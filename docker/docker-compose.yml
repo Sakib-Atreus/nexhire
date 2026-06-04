@@ -1,0 +1,87 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexhire-postgres
+    environment:
+      POSTGRES_DB: nexhire
+      POSTGRES_USER: nexhire
+      POSTGRES_PASSWORD: root1234
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nexhire -d nexhire']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexhire-network
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: nexhire-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: nexhire
+      RABBITMQ_DEFAULT_PASS: root1234
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexhire-network
+
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: nexhire-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/nexhire
+      SPRING_DATASOURCE_USERNAME: nexhire
+      SPRING_DATASOURCE_PASSWORD: root1234
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: nexhire
+      SPRING_RABBITMQ_PASSWORD: root1234
+      JWT_SECRET: lQffSG11g0obJA99ttgylKZuxHHgTnuUH0V1cDRstsK
+      JWT_EXPIRATION: 86400000
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nexhire-network
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: nexhire-web
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8080/api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+    networks:
+      - nexhire-network
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  nexhire-network:
+    driver: bridge

@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexhire-postgres-dev
+    environment:
+      POSTGRES_DB: nexhire_dev
+      POSTGRES_USER: nexhire
+      POSTGRES_PASSWORD: root1234
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nexhire -d nexhire_dev']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexhire-dev-network
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: nexhire-rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: nexhire
+      RABBITMQ_DEFAULT_PASS: root1234
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - nexhire-dev-network
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  nexhire-dev-network:
+    driver: bridge

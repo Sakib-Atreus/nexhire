@@ -1,0 +1,45 @@
+# Node
+node_modules/
+.npm
+.yarn
+
+# Next.js
+.next/
+out/
+build/
+
+# Java/Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Turbo
+.turbo/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker/data/
+
+# Test coverage
+coverage/
