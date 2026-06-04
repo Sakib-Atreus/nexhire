@@ -36,3 +36,16 @@ export function useUpdateApplicationStatus() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
   });
 }
+
+export function useRecruiterApplications() {
+  return useQuery({
+    queryKey: ['applications', 'recruiter'],
+    queryFn: () => api.get<Page<Application>>('/applications/recruiter').then((r) => r.data),
+  });
+}
+
+export function useCheckApplied(jobId: string) {
+  const { data } = useMyApplications();
+  const applied = data?.content.find((a) => a.jobId === jobId && a.status !== 'WITHDRAWN');
+  return { applied: !!applied, application: applied };
+}
