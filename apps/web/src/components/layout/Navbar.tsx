@@ -49,8 +49,8 @@ export function Navbar() {
       {/* Top bar — visible on all screen sizes */}
       <header className="sticky top-0 z-20 bg-white border-b border-slate-200 lg:border-b-0">
         <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          {/* Mobile logo (hidden on desktop since sidebar shows it) */}
-          <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
+          {/* Mobile logo — links to home page */}
+          <Link href="/" className="flex items-center gap-2 lg:hidden">
             <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
               <Briefcase className="w-3.5 h-3.5 text-white" />
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useJob } from '@/hooks/useJobs';
 import { useJobApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
@@ -8,8 +8,8 @@ import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import {
-  ArrowLeft, Users, Mail, Calendar, FileText, CheckCircle2,
-  XCircle, Clock, Eye, ChevronDown, Search, Building2,
+  ArrowLeft, Users, Mail, Calendar, FileText, Eye,
+  ChevronDown, Search, Building2,
 } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@/types';
 
@@ -33,6 +33,16 @@ const STATUS_COLORS: Record<ApplicationStatus, string> = {
   WITHDRAWN: 'bg-slate-50 text-slate-500 border-slate-200',
 };
 
+const STATUS_DOT: Record<ApplicationStatus, string> = {
+  PENDING: 'bg-yellow-400',
+  REVIEWING: 'bg-blue-500',
+  SHORTLISTED: 'bg-indigo-500',
+  INTERVIEWED: 'bg-purple-500',
+  OFFERED: 'bg-green-500',
+  REJECTED: 'bg-red-500',
+  WITHDRAWN: 'bg-slate-300',
+};
+
 const STATUS_ORDER: ApplicationStatus[] = [
   'PENDING', 'REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED', 'REJECTED', 'WITHDRAWN',
 ];
@@ -47,12 +57,60 @@ const ALLOWED_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   WITHDRAWN: [],
 };
 
+// Click-based dropdown so it works on touch devices and is accessible
+function StatusDropdown({ app }: { app: Application }) {
+  const { mutate: update, isPending } = useUpdateApplicationStatus();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const transitions = ALLOWED_TRANSITIONS[app.status];
+  if (transitions.length === 0) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        disabled={isPending}
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+      >
+        Update <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-20">
+          {transitions.map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                update({ id: app.id, status: s });
+                setOpen(false);
+              }}
+              disabled={isPending}
+              className="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', STATUS_DOT[s])} />
+              <span className={STATUS_COLORS[s].split(' ')[1]}>{STATUS_LABELS[s]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ApplicantCard({ app }: { app: Application }) {
   const { mutate: update, isPending } = useUpdateApplicationStatus();
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState(app.notes ?? '');
-
-  const transitions = ALLOWED_TRANSITIONS[app.status];
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -65,7 +123,10 @@ function ApplicantCard({ app }: { app: Application }) {
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-slate-900">{app.candidateName}</p>
-              <a href={`mailto:${app.candidateEmail}`} className="text-sm text-slate-500 hover:text-primary-600 flex items-center gap-1 transition-colors">
+              <a
+                href={`mailto:${app.candidateEmail}`}
+                className="text-sm text-slate-500 hover:text-primary-600 flex items-center gap-1 transition-colors"
+              >
                 <Mail className="w-3.5 h-3.5" /> {app.candidateEmail}
               </a>
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
@@ -75,38 +136,12 @@ function ApplicantCard({ app }: { app: Application }) {
             </div>
           </div>
 
-          {/* Status + actions */}
+          {/* Status + update dropdown */}
           <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
             <span className={cn('text-xs px-2.5 py-1.5 rounded-full border font-semibold', STATUS_COLORS[app.status])}>
               {STATUS_LABELS[app.status]}
             </span>
-
-            {transitions.length > 0 && (
-              <div className="relative group">
-                <button
-                  disabled={isPending}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
-                >
-                  Update <ChevronDown className="w-3 h-3" />
-                </button>
-                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-10 hidden group-hover:block">
-                  {transitions.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => update({ id: app.id, status: s })}
-                      disabled={isPending}
-                      className={cn(
-                        'w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-2',
-                        STATUS_COLORS[s].split(' ')[1]
-                      )}
-                    >
-                      <span className={cn('w-2 h-2 rounded-full', s === 'OFFERED' ? 'bg-green-500' : s === 'REJECTED' ? 'bg-red-500' : 'bg-blue-500')} />
-                      {STATUS_LABELS[s]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <StatusDropdown app={app} />
           </div>
         </div>
 
@@ -188,7 +223,10 @@ export default function ApplicantsPage() {
   const apps = applications?.content ?? [];
 
   const filtered = apps.filter((a) => {
-    const matchSearch = !search || a.candidateName.toLowerCase().includes(search.toLowerCase()) || a.candidateEmail.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      !search ||
+      a.candidateName.toLowerCase().includes(search.toLowerCase()) ||
+      a.candidateEmail.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || a.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -227,7 +265,9 @@ export default function ApplicantsPage() {
           onClick={() => setStatusFilter('')}
           className={cn(
             'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors border',
-            !statusFilter ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            !statusFilter
+              ? 'bg-primary-600 text-white border-primary-600'
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
           )}
         >
           All ({apps.length})
@@ -235,10 +275,12 @@ export default function ApplicantsPage() {
         {STATUS_ORDER.filter((s) => countByStatus(s) > 0).map((s) => (
           <button
             key={s}
-            onClick={() => setStatusFilter(s)}
+            onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
             className={cn(
               'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors border',
-              statusFilter === s ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              statusFilter === s
+                ? 'bg-primary-600 text-white border-primary-600'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             )}
           >
             {STATUS_LABELS[s]} ({countByStatus(s)})
@@ -260,7 +302,9 @@ export default function ApplicantsPage() {
       {/* Applicant cards */}
       {isLoading ? (
         <div className="space-y-4">
-          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-36 bg-white rounded-2xl border border-slate-100 animate-pulse" />)}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-36 bg-white rounded-2xl border border-slate-100 animate-pulse" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
@@ -274,7 +318,9 @@ export default function ApplicantsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((app) => <ApplicantCard key={app.id} app={app} />)}
+          {filtered.map((app) => (
+            <ApplicantCard key={app.id} app={app} />
+          ))}
         </div>
       )}
     </div>

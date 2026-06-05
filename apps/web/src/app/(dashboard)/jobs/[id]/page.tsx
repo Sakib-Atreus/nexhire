@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
+import type { Job } from '@/types';
 
 const LEVEL_COLORS: Record<string, string> = {
   ENTRY: 'bg-green-50 text-green-700 border-green-200',
@@ -20,13 +21,14 @@ const LEVEL_COLORS: Record<string, string> = {
   EXECUTIVE: 'bg-red-50 text-red-700 border-red-200',
 };
 
-const STATUS_COLORS: Record<string, string> = {
+const JOB_STATUS_COLORS: Record<string, string> = {
   OPEN: 'bg-green-50 text-green-700',
   DRAFT: 'bg-slate-50 text-slate-500',
   CLOSED: 'bg-red-50 text-red-600',
   FILLED: 'bg-purple-50 text-purple-700',
 };
 
+// ---------- Apply modal ----------
 function ApplyModal({ jobId, onClose }: { jobId: string; onClose: () => void }) {
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeUrl, setResumeUrl] = useState('');
@@ -112,12 +114,42 @@ function ApplyModal({ jobId, onClose }: { jobId: string; onClose: () => void }) 
   );
 }
 
+// ---------- Candidate-only action buttons ----------
+// Isolated into its own component so useCheckApplied (which fetches /applications/my)
+// is only called when the user is actually a CANDIDATE.
+function CandidateActions({ job }: { job: Job }) {
+  const { applied, application } = useCheckApplied(job.id);
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <>
+      {applied ? (
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-semibold">
+          <CheckCircle2 className="w-4 h-4" />
+          Applied · {application?.status}
+        </div>
+      ) : job.status !== 'OPEN' ? (
+        <div className="px-5 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-sm font-medium">
+          Not accepting applications
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-6 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors shadow-sm shadow-primary-200"
+        >
+          Apply Now
+        </button>
+      )}
+      {showModal && <ApplyModal jobId={job.id} onClose={() => setShowModal(false)} />}
+    </>
+  );
+}
+
+// ---------- Main page ----------
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: job, isLoading } = useJob(id);
   const { user } = useAuthStore();
-  const { applied, application } = useCheckApplied(id);
-  const [showModal, setShowModal] = useState(false);
 
   if (isLoading) {
     return (
@@ -162,7 +194,7 @@ export default function JobDetailPage() {
                   <span className={cn('text-xs px-2.5 py-1 rounded-full border font-medium', LEVEL_COLORS[job.experienceLevel])}>
                     {job.experienceLevel}
                   </span>
-                  <span className={cn('text-xs px-2.5 py-1 rounded-full font-medium', STATUS_COLORS[job.status])}>
+                  <span className={cn('text-xs px-2.5 py-1 rounded-full font-medium', JOB_STATUS_COLORS[job.status])}>
                     {job.status}
                   </span>
                 </div>
@@ -171,25 +203,7 @@ export default function JobDetailPage() {
 
             {/* Actions */}
             <div className="flex flex-col gap-2 flex-shrink-0">
-              {user?.role === 'CANDIDATE' && (
-                applied ? (
-                  <div className="flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-semibold">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Applied · {application?.status}
-                  </div>
-                ) : job.status !== 'OPEN' ? (
-                  <div className="px-5 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-sm font-medium">
-                    Not accepting applications
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowModal(true)}
-                    className="px-6 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors shadow-sm shadow-primary-200"
-                  >
-                    Apply Now
-                  </button>
-                )
-              )}
+              {user?.role === 'CANDIDATE' && <CandidateActions job={job} />}
 
               {(isOwner || isAdmin) && (
                 <Link
@@ -263,9 +277,6 @@ export default function JobDetailPage() {
           </section>
         )}
       </div>
-
-      {/* Apply modal */}
-      {showModal && <ApplyModal jobId={job.id} onClose={() => setShowModal(false)} />}
     </div>
   );
 }

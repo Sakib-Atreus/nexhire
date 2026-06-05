@@ -1,5 +1,16 @@
+'use client';
+
 import Link from 'next/link';
-import { Briefcase, Users, TrendingUp, Search, Shield, Bell, ChevronRight, CheckCircle2, Building2, Star } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { useLogout } from '@/hooks/useAuth';
+import { Briefcase, Users, TrendingUp, Search, Shield, Bell, ChevronRight, CheckCircle2, Building2, Star, LayoutDashboard, LogOut } from 'lucide-react';
+import { cn } from '@/lib/cn';
+
+const ROLE_COLORS: Record<string, string> = {
+  CANDIDATE: 'bg-blue-50 text-blue-700 border-blue-100',
+  RECRUITER: 'bg-purple-50 text-purple-700 border-purple-100',
+  ADMIN: 'bg-red-50 text-red-700 border-red-100',
+};
 
 const STATS = [
   { value: '10,000+', label: 'Open Positions' },
@@ -53,6 +64,11 @@ const HOW_IT_WORKS_CANDIDATE = [
 ];
 
 export default function HomePage() {
+  const { user, isAuthenticated } = useAuthStore();
+  const logout = useLogout();
+
+  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -64,20 +80,57 @@ export default function HomePage() {
             </div>
             <span className="text-xl font-bold text-slate-900">NexHire</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Get Started
-            </Link>
-          </div>
+
+          {isAuthenticated && user ? (
+            /* Logged-in state */
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
+              </Link>
+              <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-sm font-semibold text-slate-800 leading-tight">
+                    {user.firstName} {user.lastName}
+                  </span>
+                  <span className={cn('text-xs px-1.5 py-0.5 rounded border font-medium', ROLE_COLORS[user.role ?? 'CANDIDATE'])}>
+                    {user.role}
+                  </span>
+                </div>
+                <Link href="/dashboard">
+                  <div className="w-9 h-9 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-primary-100 hover:ring-primary-300 transition-all cursor-pointer">
+                    {initials}
+                  </div>
+                </Link>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Logged-out state */
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                Get Started
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -98,20 +151,39 @@ export default function HomePage() {
             <p className="text-lg sm:text-xl text-primary-100 mb-10 max-w-xl leading-relaxed">
               Connect with top companies, track your applications in real-time, and land the role you deserve — all in one place.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/register?role=CANDIDATE"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-primary-700 rounded-xl font-bold text-base hover:bg-primary-50 transition-colors shadow-lg shadow-primary-900/30"
-              >
-                Find Jobs <ChevronRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/register?role=RECRUITER"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white rounded-xl font-bold text-base hover:bg-white/10 transition-colors"
-              >
-                Post a Job
-              </Link>
-            </div>
+
+            {isAuthenticated && user ? (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-primary-700 rounded-xl font-bold text-base hover:bg-primary-50 transition-colors shadow-lg shadow-primary-900/30"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Go to Dashboard <ChevronRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/jobs"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white rounded-xl font-bold text-base hover:bg-white/10 transition-colors"
+                >
+                  Browse Jobs
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/register?role=CANDIDATE"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-primary-700 rounded-xl font-bold text-base hover:bg-primary-50 transition-colors shadow-lg shadow-primary-900/30"
+                >
+                  Find Jobs <ChevronRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/register?role=RECRUITER"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white rounded-xl font-bold text-base hover:bg-white/10 transition-colors"
+                >
+                  Post a Job
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -164,7 +236,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             <div className="hidden md:block absolute top-8 left-1/4 right-1/4 h-px bg-slate-200" />
-            {HOW_IT_WORKS_CANDIDATE.map((item, i) => (
+            {HOW_IT_WORKS_CANDIDATE.map((item) => (
               <div key={item.step} className="relative text-center">
                 <div className="w-16 h-16 bg-primary-600 text-white rounded-2xl flex items-center justify-center text-xl font-bold mx-auto mb-5 shadow-lg shadow-primary-200">
                   {item.step}
@@ -181,24 +253,37 @@ export default function HomePage() {
       <section className="py-20 sm:py-24 bg-primary-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ready to take the next step?
+            {isAuthenticated ? 'Welcome back to NexHire' : 'Ready to take the next step?'}
           </h2>
           <p className="text-primary-100 text-lg mb-10 max-w-xl mx-auto">
-            Join thousands of professionals who found their dream job on NexHire.
+            {isAuthenticated
+              ? 'Your dashboard is ready. Continue exploring opportunities.'
+              : 'Join thousands of professionals who found their dream job on NexHire.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register?role=CANDIDATE"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-primary-700 rounded-xl font-bold hover:bg-primary-50 transition-colors"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Start Job Search
-            </Link>
-            <Link
-              href="/register?role=RECRUITER"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-white/40 text-white rounded-xl font-bold hover:bg-white/10 transition-colors"
-            >
-              Post a Job for Free
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-primary-700 rounded-xl font-bold hover:bg-primary-50 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/register?role=CANDIDATE"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-primary-700 rounded-xl font-bold hover:bg-primary-50 transition-colors"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Start Job Search
+                </Link>
+                <Link
+                  href="/register?role=RECRUITER"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-white/40 text-white rounded-xl font-bold hover:bg-white/10 transition-colors"
+                >
+                  Post a Job for Free
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useMyJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobs';
-import { useAuthStore } from '@/store/authStore';
+import { useMyJobs, useDeleteJob } from '@/hooks/useJobs';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import {
-  Briefcase, Plus, MapPin, Clock, Users, Eye, Pencil, Trash2,
-  ChevronRight, AlertTriangle, X, CheckCircle2,
+  Briefcase, Plus, MapPin, Clock, Users, Eye, Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import type { Job, JobStatus } from '@/types';
 
@@ -51,7 +50,6 @@ function DeleteConfirmModal({ job, onClose, onConfirm }: { job: Job; onClose: ()
 }
 
 export default function MyJobsPage() {
-  const { user } = useAuthStore();
   const { data, isLoading } = useMyJobs();
   const { mutate: deleteJob, isPending: deleting } = useDeleteJob();
   const [deleteTarget, setDeleteTarget] = useState<Job | null>(null);

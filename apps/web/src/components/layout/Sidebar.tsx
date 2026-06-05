@@ -8,9 +8,11 @@ import { cn } from '@/lib/cn';
 import {
   LayoutDashboard,
   Briefcase,
+  Building2,
   FileText,
   Bell,
   PlusCircle,
+  Search,
   Users,
   ShieldCheck,
   LogOut,
@@ -25,15 +27,15 @@ interface NavItem {
 
 const CANDIDATE_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Browse Jobs', icon: Briefcase },
+  { href: '/jobs', label: 'Browse Jobs', icon: Search },
   { href: '/applications', label: 'My Applications', icon: FileText },
   { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
 
 const RECRUITER_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/jobs/my', label: 'My Jobs', icon: Briefcase },
-  { href: '/jobs', label: 'Browse Jobs', icon: Briefcase },
+  { href: '/jobs/my', label: 'My Jobs', icon: Building2 },
+  { href: '/jobs', label: 'Browse Jobs', icon: Search },
   { href: '/jobs/create', label: 'Post a Job', icon: PlusCircle },
   { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
@@ -58,6 +60,33 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-red-50 text-red-700',
 };
 
+function isNavActive(href: string, pathname: string): boolean {
+  if (pathname === href) return true;
+  if (href === '/dashboard') return false;
+  // /jobs/my: also active when viewing a specific job's applicants page
+  if (href === '/jobs/my') {
+    return (
+      pathname.startsWith('/jobs/my') ||
+      /^\/jobs\/[^/]+\/applicants/.test(pathname)
+    );
+  }
+  // /jobs browse: active on /jobs/ID detail but NOT /jobs/my, /jobs/create, /jobs/*/applicants
+  if (href === '/jobs') {
+    return (
+      pathname.startsWith('/jobs/') &&
+      !pathname.startsWith('/jobs/my') &&
+      !pathname.startsWith('/jobs/create') &&
+      !/^\/jobs\/[^/]+\/applicants/.test(pathname)
+    );
+  }
+  // /jobs/create: exact only (already handled by pathname === href above)
+  if (href === '/jobs/create') return false;
+  // /admin panel: exact only (separate from /admin/users)
+  if (href === '/admin') return pathname === '/admin';
+  // Default: prefix match
+  return pathname.startsWith(href + '/');
+}
+
 export function Sidebar() {
   const { user } = useAuthStore();
   const logout = useLogout();
@@ -68,21 +97,21 @@ export function Sidebar() {
 
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">
-      {/* Logo */}
-      <div className="h-16 flex items-center gap-2.5 px-5 border-b border-slate-100">
+      {/* Logo — links to landing home page */}
+      <Link href="/" className="h-16 flex items-center gap-2.5 px-5 border-b border-slate-100 hover:bg-slate-50 transition-colors">
         <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
           <Briefcase className="w-4 h-4 text-white" />
         </div>
         <span className="text-xl font-bold text-slate-900">NexHire</span>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map((item) => {
-          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+          const active = isNavActive(item.href, pathname);
           return (
             <Link
-              key={item.href}
+              key={item.href + item.label}
               href={item.href}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
@@ -91,7 +120,12 @@ export function Sidebar() {
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               )}
             >
-              <item.icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600')} />
+              <item.icon
+                className={cn(
+                  'w-4 h-4 flex-shrink-0',
+                  active ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600'
+                )}
+              />
               {item.label}
               {active && <ChevronRight className="w-3.5 h-3.5 ml-auto text-primary-400" />}
             </Link>
