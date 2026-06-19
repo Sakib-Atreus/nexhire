@@ -50,6 +50,18 @@ public class User implements UserDetails {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String skills;
+
+    @Column
+    private String headline;
+
+    @Column(name = "portfolio_links", columnDefinition = "TEXT")
+    private String portfolioLinks;
+
+    @Column(name = "notification_preferences", columnDefinition = "TEXT")
+    private String notificationPreferences;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean enabled = true;
@@ -83,7 +95,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return enabled;
     }
 
     @Override

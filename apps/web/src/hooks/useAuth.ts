@@ -44,3 +44,31 @@ export function useLogout() {
     router.push('/login');
   };
 }
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (data: { email: string }) =>
+      api.post<{ message: string }>('/auth/forgot-password', data).then((r) => r.data),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (data: { token: string; newPassword: string }) =>
+      api.post<{ message: string }>('/auth/reset-password', data).then((r) => r.data),
+  });
+}
+
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: (data: { token: string }) =>
+      api.post<{ message: string }>('/auth/verify-email', data).then((r) => r.data),
+  });
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: () =>
+      api.post<{ message: string }>('/auth/resend-verification').then((r) => r.data),
+  });
+}

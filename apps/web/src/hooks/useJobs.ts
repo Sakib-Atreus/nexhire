@@ -9,6 +9,8 @@ interface JobSearchParams {
   location?: string;
   jobType?: string;
   experienceLevel?: string;
+  salaryMin?: number;
+  salaryMax?: number;
   page?: number;
   size?: number;
 }
@@ -56,6 +58,29 @@ export function useDeleteJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/jobs/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+  });
+}
+
+export function useSavedJobs() {
+  return useQuery({
+    queryKey: ['jobs', 'saved'],
+    queryFn: () => api.get<Page<Job>>('/jobs/saved').then((r) => r.data),
+  });
+}
+
+export function useSaveJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: string) => api.post<Job>('/jobs/' + jobId + '/save').then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+  });
+}
+
+export function useUnsaveJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: string) => api.delete('/jobs/' + jobId + '/save'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   });
 }

@@ -4,7 +4,9 @@ import com.nexhire.api.exception.BadRequestException;
 import com.nexhire.api.exception.ForbiddenException;
 import com.nexhire.api.exception.ResourceNotFoundException;
 import com.nexhire.api.modules.applications.dto.ApplicationDTO;
+import com.nexhire.api.modules.applications.dto.ApplicationStatsDTO;
 import com.nexhire.api.modules.applications.dto.ApplyJobRequest;
+import com.nexhire.api.modules.applications.dto.BulkUpdateStatusRequest;
 import com.nexhire.api.modules.applications.dto.UpdateApplicationStatusRequest;
 import com.nexhire.api.modules.jobs.Job;
 import com.nexhire.api.modules.jobs.JobRepository;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -98,6 +101,34 @@ public class ApplicationService {
         notificationService.notifyApplicationStatusChanged(saved);
 
         return toDTO(saved);
+    }
+
+    @Transactional
+    public List<ApplicationDTO> bulkUpdateStatus(BulkUpdateStatusRequest request, User currentUser) {
+        List<Application> apps = applicationRepository.findAllById(request.applicationIds());
+        apps.forEach(app -> {
+            if (app.getJob().getRecruiter().getId().equals(currentUser.getId())
+                || currentUser.getRole() == Role.ADMIN) {
+                app.setStatus(request.status());
+                if (request.notes() != null) app.setNotes(request.notes());
+            }
+        });
+        return applicationRepository.saveAll(apps).stream().map(this::toDTO).toList();
+    }
+
+    public ApplicationStatsDTO getRecruiterStats(User recruiter) {
+        UUID rid = recruiter.getId();
+        long total = applicationRepository.countByRecruiterId(rid);
+        return new ApplicationStatsDTO(
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.PENDING),
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.REVIEWING),
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.SHORTLISTED),
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.INTERVIEWED),
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.OFFERED),
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.REJECTED),
+            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.WITHDRAWN),
+            total
+        );
     }
 
     public ApplicationDTO toDTO(Application application) {

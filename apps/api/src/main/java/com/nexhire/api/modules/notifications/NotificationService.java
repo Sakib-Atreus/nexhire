@@ -20,6 +20,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationProducer notificationProducer;
+    private final SseEmitterService sseEmitterService;
 
     public Page<NotificationDTO> getForUser(UUID userId, Pageable pageable) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable).map(this::toDTO);
@@ -75,6 +76,18 @@ public class NotificationService {
             "APPLICATION"
         );
         notificationProducer.send(message);
+    }
+
+    /**
+     * Persists a notification directly (bypassing RabbitMQ) and pushes it
+     * to any active SSE connections for the recipient immediately.
+     */
+    @Transactional
+    public NotificationDTO createAndPush(Notification notification) {
+        Notification saved = notificationRepository.save(notification);
+        NotificationDTO dto = toDTO(saved);
+        sseEmitterService.sendToUser(saved.getUser().getId(), dto);
+        return dto;
     }
 
     public NotificationDTO toDTO(Notification notification) {

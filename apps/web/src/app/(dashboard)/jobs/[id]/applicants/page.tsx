@@ -3,13 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useJob } from '@/hooks/useJobs';
-import { useJobApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
+import { useJobApplications, useUpdateApplicationStatus, useBulkUpdateStatus } from '@/hooks/useApplications';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import {
   ArrowLeft, Users, Mail, Calendar, FileText, Eye,
-  ChevronDown, Search, Building2,
+  ChevronDown, Search, Building2, CheckSquare, X,
 } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@/types';
 
@@ -46,6 +46,8 @@ const STATUS_DOT: Record<ApplicationStatus, string> = {
 const STATUS_ORDER: ApplicationStatus[] = [
   'PENDING', 'REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED', 'REJECTED', 'WITHDRAWN',
 ];
+
+const BULK_STATUSES: ApplicationStatus[] = ['REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED', 'REJECTED'];
 
 const ALLOWED_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   PENDING: ['REVIEWING', 'SHORTLISTED', 'REJECTED'],
@@ -107,20 +109,45 @@ function StatusDropdown({ app }: { app: Application }) {
   );
 }
 
-function ApplicantCard({ app }: { app: Application }) {
+function ApplicantCard({
+  app,
+  selected,
+  onToggle,
+}: {
+  app: Application;
+  selected: boolean;
+  onToggle: (id: string) => void;
+}) {
   const { mutate: update, isPending } = useUpdateApplicationStatus();
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState(app.notes ?? '');
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div
+      className={cn(
+        'bg-white rounded-2xl border shadow-sm overflow-hidden transition-colors',
+        selected ? 'border-primary-400 ring-2 ring-primary-100' : 'border-slate-100',
+      )}
+    >
       <div className="p-5">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-          {/* Avatar + info */}
+          {/* Checkbox + Avatar + info */}
           <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Checkbox */}
+            <label className="flex items-center mt-0.5 cursor-pointer flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => onToggle(app.id)}
+                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+              />
+            </label>
+
+            {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm flex-shrink-0">
               {app.candidateName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
             </div>
+
             <div className="min-w-0">
               <p className="font-semibold text-slate-900">{app.candidateName}</p>
               <a
@@ -207,6 +234,9 @@ export default function ApplicantsPage() {
   const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<ApplicationStatus>('REVIEWING');
+  const { mutate: bulkUpdate, isPending: isBulkPending } = useBulkUpdateStatus();
 
   const isLoading = jobLoading || appsLoading;
   const canView = user?.role === 'RECRUITER' || user?.role === 'ADMIN';
@@ -233,8 +263,43 @@ export default function ApplicantsPage() {
 
   const countByStatus = (s: string) => apps.filter((a) => a.status === s).length;
 
+  const allVisibleSelected = filtered.length > 0 && filtered.every((a) => selectedIds.has(a.id));
+  const someVisibleSelected = filtered.some((a) => selectedIds.has(a.id));
+
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((a) => next.delete(a.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((a) => next.add(a.id));
+        return next;
+      });
+    }
+  }
+
+  function handleBulkApply() {
+    bulkUpdate(
+      { applicationIds: Array.from(selectedIds), status: bulkStatus },
+      { onSuccess: () => setSelectedIds(new Set()) },
+    );
+  }
+
   return (
-    <div className="pb-20 lg:pb-0">
+    <div className="pb-28 lg:pb-8">
       {/* Back */}
       <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to My Jobs
@@ -288,15 +353,31 @@ export default function ApplicantsPage() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative mb-5">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or email..."
-          className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-        />
+      {/* Search + Select All row */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+          />
+        </div>
+
+        {filtered.length > 0 && (
+          <label className="flex items-center gap-2 cursor-pointer select-none flex-shrink-0 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              ref={(el) => { if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected; }}
+              onChange={toggleAll}
+              className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+            />
+            <CheckSquare className="w-4 h-4 text-slate-400" />
+            <span className="font-medium">Select all</span>
+          </label>
+        )}
       </div>
 
       {/* Applicant cards */}
@@ -319,8 +400,57 @@ export default function ApplicantsPage() {
       ) : (
         <div className="space-y-4">
           {filtered.map((app) => (
-            <ApplicantCard key={app.id} app={app} />
+            <ApplicantCard
+              key={app.id}
+              app={app}
+              selected={selectedIds.has(app.id)}
+              onToggle={toggleOne}
+            />
           ))}
+        </div>
+      )}
+
+      {/* Bulk action bar — fixed at bottom when items are selected */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-2xl mx-4 mb-4 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+            {/* Count */}
+            <span className="text-sm font-semibold text-slate-100 flex-shrink-0">
+              {selectedIds.size} selected
+            </span>
+
+            <div className="flex-1" />
+
+            {/* Status dropdown */}
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus)}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            >
+              {BULK_STATUSES.map((s) => (
+                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              ))}
+            </select>
+
+            {/* Apply button */}
+            <button
+              onClick={handleBulkApply}
+              disabled={isBulkPending}
+              className="px-4 py-1.5 bg-primary-500 hover:bg-primary-400 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              {isBulkPending ? 'Applying...' : 'Apply'}
+            </button>
+
+            {/* Clear button */}
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              disabled={isBulkPending}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors disabled:opacity-50"
+              aria-label="Clear selection"
+            >
+              <X className="w-4 h-4 text-slate-300" />
+            </button>
+          </div>
         </div>
       )}
     </div>

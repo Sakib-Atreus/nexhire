@@ -32,8 +32,24 @@ services:
     networks:
       - nexhire-dev-network
 
+  minio:
+    image: minio/minio:latest
+    container_name: nexhire-minio-dev
+    environment:
+      MINIO_ROOT_USER: nexhire-minio
+      MINIO_ROOT_PASSWORD: minio1234
+    command: server /data --console-address ":9001"
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - nexhire-dev-network
+
 volumes:
   postgres_dev_data:
+  minio_dev_data:
 
 networks:
   nexhire-dev-network:

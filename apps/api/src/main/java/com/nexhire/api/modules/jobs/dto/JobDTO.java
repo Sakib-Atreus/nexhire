@@ -29,5 +29,8 @@ public record JobDTO(
     UUID recruiterId,
     String recruiterName,
     Instant createdAt,
-    Instant updatedAt
+    Instant updatedAt,
+    int viewCount,
+    String screeningQuestions,
+    boolean isSaved
 ) {}

@@ -1,26 +1,36 @@
 'use client';
 
-import { useNotifications, useMarkAllRead } from '@/hooks/useNotifications';
-import { Bell, CheckCheck } from 'lucide-react';
+import { useNotifications, useMarkAllRead, useNotificationStream } from '@/hooks/useNotifications';
+import { Bell, CheckCheck, Settings } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import Link from 'next/link';
 
 export default function NotificationsPage() {
   const { data, isLoading } = useNotifications();
   const { mutate: markAllRead, isPending } = useMarkAllRead();
+  useNotificationStream();
 
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
-        {(data?.content.some((n) => !n.read)) && (
-          <button
-            onClick={() => markAllRead()}
-            disabled={isPending}
-            className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-800 font-medium"
+        <div className="flex items-center gap-3">
+          {(data?.content.some((n) => !n.read)) && (
+            <button
+              onClick={() => markAllRead()}
+              disabled={isPending}
+              className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-800 font-medium"
+            >
+              <CheckCheck className="w-4 h-4" /> Mark all read
+            </button>
+          )}
+          <Link
+            href="/notifications/preferences"
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 font-medium"
           >
-            <CheckCheck className="w-4 h-4" /> Mark all read
-          </button>
-        )}
+            <Settings className="w-4 h-4" /> Preferences
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (

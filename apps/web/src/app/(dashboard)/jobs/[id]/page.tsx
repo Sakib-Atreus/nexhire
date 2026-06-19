@@ -7,11 +7,12 @@ import { useApply, useCheckApplied } from '@/hooks/useApplications';
 import { useAuthStore } from '@/store/authStore';
 import {
   MapPin, Clock, DollarSign, Calendar, Building2, ArrowLeft,
-  Users, CheckCircle2, X, Briefcase, TrendingUp,
+  Users, CheckCircle2, X, Briefcase, TrendingUp, Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import type { Job } from '@/types';
+import { FileUpload } from '@/components/ui/FileUpload';
 
 const LEVEL_COLORS: Record<string, string> = {
   ENTRY: 'bg-green-50 text-green-700 border-green-200',
@@ -32,11 +33,17 @@ const JOB_STATUS_COLORS: Record<string, string> = {
 function ApplyModal({ jobId, onClose }: { jobId: string; onClose: () => void }) {
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeUrl, setResumeUrl] = useState('');
+  const [resumeTab, setResumeTab] = useState<'upload' | 'url'>('upload');
+  const [errors, setErrors] = useState<{ coverLetter?: string; resume?: string }>({});
   const { mutate: apply, isPending, isSuccess, error } = useApply();
 
   const handleApply = () => {
+    const newErrors: { coverLetter?: string; resume?: string } = {};
+    if (!coverLetter.trim()) newErrors.coverLetter = 'Cover letter is required';
+    if (!resumeUrl.trim()) newErrors.resume = 'Resume is required';
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     apply(
-      { jobId, coverLetter: coverLetter || undefined, resumeUrl: resumeUrl || undefined },
+      { jobId, coverLetter, resumeUrl },
       { onSuccess: () => setTimeout(onClose, 1500) }
     );
   };
@@ -63,27 +70,73 @@ function ApplyModal({ jobId, onClose }: { jobId: string; onClose: () => void }) 
           <div className="p-6 space-y-5">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Cover Letter <span className="text-slate-400 font-normal">(optional)</span>
+                Cover Letter <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
+                onChange={(e) => { setCoverLetter(e.target.value); setErrors(p => ({ ...p, coverLetter: undefined })); }}
                 rows={5}
                 placeholder="Introduce yourself and explain why you're a great fit for this role..."
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm text-slate-700 placeholder-slate-400"
+                className={cn(
+                  'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm text-slate-700 placeholder-slate-400',
+                  errors.coverLetter ? 'border-red-400' : 'border-slate-300'
+                )}
               />
+              {errors.coverLetter && <p className="mt-1 text-xs text-red-500">{errors.coverLetter}</p>}
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Resume URL <span className="text-slate-400 font-normal">(optional)</span>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Resume <span className="text-red-500">*</span>
               </label>
-              <input
-                type="url"
-                value={resumeUrl}
-                onChange={(e) => setResumeUrl(e.target.value)}
-                placeholder="https://yourresume.com/resume.pdf"
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-              />
+              <div className="flex border border-slate-200 rounded-lg overflow-hidden mb-3">
+                <button
+                  type="button"
+                  onClick={() => setResumeTab('upload')}
+                  className={cn(
+                    'flex-1 px-4 py-2 text-sm font-medium transition-colors',
+                    resumeTab === 'upload'
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResumeTab('url')}
+                  className={cn(
+                    'flex-1 px-4 py-2 text-sm font-medium transition-colors',
+                    resumeTab === 'url'
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  Paste URL
+                </button>
+              </div>
+
+              {resumeTab === 'upload' ? (
+                <FileUpload
+                  onUpload={(url) => { setResumeUrl(url); setErrors(p => ({ ...p, resume: undefined })); }}
+                  accept=".pdf,.doc,.docx"
+                  label="Upload your resume"
+                  hint="PDF, DOC or DOCX"
+                  currentUrl={resumeUrl}
+                />
+              ) : (
+                <input
+                  type="url"
+                  value={resumeUrl}
+                  onChange={(e) => { setResumeUrl(e.target.value); setErrors(p => ({ ...p, resume: undefined })); }}
+                  placeholder="https://yourresume.com/resume.pdf"
+                  className={cn(
+                    'w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm',
+                    errors.resume ? 'border-red-400' : 'border-slate-300'
+                  )}
+                />
+              )}
+              {errors.resume && <p className="mt-1 text-xs text-red-500">{errors.resume}</p>}
             </div>
 
             {error && (
@@ -204,6 +257,15 @@ export default function JobDetailPage() {
             {/* Actions */}
             <div className="flex flex-col gap-2 flex-shrink-0">
               {user?.role === 'CANDIDATE' && <CandidateActions job={job} />}
+
+              {isOwner && (
+                <Link
+                  href={`/jobs/${job.id}/edit`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" /> Edit Job
+                </Link>
+              )}
 
               {(isOwner || isAdmin) && (
                 <Link

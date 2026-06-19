@@ -1,5 +1,7 @@
 package com.nexhire.api.modules.users;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nexhire.api.exception.ResourceNotFoundException;
 import com.nexhire.api.modules.users.dto.UpdateUserRequest;
 import com.nexhire.api.modules.users.dto.UserDTO;
@@ -12,6 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -57,6 +61,9 @@ public class UserService implements UserDetailsService {
         if (request.phone() != null) user.setPhone(request.phone());
         if (request.bio() != null) user.setBio(request.bio());
         if (request.avatarUrl() != null) user.setAvatarUrl(request.avatarUrl());
+        if (request.skills() != null) user.setSkills(toJsonString(request.skills()));
+        if (request.headline() != null) user.setHeadline(request.headline());
+        if (request.portfolioLinks() != null) user.setPortfolioLinks(toJsonString(request.portfolioLinks()));
 
         return toDTO(userRepository.save(user));
     }
@@ -67,6 +74,22 @@ public class UserService implements UserDetailsService {
             throw new ResourceNotFoundException("User", "id", id);
         }
         userRepository.deleteById(id);
+    }
+
+    @Transactional
+    public UserDTO banUser(UUID id, boolean enable) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        user.setEnabled(enable);
+        return toDTO(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserDTO promoteUser(UUID id, Role newRole) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        user.setRole(newRole);
+        return toDTO(userRepository.save(user));
     }
 
     public UserDTO toDTO(User user) {
@@ -81,7 +104,29 @@ public class UserService implements UserDetailsService {
             user.getBio(),
             user.getAvatarUrl(),
             user.isEmailVerified(),
-            user.getCreatedAt()
+            user.getCreatedAt(),
+            parseJsonList(user.getSkills()),
+            user.getHeadline(),
+            parseJsonList(user.getPortfolioLinks()),
+            user.isEnabled()
         );
+    }
+
+    private List<String> parseJsonList(String json) {
+        if (json == null || json.isBlank()) return Collections.emptyList();
+        try {
+            return new ObjectMapper().readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private String toJsonString(List<String> list) {
+        if (list == null) return "[]";
+        try {
+            return new ObjectMapper().writeValueAsString(list);
+        } catch (Exception e) {
+            return "[]";
+        }
     }
 }

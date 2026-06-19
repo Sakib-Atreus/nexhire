@@ -69,6 +69,13 @@ public class Job {
 
     private String tags;
 
+    @Builder.Default
+    @Column(name = "view_count")
+    private int viewCount = 0;
+
+    @Column(name = "screening_questions", columnDefinition = "TEXT")
+    private String screeningQuestions;
+
     private LocalDate deadline;
 
     @ManyToOne(fetch = FetchType.LAZY)

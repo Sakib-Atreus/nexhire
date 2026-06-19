@@ -1,7 +1,9 @@
 package com.nexhire.api.modules.applications;
 
 import com.nexhire.api.modules.applications.dto.ApplicationDTO;
+import com.nexhire.api.modules.applications.dto.ApplicationStatsDTO;
 import com.nexhire.api.modules.applications.dto.ApplyJobRequest;
+import com.nexhire.api.modules.applications.dto.BulkUpdateStatusRequest;
 import com.nexhire.api.modules.applications.dto.UpdateApplicationStatusRequest;
 import com.nexhire.api.modules.users.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -75,5 +78,22 @@ public class ApplicationController {
         @AuthenticationPrincipal User currentUser
     ) {
         return ResponseEntity.ok(applicationService.updateStatus(id, request, currentUser));
+    }
+
+    @PatchMapping("/bulk-status")
+    @PreAuthorize("hasRole('RECRUITER') or hasRole('ADMIN')")
+    @Operation(summary = "Bulk update application statuses")
+    public ResponseEntity<List<ApplicationDTO>> bulkUpdateStatus(
+        @Valid @RequestBody BulkUpdateStatusRequest request,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        return ResponseEntity.ok(applicationService.bulkUpdateStatus(request, currentUser));
+    }
+
+    @GetMapping("/recruiter/stats")
+    @PreAuthorize("hasRole('RECRUITER') or hasRole('ADMIN')")
+    @Operation(summary = "Get recruiter application pipeline stats")
+    public ResponseEntity<ApplicationStatsDTO> getRecruiterStats(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(applicationService.getRecruiterStats(currentUser));
     }
 }

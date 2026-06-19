@@ -17,6 +17,9 @@ import {
   ShieldCheck,
   LogOut,
   ChevronRight,
+  Bookmark,
+  User2,
+  BarChart3,
 } from 'lucide-react';
 
 interface NavItem {
@@ -30,6 +33,8 @@ const CANDIDATE_NAV: NavItem[] = [
   { href: '/jobs', label: 'Browse Jobs', icon: Search },
   { href: '/applications', label: 'My Applications', icon: FileText },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/jobs/saved', label: 'Saved Jobs', icon: Bookmark },
+  { href: '/profile', label: 'My Profile', icon: User2 },
 ];
 
 const RECRUITER_NAV: NavItem[] = [
@@ -38,6 +43,7 @@ const RECRUITER_NAV: NavItem[] = [
   { href: '/jobs', label: 'Browse Jobs', icon: Search },
   { href: '/jobs/create', label: 'Post a Job', icon: PlusCircle },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/profile', label: 'My Profile', icon: User2 },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -46,6 +52,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/jobs', label: 'All Jobs', icon: Briefcase },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 function getNav(role?: string): NavItem[] {
@@ -70,12 +77,13 @@ function isNavActive(href: string, pathname: string): boolean {
       /^\/jobs\/[^/]+\/applicants/.test(pathname)
     );
   }
-  // /jobs browse: active on /jobs/ID detail but NOT /jobs/my, /jobs/create, /jobs/*/applicants
+  // /jobs browse: active on /jobs/ID detail but NOT /jobs/my, /jobs/create, /jobs/saved, /jobs/*/applicants
   if (href === '/jobs') {
     return (
       pathname.startsWith('/jobs/') &&
       !pathname.startsWith('/jobs/my') &&
       !pathname.startsWith('/jobs/create') &&
+      !pathname.startsWith('/jobs/saved') &&
       !/^\/jobs\/[^/]+\/applicants/.test(pathname)
     );
   }

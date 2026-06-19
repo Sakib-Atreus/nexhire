@@ -1,5 +1,7 @@
 package com.nexhire.api.modules.users;
 
+import com.nexhire.api.modules.users.dto.BanUserRequest;
+import com.nexhire.api.modules.users.dto.UpdateRoleRequest;
 import com.nexhire.api.modules.users.dto.UpdateUserRequest;
 import com.nexhire.api.modules.users.dto.UserDTO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,5 +60,19 @@ public class UserController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Ban or unban a user (ADMIN only)")
+    public ResponseEntity<UserDTO> updateStatus(@PathVariable UUID id, @RequestBody BanUserRequest request) {
+        return ResponseEntity.ok(userService.banUser(id, request.enabled()));
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update user role (ADMIN only)")
+    public ResponseEntity<UserDTO> updateRole(@PathVariable UUID id, @Valid @RequestBody UpdateRoleRequest request) {
+        return ResponseEntity.ok(userService.promoteUser(id, request.role()));
     }
 }

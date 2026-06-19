@@ -3,15 +3,24 @@
 import { useState } from 'react';
 import { useJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 export default function JobsPage() {
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [jobType, setJobType] = useState('');
+  const [salaryMin, setSalaryMin] = useState<number | undefined>(undefined);
+  const [salaryMax, setSalaryMax] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(0);
 
-  const { data, isLoading, isError } = useJobs({ keyword: keyword || undefined, location: location || undefined, jobType: jobType || undefined, page });
+  const { data, isLoading, isError } = useJobs({
+    keyword: keyword || undefined,
+    location: location || undefined,
+    jobType: jobType || undefined,
+    salaryMin,
+    salaryMax,
+    page,
+  });
 
   return (
     <div>
@@ -46,6 +55,24 @@ export default function JobsPage() {
             <option value="INTERNSHIP">Internship</option>
             <option value="REMOTE">Remote</option>
           </select>
+        </div>
+        <div className="flex gap-3 mt-3">
+          <input
+            type="number"
+            min={0}
+            value={salaryMin ?? ''}
+            onChange={(e) => { setSalaryMin(e.target.value ? Number(e.target.value) : undefined); setPage(0); }}
+            placeholder="Min salary ($)"
+            className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <input
+            type="number"
+            min={0}
+            value={salaryMax ?? ''}
+            onChange={(e) => { setSalaryMax(e.target.value ? Number(e.target.value) : undefined); setPage(0); }}
+            placeholder="Max salary ($)"
+            className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
         </div>
       </div>
 

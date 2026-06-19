@@ -32,6 +32,10 @@ export interface User {
   avatarUrl?: string;
   emailVerified: boolean;
   createdAt: string;
+  skills?: string[];
+  headline?: string;
+  portfolioLinks?: string[];
+  enabled?: boolean;
 }
 
 export interface AuthResponse {
@@ -63,6 +67,9 @@ export interface Job {
   recruiterName: string;
   createdAt: string;
   updatedAt: string;
+  viewCount?: number;
+  screeningQuestions?: string[];
+  isSaved?: boolean;
 }
 
 export interface Application {
@@ -109,3 +116,8 @@ export interface ApiError {
   timestamp: string;
   fieldErrors?: Record<string, string>;
 }
+
+export interface SavedJob { id: string; jobId: string; savedAt: string; job: Job; }
+export interface FileUploadResponse { url: string; fileName: string; contentType: string; size: number; }
+export interface ApplicationStats { pending: number; reviewing: number; shortlisted: number; interviewed: number; offered: number; rejected: number; withdrawn: number; total: number; }
+export interface NotificationPreferences { applicationReceived: boolean; statusChanged: boolean; general: boolean; }

@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -33,15 +34,21 @@ public class JobController {
         @RequestParam(required = false) String location,
         @RequestParam(required = false) JobType jobType,
         @RequestParam(required = false) ExperienceLevel experienceLevel,
+        @RequestParam(required = false) BigDecimal salaryMin,
+        @RequestParam(required = false) BigDecimal salaryMax,
         Pageable pageable
     ) {
-        return ResponseEntity.ok(jobService.search(keyword, location, jobType, experienceLevel, pageable));
+        return ResponseEntity.ok(jobService.search(keyword, location, jobType, experienceLevel, salaryMin, salaryMax, pageable));
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get job by ID")
-    public ResponseEntity<JobDTO> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(jobService.getById(id));
+    @GetMapping("/saved")
+    @PreAuthorize("hasRole('CANDIDATE') or hasRole('ADMIN')")
+    @Operation(summary = "Get saved jobs for authenticated candidate")
+    public ResponseEntity<Page<JobDTO>> getSavedJobs(
+        @AuthenticationPrincipal User currentUser,
+        Pageable pageable
+    ) {
+        return ResponseEntity.ok(jobService.getSavedJobs(currentUser.getId(), pageable));
     }
 
     @GetMapping("/my")
@@ -52,6 +59,15 @@ public class JobController {
         Pageable pageable
     ) {
         return ResponseEntity.ok(jobService.getByRecruiter(currentUser.getId(), pageable));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get job by ID")
+    public ResponseEntity<JobDTO> getById(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        return ResponseEntity.ok(jobService.getByIdForUser(id, currentUser != null ? currentUser.getId() : null));
     }
 
     @PostMapping
@@ -83,6 +99,27 @@ public class JobController {
         @AuthenticationPrincipal User currentUser
     ) {
         jobService.delete(id, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/save")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Save a job for later")
+    public ResponseEntity<JobDTO> saveJob(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        return ResponseEntity.ok(jobService.saveJob(id, currentUser));
+    }
+
+    @DeleteMapping("/{id}/save")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Remove a saved job")
+    public ResponseEntity<Void> unsaveJob(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        jobService.unsaveJob(id, currentUser.getId());
         return ResponseEntity.noContent().build();
     }
 }

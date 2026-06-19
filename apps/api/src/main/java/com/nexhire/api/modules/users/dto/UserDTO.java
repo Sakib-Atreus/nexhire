@@ -3,6 +3,7 @@ package com.nexhire.api.modules.users.dto;
 import com.nexhire.api.modules.users.Role;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record UserDTO(
@@ -16,5 +17,9 @@ public record UserDTO(
     String bio,
     String avatarUrl,
     boolean emailVerified,
-    Instant createdAt
+    Instant createdAt,
+    List<String> skills,
+    String headline,
+    List<String> portfolioLinks,
+    boolean enabled
 ) {}

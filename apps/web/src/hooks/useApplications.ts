@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
-import type { Application, Page } from '@/types';
+import type { Application, ApplicationStats, ApplicationStatus, Page } from '@/types';
 
 export function useMyApplications() {
   return useQuery({
@@ -48,4 +48,20 @@ export function useCheckApplied(jobId: string) {
   const { data } = useMyApplications();
   const applied = data?.content.find((a) => a.jobId === jobId && a.status !== 'WITHDRAWN');
   return { applied: !!applied, application: applied };
+}
+
+export function useBulkUpdateStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { applicationIds: string[]; status: ApplicationStatus; notes?: string }) =>
+      api.patch<Application[]>('/applications/bulk-status', data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+  });
+}
+
+export function useRecruiterStats() {
+  return useQuery({
+    queryKey: ['applications', 'recruiter', 'stats'],
+    queryFn: () => api.get<ApplicationStats>('/applications/recruiter/stats').then((r) => r.data),
+  });
 }
