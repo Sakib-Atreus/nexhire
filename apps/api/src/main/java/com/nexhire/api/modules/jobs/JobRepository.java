@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -45,6 +46,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     );
 
     @Modifying
+    @Transactional
     @Query("UPDATE Job j SET j.viewCount = j.viewCount + 1 WHERE j.id = :id")
     void incrementViewCount(@Param("id") UUID id);
 
@@ -54,6 +56,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         AND (CAST(:keyword AS String) IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%'))
              OR LOWER(j.description) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')))
         AND (CAST(:location AS String) IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', CAST(:location AS String), '%')))
+        AND (CAST(:companyName AS String) IS NULL OR LOWER(j.companyName) LIKE LOWER(CONCAT('%', CAST(:companyName AS String), '%')))
         AND (:jobType IS NULL OR j.jobType = :jobType)
         AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
         AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin)
@@ -65,6 +68,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         AND (CAST(:keyword AS String) IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%'))
              OR LOWER(j.description) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')))
         AND (CAST(:location AS String) IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', CAST(:location AS String), '%')))
+        AND (CAST(:companyName AS String) IS NULL OR LOWER(j.companyName) LIKE LOWER(CONCAT('%', CAST(:companyName AS String), '%')))
         AND (:jobType IS NULL OR j.jobType = :jobType)
         AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
         AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin)
@@ -74,6 +78,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         @Param("status") JobStatus status,
         @Param("keyword") String keyword,
         @Param("location") String location,
+        @Param("companyName") String companyName,
         @Param("jobType") JobType jobType,
         @Param("experienceLevel") ExperienceLevel experienceLevel,
         @Param("salaryMin") java.math.BigDecimal salaryMin,

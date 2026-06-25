@@ -7,7 +7,7 @@ import { useApply, useCheckApplied } from '@/hooks/useApplications';
 import { useAuthStore } from '@/store/authStore';
 import {
   MapPin, Clock, DollarSign, Calendar, Building2, ArrowLeft,
-  Users, CheckCircle2, X, Briefcase, TrendingUp, Pencil,
+  Users, CheckCircle2, X, Briefcase, TrendingUp, Pencil, Share2, Copy, Check,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
@@ -198,6 +198,33 @@ function CandidateActions({ job }: { job: Job }) {
   );
 }
 
+// ---------- Share button ----------
+function ShareButton({ job }: { job: Job }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = { title: job.title, text: `${job.title} at ${job.companyName}`, url };
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try { await navigator.share(shareData); return; } catch { /* fallthrough to clipboard */ }
+    }
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+      title="Share this job"
+    >
+      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+      {copied ? 'Copied!' : 'Share'}
+    </button>
+  );
+}
+
 // ---------- Main page ----------
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -275,6 +302,8 @@ export default function JobDetailPage() {
                   <Users className="w-4 h-4" /> View Applicants
                 </Link>
               )}
+
+              <ShareButton job={job} />
             </div>
           </div>
 

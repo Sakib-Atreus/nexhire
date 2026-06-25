@@ -167,7 +167,8 @@ export default function MyJobsPage() {
                     href={`/jobs/${job.id}/applicants`}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors border border-indigo-100"
                   >
-                    <Users className="w-3.5 h-3.5" /> Applicants
+                    <Users className="w-3.5 h-3.5" />
+                    {job.applicationCount != null ? `${job.applicationCount} Applicants` : 'Applicants'}
                   </Link>
                   <Link
                     href={`/jobs/${job.id}`}

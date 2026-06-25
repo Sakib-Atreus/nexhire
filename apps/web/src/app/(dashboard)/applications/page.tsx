@@ -40,7 +40,8 @@ const STATUS_DOTS: Record<ApplicationStatus, string> = {
 const ALL_STATUSES = Object.keys(STATUS_LABELS) as ApplicationStatus[];
 
 export default function ApplicationsPage() {
-  const { data, isLoading } = useMyApplications();
+  const [page, setPage] = useState(0);
+  const { data, isLoading } = useMyApplications(page);
   const { mutate: updateStatus, isPending } = useUpdateApplicationStatus();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -195,6 +196,30 @@ export default function ApplicationsPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {data && data.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-500">
+            Page {data.number + 1} of {data.totalPages} · {data.totalElements} applications
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={data.first}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              Previous
+            </button>
+            <button
+              disabled={data.last}
+              onClick={() => setPage((p) => p + 1)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

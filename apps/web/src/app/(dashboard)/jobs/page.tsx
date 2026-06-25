@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
-import { Search } from 'lucide-react';
+import { Search, Building2 } from 'lucide-react';
 
 export default function JobsPage() {
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
+  const [company, setCompany] = useState('');
   const [jobType, setJobType] = useState('');
   const [salaryMin, setSalaryMin] = useState<number | undefined>(undefined);
   const [salaryMax, setSalaryMax] = useState<number | undefined>(undefined);
@@ -16,6 +17,7 @@ export default function JobsPage() {
   const { data, isLoading, isError } = useJobs({
     keyword: keyword || undefined,
     location: location || undefined,
+    companyName: company || undefined,
     jobType: jobType || undefined,
     salaryMin,
     salaryMax,
@@ -37,11 +39,20 @@ export default function JobsPage() {
               className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+          <div className="relative sm:w-48">
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              value={company}
+              onChange={(e) => { setCompany(e.target.value); setPage(0); }}
+              placeholder="Company name"
+              className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
           <input
             value={location}
             onChange={(e) => { setLocation(e.target.value); setPage(0); }}
             placeholder="Location"
-            className="sm:w-48 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="sm:w-40 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <select
             value={jobType}

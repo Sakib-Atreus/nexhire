@@ -87,6 +87,9 @@ public class AuthService {
         } catch (JwtException e) {
             throw new BadRequestException("Invalid or malformed refresh token");
         }
+        if (!jwtTokenProvider.isRefreshToken(request.refreshToken())) {
+            throw new BadRequestException("Token type invalid: a refresh token is required");
+        }
         User user = userRepository.findByEmail(username)
             .orElseThrow(() -> new BadRequestException("Invalid refresh token"));
         if (!jwtTokenProvider.isTokenValid(request.refreshToken(), user)) {

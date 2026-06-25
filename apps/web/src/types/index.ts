@@ -36,6 +36,7 @@ export interface User {
   headline?: string;
   portfolioLinks?: string[];
   enabled?: boolean;
+  openToWork?: boolean;
 }
 
 export interface AuthResponse {
@@ -70,6 +71,7 @@ export interface Job {
   viewCount?: number;
   screeningQuestions?: string[];
   isSaved?: boolean;
+  applicationCount?: number;
 }
 
 export interface Application {

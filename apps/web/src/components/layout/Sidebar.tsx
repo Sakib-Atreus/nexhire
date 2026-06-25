@@ -101,7 +101,9 @@ export function Sidebar() {
   const pathname = usePathname();
 
   const nav = getNav(user?.role);
-  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '?';
+  const initials = user
+    ? (`${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`).toUpperCase() || '?'
+    : '?';
 
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">

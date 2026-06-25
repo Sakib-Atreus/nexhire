@@ -35,7 +35,7 @@ export default function NotificationsPage() {
 
       {isLoading ? (
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-slate-200 rounded-xl animate-pulse" />)}</div>
-      ) : data?.content.length === 0 ? (
+      ) : !data?.content?.length ? (
         <div className="text-center py-16 text-slate-500">
           <Bell className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">No notifications</p>

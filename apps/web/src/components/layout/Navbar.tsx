@@ -41,7 +41,9 @@ export function Navbar() {
   const { data: unreadCount } = useUnreadCount();
   const pathname = usePathname();
 
-  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '?';
+  const initials = user
+    ? (`${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`).toUpperCase() || '?'
+    : '?';
   const mobileNav = MOBILE_NAV[user?.role ?? 'CANDIDATE'];
 
   return (

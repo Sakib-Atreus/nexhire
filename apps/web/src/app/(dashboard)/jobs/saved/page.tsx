@@ -1,12 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { useSavedJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
 
 export default function SavedJobsPage() {
-  const { data, isLoading, isError } = useSavedJobs();
+  const [page, setPage] = useState(0);
+  const { data, isLoading, isError } = useSavedJobs(page);
 
   return (
     <div>
@@ -47,6 +49,30 @@ export default function SavedJobsPage() {
             ))}
           </div>
         </>
+      )}
+
+      {data && data.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-500">
+            Page {data.number + 1} of {data.totalPages} · {data.totalElements} saved jobs
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={data.first}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              Previous
+            </button>
+            <button
+              disabled={data.last}
+              onClick={() => setPage((p) => p + 1)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

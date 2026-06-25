@@ -2,6 +2,7 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { useMyApplications, useRecruiterApplications } from '@/hooks/useApplications';
+import { useAllUsers } from '@/hooks/useUsers';
 import { useMyJobs } from '@/hooks/useJobs';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import Link from 'next/link';
@@ -440,16 +441,16 @@ function RecruiterDashboard() {
 
 // ─── Admin dashboard ──────────────────────────────────────────────
 function AdminDashboard() {
-  const { data: allApplications } = useRecruiterApplications();
+  const { data: usersData } = useAllUsers(0, 1);
   const { data: unread } = useUnreadCount();
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="All Applications" value={allApplications?.totalElements ?? 0} icon={FileText} iconColor="text-blue-600" bg="bg-blue-50" />
+        <StatCard label="Total Users" value={usersData?.totalElements ?? 0} icon={Users} iconColor="text-blue-600" bg="bg-blue-50" href="/admin/users" />
         <StatCard label="Notifications" value={unread ?? 0} icon={Bell} iconColor="text-rose-600" bg="bg-rose-50" href="/notifications" />
-        <StatCard label="Users" value="—" icon={Users} iconColor="text-indigo-600" bg="bg-indigo-50" href="/admin" />
         <StatCard label="Admin Panel" value="Active" icon={ShieldCheck} iconColor="text-green-600" bg="bg-green-50" href="/admin" />
+        <StatCard label="Analytics" value="View" icon={FileText} iconColor="text-indigo-600" bg="bg-indigo-50" href="/admin/analytics" />
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">

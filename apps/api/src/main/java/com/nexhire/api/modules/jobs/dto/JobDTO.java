@@ -32,5 +32,6 @@ public record JobDTO(
     Instant updatedAt,
     int viewCount,
     String screeningQuestions,
-    boolean isSaved
+    boolean isSaved,
+    Integer applicationCount
 ) {}

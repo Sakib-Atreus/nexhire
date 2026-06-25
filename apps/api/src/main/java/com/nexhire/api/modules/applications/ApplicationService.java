@@ -106,12 +106,15 @@ public class ApplicationService {
     @Transactional
     public List<ApplicationDTO> bulkUpdateStatus(BulkUpdateStatusRequest request, User currentUser) {
         List<Application> apps = applicationRepository.findAllById(request.applicationIds());
+        boolean hasUnauthorized = apps.stream().anyMatch(app ->
+            !app.getJob().getRecruiter().getId().equals(currentUser.getId())
+            && currentUser.getRole() != Role.ADMIN);
+        if (hasUnauthorized) {
+            throw new ForbiddenException("You do not have permission to update one or more of the selected applications");
+        }
         apps.forEach(app -> {
-            if (app.getJob().getRecruiter().getId().equals(currentUser.getId())
-                || currentUser.getRole() == Role.ADMIN) {
-                app.setStatus(request.status());
-                if (request.notes() != null) app.setNotes(request.notes());
-            }
+            app.setStatus(request.status());
+            if (request.notes() != null) app.setNotes(request.notes());
         });
         return applicationRepository.saveAll(apps).stream().map(this::toDTO).toList();
     }

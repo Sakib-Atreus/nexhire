@@ -21,5 +21,6 @@ public record UserDTO(
     List<String> skills,
     String headline,
     List<String> portfolioLinks,
-    boolean enabled
+    boolean enabled,
+    boolean openToWork
 ) {}

@@ -32,13 +32,14 @@ public class JobController {
     public ResponseEntity<Page<JobDTO>> search(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String location,
+        @RequestParam(required = false) String companyName,
         @RequestParam(required = false) JobType jobType,
         @RequestParam(required = false) ExperienceLevel experienceLevel,
         @RequestParam(required = false) BigDecimal salaryMin,
         @RequestParam(required = false) BigDecimal salaryMax,
         Pageable pageable
     ) {
-        return ResponseEntity.ok(jobService.search(keyword, location, jobType, experienceLevel, salaryMin, salaryMax, pageable));
+        return ResponseEntity.ok(jobService.search(keyword, location, companyName, jobType, experienceLevel, salaryMin, salaryMax, pageable));
     }
 
     @GetMapping("/saved")

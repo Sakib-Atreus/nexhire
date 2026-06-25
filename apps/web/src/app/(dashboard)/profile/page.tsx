@@ -17,6 +17,7 @@ interface ProfileForm {
   bio: string;
   skills: string[];
   portfolioLinks: { url: string }[];
+  openToWork: boolean;
 }
 
 // ─── Loading skeleton ─────────────────────────────────────────────
@@ -104,6 +105,7 @@ export default function ProfilePage() {
       bio: '',
       skills: [],
       portfolioLinks: [],
+      openToWork: false,
     },
   });
 
@@ -120,6 +122,7 @@ export default function ProfilePage() {
       bio: user.bio ?? '',
       skills: user.skills ?? [],
       portfolioLinks: (user.portfolioLinks ?? []).map((url) => ({ url })),
+      openToWork: user.openToWork ?? false,
     });
   }, [user, reset]);
 
@@ -138,6 +141,7 @@ export default function ProfilePage() {
         bio: values.bio || undefined,
         skills: values.skills,
         portfolioLinks: values.portfolioLinks.map((p) => p.url).filter(Boolean),
+        openToWork: values.openToWork,
       },
       {
         onSuccess: () => showToast('Profile updated successfully!'),
@@ -150,6 +154,7 @@ export default function ProfilePage() {
   }
 
   const skills = watch('skills');
+  const openToWork = watch('openToWork');
 
   if (isLoading || !user) return <ProfileSkeleton />;
 
@@ -222,6 +227,32 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* Open to work toggle — candidates only */}
+            {user.role === 'CANDIDATE' && (
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Open to work</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Let recruiters know you&apos;re looking for opportunities</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={openToWork}
+                    onClick={() => setValue('openToWork', !openToWork, { shouldDirty: true })}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${openToWork ? 'bg-green-500' : 'bg-slate-200'}`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition duration-200 ${openToWork ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
+                {openToWork && (
+                  <p className="mt-2 text-xs text-green-600 font-medium">Visible to recruiters as &quot;Open to work&quot;</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Right column: editable fields ── */}

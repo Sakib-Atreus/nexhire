@@ -64,6 +64,7 @@ public class UserService implements UserDetailsService {
         if (request.skills() != null) user.setSkills(toJsonString(request.skills()));
         if (request.headline() != null) user.setHeadline(request.headline());
         if (request.portfolioLinks() != null) user.setPortfolioLinks(toJsonString(request.portfolioLinks()));
+        if (request.openToWork() != null) user.setOpenToWork(request.openToWork());
 
         return toDTO(userRepository.save(user));
     }
@@ -108,7 +109,8 @@ public class UserService implements UserDetailsService {
             parseJsonList(user.getSkills()),
             user.getHeadline(),
             parseJsonList(user.getPortfolioLinks()),
-            user.isEnabled()
+            user.isEnabled(),
+            user.isOpenToWork()
         );
     }
 

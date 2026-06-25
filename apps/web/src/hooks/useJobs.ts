@@ -7,6 +7,7 @@ import type { Job, Page } from '@/types';
 interface JobSearchParams {
   keyword?: string;
   location?: string;
+  companyName?: string;
   jobType?: string;
   experienceLevel?: string;
   salaryMin?: number;
@@ -62,10 +63,10 @@ export function useDeleteJob() {
   });
 }
 
-export function useSavedJobs() {
+export function useSavedJobs(page = 0) {
   return useQuery({
-    queryKey: ['jobs', 'saved'],
-    queryFn: () => api.get<Page<Job>>('/jobs/saved').then((r) => r.data),
+    queryKey: ['jobs', 'saved', page],
+    queryFn: () => api.get<Page<Job>>('/jobs/saved', { params: { page, size: 10 } }).then((r) => r.data),
   });
 }
 

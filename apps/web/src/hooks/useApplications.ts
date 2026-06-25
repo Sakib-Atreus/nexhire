@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import type { Application, ApplicationStats, ApplicationStatus, Page } from '@/types';
 
-export function useMyApplications() {
+export function useMyApplications(page = 0) {
   return useQuery({
-    queryKey: ['applications', 'my'],
-    queryFn: () => api.get<Page<Application>>('/applications/my').then((r) => r.data),
+    queryKey: ['applications', 'my', page],
+    queryFn: () => api.get<Page<Application>>('/applications/my', { params: { page, size: 10 } }).then((r) => r.data),
   });
 }
 

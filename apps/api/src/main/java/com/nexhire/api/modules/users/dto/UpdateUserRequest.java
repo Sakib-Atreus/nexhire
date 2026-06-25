@@ -12,5 +12,6 @@ public record UpdateUserRequest(
     String avatarUrl,
     List<String> skills,
     String headline,
-    List<String> portfolioLinks
+    List<String> portfolioLinks,
+    Boolean openToWork
 ) {}

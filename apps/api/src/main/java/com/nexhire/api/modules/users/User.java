@@ -70,6 +70,10 @@ public class User implements UserDetails {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
+    @Builder.Default
+    @Column(name = "open_to_work", nullable = false)
+    private boolean openToWork = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

@@ -49,6 +49,11 @@ public class SseEmitterService {
 
     private void removeEmitter(UUID userId, SseEmitter emitter) {
         List<SseEmitter> emitters = userEmitters.get(userId);
-        if (emitters != null) emitters.remove(emitter);
+        if (emitters != null) {
+            emitters.remove(emitter);
+            if (emitters.isEmpty()) {
+                userEmitters.remove(userId, emitters);
+            }
+        }
     }
 }

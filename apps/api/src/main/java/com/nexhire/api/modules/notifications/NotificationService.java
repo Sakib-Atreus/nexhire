@@ -2,6 +2,7 @@ package com.nexhire.api.modules.notifications;
 
 import com.nexhire.api.exception.ResourceNotFoundException;
 import com.nexhire.api.modules.applications.Application;
+import com.nexhire.api.modules.jobs.Job;
 import com.nexhire.api.modules.notifications.dto.NotificationDTO;
 import com.nexhire.api.modules.users.User;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,21 @@ public class NotificationService {
             "APPLICATION"
         );
         notificationProducer.send(message);
+    }
+
+    @Async
+    @Transactional
+    public void notifyJobExpired(Job job) {
+        Notification notification = Notification.builder()
+            .user(job.getRecruiter())
+            .type(NotificationType.JOB_CLOSED)
+            .title("Job Listing Closed")
+            .message(String.format("Your job listing '%s' has been automatically closed because the deadline has passed.",
+                job.getTitle()))
+            .referenceId(job.getId())
+            .referenceType("JOB")
+            .build();
+        createAndPush(notification);
     }
 
     @Async

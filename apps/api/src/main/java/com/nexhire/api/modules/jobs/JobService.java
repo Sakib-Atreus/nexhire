@@ -6,6 +6,8 @@ import com.nexhire.api.exception.ResourceNotFoundException;
 import com.nexhire.api.modules.jobs.dto.CreateJobRequest;
 import com.nexhire.api.modules.jobs.dto.JobDTO;
 import com.nexhire.api.modules.jobs.dto.UpdateJobRequest;
+import com.nexhire.api.modules.applications.ApplicationRepository;
+import com.nexhire.api.modules.notifications.NotificationService;
 import com.nexhire.api.modules.users.Role;
 import com.nexhire.api.modules.users.User;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +31,12 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final SavedJobRepository savedJobRepository;
+    private final NotificationService notificationService;
+    private final ApplicationRepository applicationRepository;
 
-    public Page<JobDTO> search(String keyword, String location, JobType jobType, ExperienceLevel experienceLevel,
+    public Page<JobDTO> search(String keyword, String location, String companyName, JobType jobType, ExperienceLevel experienceLevel,
                                BigDecimal salaryMin, BigDecimal salaryMax, Pageable pageable) {
-        return jobRepository.searchExtended(JobStatus.OPEN, keyword, location, jobType, experienceLevel, salaryMin, salaryMax, pageable)
+        return jobRepository.searchExtended(JobStatus.OPEN, keyword, location, companyName, jobType, experienceLevel, salaryMin, salaryMax, pageable)
             .map(j -> toDTO(j, null));
     }
 
@@ -57,11 +61,16 @@ public class JobService {
     }
 
     public Page<JobDTO> getByRecruiter(UUID recruiterId, Pageable pageable) {
-        return jobRepository.findByRecruiterId(recruiterId, pageable).map(j -> toDTO(j, null));
+        return jobRepository.findByRecruiterId(recruiterId, pageable)
+            .map(j -> toDTO(j, null, (int) applicationRepository.countByJobId(j.getId())));
     }
 
     @Transactional
     public JobDTO create(CreateJobRequest request, User recruiter) {
+        if (request.salaryMin() != null && request.salaryMax() != null
+                && request.salaryMin().compareTo(request.salaryMax()) > 0) {
+            throw new BadRequestException("Minimum salary cannot be greater than maximum salary");
+        }
         Job job = Job.builder()
             .title(request.title())
             .description(request.description())
@@ -91,6 +100,12 @@ public class JobService {
 
         if (!job.getRecruiter().getId().equals(currentUser.getId()) && currentUser.getRole() != Role.ADMIN) {
             throw new ForbiddenException("You do not have permission to update this job");
+        }
+
+        BigDecimal effectiveMin = request.salaryMin() != null ? request.salaryMin() : job.getSalaryMin();
+        BigDecimal effectiveMax = request.salaryMax() != null ? request.salaryMax() : job.getSalaryMax();
+        if (effectiveMin != null && effectiveMax != null && effectiveMin.compareTo(effectiveMax) > 0) {
+            throw new BadRequestException("Minimum salary cannot be greater than maximum salary");
         }
 
         if (request.title() != null) job.setTitle(request.title());
@@ -149,11 +164,16 @@ public class JobService {
         expired.forEach(j -> j.setStatus(JobStatus.CLOSED));
         jobRepository.saveAll(expired);
         if (!expired.isEmpty()) {
+            expired.forEach(j -> notificationService.notifyJobExpired(j));
             log.info("Auto-closed {} expired jobs", expired.size());
         }
     }
 
     public JobDTO toDTO(Job job, UUID currentUserId) {
+        return toDTO(job, currentUserId, null);
+    }
+
+    public JobDTO toDTO(Job job, UUID currentUserId, Integer applicationCount) {
         boolean saved = currentUserId != null && savedJobRepository.existsByUserIdAndJobId(currentUserId, job.getId());
         return new JobDTO(
             job.getId(),
@@ -178,7 +198,8 @@ public class JobService {
             job.getUpdatedAt(),
             job.getViewCount(),
             job.getScreeningQuestions(),
-            saved
+            saved,
+            applicationCount
         );
     }
 }

@@ -47,14 +47,16 @@ public class FileService {
             boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
             if (!exists) minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
 
-            minioClient.putObject(
-                PutObjectArgs.builder()
-                    .bucket(bucket)
-                    .object(objectName)
-                    .stream(file.getInputStream(), file.getSize(), -1)
-                    .contentType(contentType)
-                    .build()
-            );
+            try (java.io.InputStream inputStream = file.getInputStream()) {
+                minioClient.putObject(
+                    PutObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(objectName)
+                        .stream(inputStream, file.getSize(), -1)
+                        .contentType(contentType)
+                        .build()
+                );
+            }
 
             String url = endpoint + "/" + bucket + "/" + objectName;
             log.info("Uploaded file: {} -> {}", originalName, url);

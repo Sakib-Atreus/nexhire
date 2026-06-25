@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useJob } from '@/hooks/useJobs';
 import { useJobApplications, useUpdateApplicationStatus, useBulkUpdateStatus } from '@/hooks/useApplications';
 import { useAuthStore } from '@/store/authStore';
@@ -239,16 +239,14 @@ export default function ApplicantsPage() {
   const { mutate: bulkUpdate, isPending: isBulkPending } = useBulkUpdateStatus();
 
   const isLoading = jobLoading || appsLoading;
+  const router = useRouter();
   const canView = user?.role === 'RECRUITER' || user?.role === 'ADMIN';
 
-  if (!canView) {
-    return (
-      <div className="text-center py-16 text-slate-500">
-        <p className="text-lg font-medium">Access denied</p>
-        <p className="text-sm mt-1">Only recruiters and admins can view applicants.</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (user && !canView) router.replace('/dashboard');
+  }, [user, canView, router]);
+
+  if (!canView) return null;
 
   const apps = applications?.content ?? [];
 
