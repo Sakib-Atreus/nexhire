@@ -448,6 +448,26 @@ CORS_ALLOWED_ORIGINS=https://<your-vercel-url>.vercel.app
 NEXT_PUBLIC_API_URL=https://<your-render-url>/api
 ```
 
-### Keep API alive (Render free tier sleeps after 15 min)
 
-Set up a free cron job at [cron-job.org](https://cron-job.org) to ping `https://<your-render-url>/api/actuator/health` every 10 minutes.
+---
+
+## Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening a pull request.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## Contact
+
+**Sakib Mia**
+
+- GitHub: [@Sakib-Atreus](https://github.com/Sakib-Atreus)
+- Email: [sakibamia0718@gmail.com](mailto:sakibmia0718@gmail.com)
+
+Feel free to open an [issue](https://github.com/Sakib-Atreus/nexhire/issues) for bugs or feature requests.

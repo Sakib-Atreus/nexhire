@@ -34,6 +34,9 @@ Thumbs.db
 .vscode/
 *.iml
 
+# Claude Code
+.claude/
+
 # Logs
 *.log
 logs/
