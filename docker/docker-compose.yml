@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: nexhire
       POSTGRES_PASSWORD: root1234
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -72,7 +72,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://api:8080/api
     ports:
-      - '3000:3000'
+      - '3001:3000'
     depends_on:
       - api
     networks:

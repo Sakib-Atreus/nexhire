@@ -2,9 +2,11 @@ package com.nexhire.api.jobs;
 
 import com.nexhire.api.exception.ForbiddenException;
 import com.nexhire.api.exception.ResourceNotFoundException;
+import com.nexhire.api.modules.applications.ApplicationRepository;
 import com.nexhire.api.modules.jobs.*;
 import com.nexhire.api.modules.jobs.dto.CreateJobRequest;
 import com.nexhire.api.modules.jobs.dto.UpdateJobRequest;
+import com.nexhire.api.modules.notifications.NotificationService;
 import com.nexhire.api.modules.users.Role;
 import com.nexhire.api.modules.users.User;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,9 @@ import static org.mockito.Mockito.*;
 class JobServiceTest {
 
     @Mock private JobRepository jobRepository;
+    @Mock private SavedJobRepository savedJobRepository;
+    @Mock private NotificationService notificationService;
+    @Mock private ApplicationRepository applicationRepository;
     @InjectMocks private JobService jobService;
 
     private User recruiter() {
@@ -98,10 +103,10 @@ class JobServiceTest {
 
     @Test
     void search_returnsPageOfJobs() {
-        when(jobRepository.search(any(), any(), any(), any(), any(Pageable.class)))
+        when(jobRepository.searchExtended(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of()));
 
-        var result = jobService.search(null, null, null, null, Pageable.unpaged());
+        var result = jobService.search(null, null, null, null, null, null, null, Pageable.unpaged());
 
         assertThat(result.getContent()).isEmpty();
     }

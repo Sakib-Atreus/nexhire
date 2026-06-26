@@ -22,13 +22,22 @@ export function FileUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { mutate, isPending } = useFileUpload();
 
   function handleFile(file: File) {
     setUploadedName(file.name);
+    setUploadSuccess(false);
+    setUploadError(null);
     mutate(file, {
       onSuccess: (data) => {
+        setUploadSuccess(true);
         onUpload(data.url);
+      },
+      onError: () => {
+        setUploadedName(null);
+        setUploadError('Upload failed. Please try again or paste a URL instead.');
       },
     });
   }
@@ -54,7 +63,7 @@ export function FileUpload({
     if (file) handleFile(file);
   }
 
-  const isSuccess = !isPending && uploadedName;
+  const isSuccess = uploadSuccess && uploadedName;
 
   return (
     <div className="space-y-2">
@@ -107,6 +116,7 @@ export function FileUpload({
               onClick={(e) => {
                 e.stopPropagation();
                 setUploadedName(null);
+                setUploadSuccess(false);
                 inputRef.current?.click();
               }}
               className="text-xs text-primary-600 hover:underline"
@@ -123,6 +133,10 @@ export function FileUpload({
           </>
         )}
       </div>
+
+      {uploadError && (
+        <p className="text-xs text-red-500">{uploadError}</p>
+      )}
 
       <input
         ref={inputRef}

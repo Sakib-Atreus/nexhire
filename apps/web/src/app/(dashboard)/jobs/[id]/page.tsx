@@ -40,7 +40,7 @@ function ApplyModal({ jobId, onClose }: { jobId: string; onClose: () => void }) 
   const handleApply = () => {
     const newErrors: { coverLetter?: string; resume?: string } = {};
     if (!coverLetter.trim()) newErrors.coverLetter = 'Cover letter is required';
-    if (!resumeUrl.trim()) newErrors.resume = 'Resume is required';
+    if (!resumeUrl.trim()) newErrors.resume = resumeTab === 'upload' ? 'Please upload your resume file' : 'Please paste your resume URL';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     apply(
       { jobId, coverLetter, resumeUrl },
