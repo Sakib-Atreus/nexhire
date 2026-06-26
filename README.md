@@ -1,6 +1,6 @@
 # NexHire — Job Portal
 
-A full-stack job portal monorepo built with Spring Boot 3, Next.js 15, PostgreSQL, RabbitMQ, and MinIO.
+A full-stack job portal monorepo built with Spring Boot, Next.js, PostgreSQL, RabbitMQ, and MinIO.
 
 ---
 
@@ -129,17 +129,17 @@ Copy `.env.example` to `.env` and adjust if needed.
 
 ```env
 # PostgreSQL (local dev uses nexhire_dev; Docker full stack uses nexhire)
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/nexhire_dev
-SPRING_DATASOURCE_USERNAME=nexhire
-SPRING_DATASOURCE_PASSWORD=root1234
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/{db_name}
+SPRING_DATASOURCE_USERNAME=
+SPRING_DATASOURCE_PASSWORD=
 
 # RabbitMQ (local)
 SPRING_RABBITMQ_HOST=localhost
 SPRING_RABBITMQ_PORT=5672
-SPRING_RABBITMQ_USERNAME=nexhire
-SPRING_RABBITMQ_PASSWORD=root1234
-SPRING_RABBITMQ_VIRTUAL_HOST=/
-SPRING_RABBITMQ_SSL_ENABLED=false
+SPRING_RABBITMQ_USERNAME=
+SPRING_RABBITMQ_PASSWORD=
+SPRING_RABBITMQ_VIRTUAL_HOST=
+SPRING_RABBITMQ_SSL_ENABLED=
 # Production (CloudAMQP) — use a single URL instead of individual vars:
 # SPRING_RABBITMQ_ADDRESSES=amqps://user:pass@host/vhost
 
@@ -150,10 +150,10 @@ JWT_REFRESH_EXPIRATION=604800000  # 7 days (ms)
 
 # MinIO (local) / Backblaze B2 (production, S3-compatible)
 MINIO_ENDPOINT=http://localhost:9000
-MINIO_PUBLIC_URL=http://localhost:9000/nexhire-files
-MINIO_ACCESS_KEY=nexhire-minio
-MINIO_SECRET_KEY=minio1234
-MINIO_BUCKET=nexhire-files
+MINIO_PUBLIC_URL=http://localhost:9000/{name}
+MINIO_ACCESS_KEY=
+MINIO_SECRET_KEY=
+MINIO_BUCKET=
 
 # CORS (comma-separated, add your frontend URL in production)
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
@@ -359,11 +359,9 @@ Flyway manages all schema migrations automatically on API startup.
 ```bash
 # Full Docker stack (nexhire DB)
 psql -h localhost -p 5433 -U nexhire -d nexhire
-# Password: root1234
 
 # Local dev infrastructure (nexhire_dev DB)
 psql -h localhost -p 5433 -U nexhire -d nexhire_dev
-# Password: root1234
 ```
 
 ---
@@ -409,59 +407,17 @@ Jobs are only visible in the browse list when their status is `OPEN`. Newly crea
 
 ---
 
-## Production Deployment (Free Tier)
 
-| Service | Purpose | Free Plan |
-|---|---|---|
-| [Neon](https://neon.tech) | PostgreSQL database | 0.5 GB storage |
-| [CloudAMQP](https://cloudamqp.com) | RabbitMQ (Little Lemur plan) | 1M messages/month |
-| [Backblaze B2](https://backblaze.com/b2) | File storage (private bucket) | 10 GB free |
-| [Render](https://render.com) | Spring Boot API (Docker) | 750 hrs/month |
-| [Vercel](https://vercel.com) | Next.js frontend | Unlimited |
-
-### API (Render)
-
-1. Create a new **Web Service** → select **Docker** runtime
-2. Set **Root Directory** to `apps/api`
-3. Add all environment variables (Neon DB URL, CloudAMQP AMQP URL, Backblaze B2 keys, JWT secret, `CORS_ALLOWED_ORIGINS`)
-
-Key env vars for production:
-```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://<neon-host>/neondb?sslmode=require
-SPRING_DATASOURCE_USERNAME=neondb_owner
-SPRING_DATASOURCE_PASSWORD=<neon-password>
-SPRING_RABBITMQ_ADDRESSES=amqps://<user>:<pass>@<host>/<vhost>
-JWT_SECRET=<strong-random-secret>
-MINIO_ENDPOINT=https://s3.<region>.backblazeb2.com
-MINIO_PUBLIC_URL=https://<your-render-url>/api/files
-MINIO_ACCESS_KEY=<b2-key-id>
-MINIO_SECRET_KEY=<b2-app-key>
-MINIO_BUCKET=nexhire-files
-CORS_ALLOWED_ORIGINS=https://<your-vercel-url>.vercel.app
-```
-
-### Frontend (Vercel)
-
-1. Import the GitHub repo → set **Root Directory** to `apps/web`
-2. Add one environment variable:
-```env
-NEXT_PUBLIC_API_URL=https://<your-render-url>/api
-```
-
-
----
 
 ## Contributing
 
 Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening a pull request.
 
----
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
 
----
 
 ## Contact
 
