@@ -2,6 +2,8 @@ package com.nexhire.api.auth;
 
 import com.nexhire.api.exception.BadRequestException;
 import com.nexhire.api.modules.auth.AuthService;
+import com.nexhire.api.modules.auth.EmailVerificationTokenRepository;
+import com.nexhire.api.modules.auth.PasswordResetTokenRepository;
 import com.nexhire.api.modules.auth.dto.LoginRequest;
 import com.nexhire.api.modules.auth.dto.RegisterRequest;
 import com.nexhire.api.modules.users.Role;
@@ -35,6 +37,8 @@ class AuthServiceTest {
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private AuthenticationManager authenticationManager;
     @Mock private UserService userService;
+    @Mock private PasswordResetTokenRepository passwordResetTokenRepository;
+    @Mock private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -59,7 +63,7 @@ class AuthServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(jwtTokenProvider.generateToken(any())).thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(any())).thenReturn("refresh-token");
-        when(userService.toDTO(savedUser)).thenCallRealMethod();
+        when(userService.toDTO(any(User.class))).thenCallRealMethod();
 
         var response = authService.register(request);
 
@@ -90,7 +94,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
         when(jwtTokenProvider.generateToken(user)).thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(user)).thenReturn("refresh-token");
-        when(userService.toDTO(user)).thenCallRealMethod();
+        when(userService.toDTO(any(User.class))).thenCallRealMethod();
 
         var response = authService.login(request);
 
