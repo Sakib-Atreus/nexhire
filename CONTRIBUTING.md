@@ -9,7 +9,7 @@ Thank you for taking the time to contribute!
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/<your-username>/nexhire.git
+   git clone https://github.com/sakib-atreus/nexhire.git
    cd nexhire
    ```
 3. Set up the project following the [Quick Start](README.md#quick-start) guide
