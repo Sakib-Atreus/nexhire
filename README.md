@@ -12,7 +12,7 @@ A full-stack job portal monorepo built with Spring Boot 3, Next.js 15, PostgreSQ
 | Backend | Spring Boot 3.3, Java 21, Maven |
 | Database | PostgreSQL 16 |
 | Message Broker | RabbitMQ 3.13 |
-| File Storage | MinIO (S3-compatible) |
+| File Storage | MinIO (local) / Backblaze B2 (production, S3-compatible) |
 | Monorepo | Turborepo, npm workspaces |
 
 ---
@@ -133,21 +133,30 @@ SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/nexhire_dev
 SPRING_DATASOURCE_USERNAME=nexhire
 SPRING_DATASOURCE_PASSWORD=root1234
 
-# RabbitMQ
+# RabbitMQ (local)
 SPRING_RABBITMQ_HOST=localhost
+SPRING_RABBITMQ_PORT=5672
 SPRING_RABBITMQ_USERNAME=nexhire
 SPRING_RABBITMQ_PASSWORD=root1234
+SPRING_RABBITMQ_VIRTUAL_HOST=/
+SPRING_RABBITMQ_SSL_ENABLED=false
+# Production (CloudAMQP) — use a single URL instead of individual vars:
+# SPRING_RABBITMQ_ADDRESSES=amqps://user:pass@host/vhost
 
 # JWT
 JWT_SECRET=lQffSG11g0obJA99ttgylKZuxHHgTnuUH0V1cDRstsK_algorithm
 JWT_EXPIRATION=86400000        # 1 day (ms)
 JWT_REFRESH_EXPIRATION=604800000  # 7 days (ms)
 
-# MinIO
+# MinIO (local) / Backblaze B2 (production, S3-compatible)
 MINIO_ENDPOINT=http://localhost:9000
-MINIO_PUBLIC_URL=http://localhost:9000
+MINIO_PUBLIC_URL=http://localhost:9000/nexhire-files
 MINIO_ACCESS_KEY=nexhire-minio
 MINIO_SECRET_KEY=minio1234
+MINIO_BUCKET=nexhire-files
+
+# CORS (comma-separated, add your frontend URL in production)
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # Next.js
 NEXT_PUBLIC_API_URL=http://localhost:8080/api
@@ -263,6 +272,7 @@ npm run type-check    # TypeScript validation
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | POST | `/api/files/upload` | Any | Upload a file (PDF/JPEG/PNG/GIF/WEBP, max 10 MB). Returns `{ url, fileName, contentType, size }` |
+| GET | `/api/files/{objectName}` | No | Proxy-stream a stored file (used for private buckets like Backblaze B2) |
 
 ### Notifications
 
@@ -391,8 +401,53 @@ Check Spring Boot logs. Common causes:
 
 ### Profile image / file upload fails
 - MinIO must be running — check with `docker ps | grep minio`
-- On first upload the API creates the bucket and sets a public-read policy automatically
-- Uploaded files are served from `http://localhost:9000/nexhire-files/<filename>` — MinIO must be reachable on port 9000 from your browser
+- On startup the API checks the bucket exists and creates it if not
+- Uploaded files are served through the API proxy at `/api/files/<filename>` (locally: `http://localhost:8080/api/files/<filename>`)
 
 ### Jobs not showing on the frontend
 Jobs are only visible in the browse list when their status is `OPEN`. Newly created jobs default to `OPEN`.
+
+---
+
+## Production Deployment (Free Tier)
+
+| Service | Purpose | Free Plan |
+|---|---|---|
+| [Neon](https://neon.tech) | PostgreSQL database | 0.5 GB storage |
+| [CloudAMQP](https://cloudamqp.com) | RabbitMQ (Little Lemur plan) | 1M messages/month |
+| [Backblaze B2](https://backblaze.com/b2) | File storage (private bucket) | 10 GB free |
+| [Render](https://render.com) | Spring Boot API (Docker) | 750 hrs/month |
+| [Vercel](https://vercel.com) | Next.js frontend | Unlimited |
+
+### API (Render)
+
+1. Create a new **Web Service** → select **Docker** runtime
+2. Set **Root Directory** to `apps/api`
+3. Add all environment variables (Neon DB URL, CloudAMQP AMQP URL, Backblaze B2 keys, JWT secret, `CORS_ALLOWED_ORIGINS`)
+
+Key env vars for production:
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://<neon-host>/neondb?sslmode=require
+SPRING_DATASOURCE_USERNAME=neondb_owner
+SPRING_DATASOURCE_PASSWORD=<neon-password>
+SPRING_RABBITMQ_ADDRESSES=amqps://<user>:<pass>@<host>/<vhost>
+JWT_SECRET=<strong-random-secret>
+MINIO_ENDPOINT=https://s3.<region>.backblazeb2.com
+MINIO_PUBLIC_URL=https://<your-render-url>/api/files
+MINIO_ACCESS_KEY=<b2-key-id>
+MINIO_SECRET_KEY=<b2-app-key>
+MINIO_BUCKET=nexhire-files
+CORS_ALLOWED_ORIGINS=https://<your-vercel-url>.vercel.app
+```
+
+### Frontend (Vercel)
+
+1. Import the GitHub repo → set **Root Directory** to `apps/web`
+2. Add one environment variable:
+```env
+NEXT_PUBLIC_API_URL=https://<your-render-url>/api
+```
+
+### Keep API alive (Render free tier sleeps after 15 min)
+
+Set up a free cron job at [cron-job.org](https://cron-job.org) to ping `https://<your-render-url>/api/actuator/health` every 10 minutes.
