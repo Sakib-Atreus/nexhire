@@ -297,7 +297,7 @@ export default function HomePage() {
             </div>
             <span className="font-bold text-white">NexHire</span>
           </div>
-          <p className="text-slate-500 text-sm">© 2025 NexHire. All rights reserved.</p>
+          <p className="text-slate-500 text-sm">© {new Date().getFullYear()} NexHire. All rights reserved.</p>
         </div>
       </footer>
     </div>
