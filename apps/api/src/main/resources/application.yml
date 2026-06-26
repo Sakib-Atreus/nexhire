@@ -59,7 +59,7 @@ cors:
 
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
+  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000/nexhire-files}
   access-key: ${MINIO_ACCESS_KEY:nexhire-minio}
   secret-key: ${MINIO_SECRET_KEY:minio1234}
   bucket: ${MINIO_BUCKET:nexhire-files}

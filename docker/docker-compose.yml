@@ -75,7 +75,7 @@ services:
       JWT_SECRET: lQffSG11g0obJA99ttgylKZuxHHgTnuUH0V1cDRstsK
       JWT_EXPIRATION: 86400000
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_URL: http://localhost:9000
+      MINIO_PUBLIC_URL: http://localhost:9000/nexhire-files
       MINIO_ACCESS_KEY: nexhire-minio
       MINIO_SECRET_KEY: minio1234
     ports:

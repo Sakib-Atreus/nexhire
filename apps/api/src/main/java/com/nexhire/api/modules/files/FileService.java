@@ -1,8 +1,10 @@
 package com.nexhire.api.modules.files;
 
 import com.nexhire.api.exception.BadRequestException;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,11 +54,22 @@ public class FileService {
                     .contentType(contentType)
                     .build()
             );
-            String url = publicUrl + "/" + bucket + "/" + objectName;
+            String url = publicUrl + "/" + objectName;
             log.info("Uploaded file: {} -> {}", originalName, url);
             return new FileUploadResponse(url, originalName, contentType, file.getSize());
         } catch (Exception e) {
             throw new RuntimeException("File upload failed: " + e.getMessage(), e);
+        }
+    }
+
+    public void stream(String objectName, HttpServletResponse response) {
+        try (var obj = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(objectName).build())) {
+            String ct = obj.headers().get("Content-Type");
+            response.setContentType(ct != null ? ct : "application/octet-stream");
+            obj.transferTo(response.getOutputStream());
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }
