@@ -1,7 +1,8 @@
 package com.nexhire.api.modules.files;
 
 import com.nexhire.api.exception.BadRequestException;
-import io.minio.*;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +24,8 @@ public class FileService {
     private final MinioClient minioClient;
     private final String bucket;
 
-    @Value("${minio.endpoint}")
-    private String endpoint;
+    @Value("${minio.public-url:${minio.endpoint}}")
+    private String publicUrl;
 
     public FileService(MinioClient minioClient, @Qualifier("minioBucket") String bucket) {
         this.minioClient = minioClient;
@@ -42,23 +43,16 @@ public class FileService {
         String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : "";
         String objectName = UUID.randomUUID() + ext;
 
-        try {
-            // Ensure bucket exists
-            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
-            if (!exists) minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
-
-            try (java.io.InputStream inputStream = file.getInputStream()) {
-                minioClient.putObject(
-                    PutObjectArgs.builder()
-                        .bucket(bucket)
-                        .object(objectName)
-                        .stream(inputStream, file.getSize(), -1)
-                        .contentType(contentType)
-                        .build()
-                );
-            }
-
-            String url = endpoint + "/" + bucket + "/" + objectName;
+        try (java.io.InputStream inputStream = file.getInputStream()) {
+            minioClient.putObject(
+                PutObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(objectName)
+                    .stream(inputStream, file.getSize(), -1)
+                    .contentType(contentType)
+                    .build()
+            );
+            String url = publicUrl + "/" + bucket + "/" + objectName;
             log.info("Uploaded file: {} -> {}", originalName, url);
             return new FileUploadResponse(url, originalName, contentType, file.getSize());
         } catch (Exception e) {

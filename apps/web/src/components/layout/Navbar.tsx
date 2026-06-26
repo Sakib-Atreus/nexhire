@@ -85,9 +85,17 @@ export function Navbar() {
                   {user?.role}
                 </span>
               </div>
-              <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {initials}
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={initials}
+                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {initials}
+                </div>
+              )}
               <button
                 onClick={logout}
                 className="hidden sm:flex p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"

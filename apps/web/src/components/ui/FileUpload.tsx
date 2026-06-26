@@ -6,6 +6,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 
 interface FileUploadProps {
   onUpload: (url: string) => void;
+  onFileSelected?: (file: File) => void;
   accept?: string;
   label?: string;
   hint?: string;
@@ -14,6 +15,7 @@ interface FileUploadProps {
 
 export function FileUpload({
   onUpload,
+  onFileSelected,
   accept,
   label = 'Upload a file',
   hint,
@@ -30,6 +32,7 @@ export function FileUpload({
     setUploadedName(file.name);
     setUploadSuccess(false);
     setUploadError(null);
+    onFileSelected?.(file);
     mutate(file, {
       onSuccess: (data) => {
         setUploadSuccess(true);

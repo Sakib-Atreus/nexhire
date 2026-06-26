@@ -42,11 +42,12 @@ function ProfileSkeleton() {
 }
 
 // ─── Avatar circle ────────────────────────────────────────────────
-function Avatar({ user }: { user: User }) {
-  if (user.avatarUrl) {
+function Avatar({ user, previewUrl }: { user: User; previewUrl?: string }) {
+  const src = previewUrl ?? user.avatarUrl;
+  if (src) {
     return (
       <img
-        src={user.avatarUrl}
+        src={src}
         alt={user.fullName}
         className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md mx-auto"
       />
@@ -87,6 +88,7 @@ export default function ProfilePage() {
   const { data: user, isLoading } = useMe();
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   const [toast, setToast] = useState<string | null>(null);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
   const {
     register,
@@ -149,8 +151,17 @@ export default function ProfilePage() {
     );
   }
 
+  function handleAvatarSelected(file: File) {
+    const objectUrl = URL.createObjectURL(file);
+    setLocalAvatarUrl(objectUrl);
+  }
+
   function handleAvatarUpload(url: string) {
-    updateProfile({ avatarUrl: url });
+    updateProfile({ avatarUrl: url }, {
+      onSuccess: () => {
+        setLocalAvatarUrl(null); // server URL now in cache — drop the blob
+      },
+    });
   }
 
   const skills = watch('skills');
@@ -188,7 +199,7 @@ export default function ProfilePage() {
           <div className="space-y-4">
             {/* Avatar card */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 text-center space-y-4">
-              <Avatar user={user} />
+              <Avatar user={user} previewUrl={localAvatarUrl ?? undefined} />
               <div>
                 <p className="font-semibold text-slate-800">{user.fullName}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{user.email}</p>
@@ -198,9 +209,10 @@ export default function ProfilePage() {
               </div>
               <FileUpload
                 onUpload={handleAvatarUpload}
+                onFileSelected={handleAvatarSelected}
                 accept="image/*"
                 label="Upload Photo"
-                hint="JPG, PNG or WebP · max 5 MB"
+                hint="JPG, PNG or WebP · max 10 MB"
                 currentUrl={user.avatarUrl}
               />
             </div>
