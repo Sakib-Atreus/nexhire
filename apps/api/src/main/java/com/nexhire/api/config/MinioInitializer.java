@@ -23,15 +23,11 @@ public class MinioInitializer {
             if (!exists) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
                 log.info("MinIO bucket created: {}", bucket);
+            } else {
+                log.info("MinIO bucket '{}' ready", bucket);
             }
-            String policy = String.format(
-                "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]}," +
-                "\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::%s/*\"]}]}",
-                bucket);
-            minioClient.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucket).config(policy).build());
-            log.info("MinIO bucket '{}' public-read policy applied", bucket);
         } catch (Exception e) {
-            log.error("MinIO initialisation failed — uploads will still work but files may not be publicly accessible: {}", e.getMessage());
+            log.warn("MinIO bucket check failed: {}", e.getMessage());
         }
     }
 }
