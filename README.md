@@ -144,7 +144,7 @@ SPRING_RABBITMQ_SSL_ENABLED=false
 # SPRING_RABBITMQ_ADDRESSES=amqps://user:pass@host/vhost
 
 # JWT
-JWT_SECRET=lQffSG11g0obJA99ttgylKZuxHHgTnuUH0V1cDRstsK_algorithm
+JWT_SECRET=<your-strong-random-secret>
 JWT_EXPIRATION=86400000        # 1 day (ms)
 JWT_REFRESH_EXPIRATION=604800000  # 7 days (ms)
 

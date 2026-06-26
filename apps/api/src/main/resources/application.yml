@@ -36,7 +36,7 @@ server:
     context-path: /api
 
 jwt:
-  secret: ${JWT_SECRET:lQffSG11g0obJA99ttgylKZuxHHgTnuUH0V1cDRstsK_algorithm}
+  secret: ${JWT_SECRET:07f65aeb7653e5222410f0b42d76bda3cc3eaa12b3f0edb7329292f931899ac0598e061ace63faed6248b6610d3b2bee136e637f3fe2412fa5e300435248da6a}
   expiration: ${JWT_EXPIRATION:86400000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
