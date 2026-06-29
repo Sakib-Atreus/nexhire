@@ -1,6 +1,18 @@
 # NexHire — Job Portal
 
-A full-stack job portal monorepo built with Spring Boot, Next.js, PostgreSQL, RabbitMQ, and MinIO.
+**NexHire** is a modern job portal platform that connects candidates with recruiters in real time. Candidates can browse and search job listings, save favorites, apply with a resume (file upload or URL), and track every application from a personal dashboard. Recruiters get a dedicated workspace to post jobs, review applicants, update statuses in bulk, and receive instant notifications as new applications come in.
+
+The platform is built as a **monorepo** with a clear separation between the REST API and the frontend, making it straightforward to develop, test, and deploy each part independently. It ships with Docker Compose for one-command local setup and is designed to deploy for free on Vercel + Render with Neon, CloudAMQP, and Backblaze B2 as managed cloud services.
+
+### Key Features
+
+- **Role-based access** — Candidate, Recruiter, and Admin roles with fine-grained permissions
+- **Real-time notifications** — Server-Sent Events (SSE) push updates instantly without polling
+- **File storage** — Resume and avatar uploads stored in S3-compatible object storage (MinIO locally, Backblaze B2 in production)
+- **JWT authentication** — Stateless auth with access + refresh token flow, email verification, and password reset
+- **Advanced job search** — Filter by keyword, location, job type, experience level, and company
+- **Application management** — Single and bulk status updates, per-job and cross-job recruiter views
+- **Swagger UI** — Full interactive API docs available at `/api/swagger-ui.html`
 
 ---
 
