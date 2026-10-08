@@ -49,6 +49,18 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.getMyApplications(currentUser.getId(), pageable));
     }
 
+    @GetMapping("/my/job/{jobId}")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Get the current candidate's application for a job (204 if none)")
+    public ResponseEntity<ApplicationDTO> getMyApplicationForJob(
+        @AuthenticationPrincipal User currentUser,
+        @PathVariable UUID jobId
+    ) {
+        return applicationService.getMyApplicationForJob(jobId, currentUser.getId())
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
     @GetMapping("/job/{jobId}")
     @PreAuthorize("hasRole('RECRUITER') or hasRole('ADMIN')")
     @Operation(summary = "Get all applications for a job")

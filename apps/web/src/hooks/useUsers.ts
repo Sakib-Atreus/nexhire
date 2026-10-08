@@ -1,13 +1,14 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import type { User, Page, Role } from '@/types';
 
-export function useAllUsers(page = 0, size = 20) {
+export function useAllUsers(page = 0, size = 20, sort = 'createdAt,desc') {
   return useQuery({
-    queryKey: ['users', { page, size }],
-    queryFn: () => api.get<Page<User>>('/users', { params: { page, size } }).then((r) => r.data),
+    queryKey: ['users', { page, size, sort }],
+    queryFn: () => api.get<Page<User>>('/users', { params: { page, size, sort } }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 

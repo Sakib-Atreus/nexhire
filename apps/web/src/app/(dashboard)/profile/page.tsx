@@ -1,14 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { User2, Plus, Trash2, LinkIcon } from 'lucide-react';
+import { Camera, CheckCircle2, Circle, LinkIcon, Plus, Trash2 } from 'lucide-react';
 import { useMe, useUpdateProfile } from '@/hooks/useProfile';
-import { FileUpload } from '@/components/ui/FileUpload';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { SkillsInput } from '@/components/ui/SkillsInput';
+import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { FormField, Input, Textarea } from '@/components/ui/Field';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { ErrorState, Skeleton } from '@/components/ui/States';
+import { Toggle } from '@/components/ui/Toggle';
+import { getProfileCompleteness } from '@/components/profile/completeness';
+import { ROLE_LABELS, ROLE_STYLES } from '@/lib/constants';
+import { formatMonthYear, getErrorMessage } from '@/lib/format';
+import { toast } from '@/store/toastStore';
 import type { User } from '@/types';
 
-// ─── Form shape ───────────────────────────────────────────────────
 interface ProfileForm {
   firstName: string;
   lastName: string;
@@ -20,390 +31,357 @@ interface ProfileForm {
   openToWork: boolean;
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────
+const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
+
+function toForm(user: User): ProfileForm {
+  return {
+    firstName: user.firstName ?? '',
+    lastName: user.lastName ?? '',
+    phone: user.phone ?? '',
+    headline: user.headline ?? '',
+    bio: user.bio ?? '',
+    skills: user.skills ?? [],
+    portfolioLinks: (user.portfolioLinks ?? []).map((url) => ({ url })),
+    openToWork: user.openToWork ?? false,
+  };
+}
+
 function ProfileSkeleton() {
   return (
-    <div className="animate-pulse space-y-6">
-      <div className="h-8 w-48 bg-slate-200 rounded-lg" />
+    <div>
+      <Skeleton className="h-8 w-48 mb-2" />
+      <Skeleton className="h-4 w-72 mb-6" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
-          <div className="w-24 h-24 rounded-full bg-slate-200 mx-auto" />
-          <div className="h-4 bg-slate-200 rounded w-3/4 mx-auto" />
-          <div className="h-28 bg-slate-100 rounded-lg" />
-        </div>
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-10 bg-slate-100 rounded-lg" />
-          ))}
-        </div>
+        <Card className="p-6 space-y-4">
+          <Skeleton className="w-24 h-24 rounded-full mx-auto" />
+          <Skeleton className="h-4 w-3/4 mx-auto" />
+          <Skeleton className="h-20" />
+        </Card>
+        <Card className="lg:col-span-2 p-6 space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+        </Card>
       </div>
     </div>
   );
 }
 
-// ─── Avatar circle ────────────────────────────────────────────────
-function Avatar({ user, previewUrl }: { user: User; previewUrl?: string }) {
-  const src = previewUrl ?? user.avatarUrl;
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={user.fullName}
-        className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md mx-auto"
-      />
-    );
+/** Avatar with a compact "Change photo" button that uploads immediately. */
+function PhotoPicker({ user }: { user: User }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const upload = useFileUpload();
+  const update = useUpdateProfile();
+  const busy = upload.isPending || update.isPending;
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  function onChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Choose an image file', 'JPG, PNG or WebP images are supported.');
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error('Image is too large', 'Choose an image under 10 MB.');
+      return;
+    }
+    setPreview(URL.createObjectURL(file));
+    upload.mutate(file, {
+      onSuccess: ({ url }) =>
+        update.mutate(
+          { avatarUrl: url },
+          {
+            onSuccess: () => { setPreview(null); toast.success('Profile photo updated'); },
+            onError: (err) => { setPreview(null); toast.error("Couldn't save your photo", getErrorMessage(err)); },
+          }
+        ),
+      onError: (err) => { setPreview(null); toast.error('Upload failed', getErrorMessage(err)); },
+    });
   }
-  const initials = `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase();
+
   return (
-    <div className="w-24 h-24 rounded-full bg-primary-600 flex items-center justify-center ring-4 ring-white shadow-md mx-auto">
-      <span className="text-2xl font-bold text-white">{initials}</span>
+    <div className="flex flex-col items-center text-center">
+      <div className="relative">
+        <Avatar name={user.fullName} src={preview ?? user.avatarUrl} size="xl" className="ring-4 ring-white shadow-md" />
+        {busy && (
+          <span className="absolute inset-0 rounded-full bg-white/60 flex items-center justify-center text-xs font-medium text-slate-700">
+            Uploading…
+          </span>
+        )}
+      </div>
+      <Button variant="secondary" size="sm" className="mt-4" onClick={() => inputRef.current?.click()} loading={busy}>
+        {!busy && <Camera className="w-3.5 h-3.5" aria-hidden />}
+        {user.avatarUrl ? 'Change photo' : 'Add photo'}
+      </Button>
+      <p className="mt-1.5 text-xs text-slate-500">JPG, PNG or WebP, up to 10 MB</p>
+      <input ref={inputRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-hidden onChange={onChange} />
     </div>
   );
 }
 
-// ─── Input helper ─────────────────────────────────────────────────
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-slate-700">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
-  );
-}
-
-const inputCls =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition';
-
-// ─── Page ─────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { data: user, isLoading } = useMe();
+  const { data: user, isLoading, isError, error, refetch, isRefetching } = useMe();
   const { mutate: updateProfile, isPending } = useUpdateProfile();
-  const [toast, setToast] = useState<string | null>(null);
-  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const openToWorkLabelId = useId();
 
   const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    control,
-    formState: { errors },
+    register, handleSubmit, reset, watch, setValue, control,
+    formState: { errors, isDirty },
   } = useForm<ProfileForm>({
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      phone: '',
-      headline: '',
-      bio: '',
-      skills: [],
-      portfolioLinks: [],
-      openToWork: false,
-    },
+    defaultValues: { firstName: '', lastName: '', phone: '', headline: '', bio: '', skills: [], portfolioLinks: [], openToWork: false },
   });
-
   const { fields, append, remove } = useFieldArray({ control, name: 'portfolioLinks' });
 
-  // Pre-fill form once user data loads
   useEffect(() => {
-    if (!user) return;
-    reset({
-      firstName: user.firstName ?? '',
-      lastName: user.lastName ?? '',
-      phone: user.phone ?? '',
-      headline: user.headline ?? '',
-      bio: user.bio ?? '',
-      skills: user.skills ?? [],
-      portfolioLinks: (user.portfolioLinks ?? []).map((url) => ({ url })),
-      openToWork: user.openToWork ?? false,
-    });
+    // keepDirtyValues: a background refetch (e.g. after a photo upload) must not wipe unsaved edits.
+    if (user) reset(toForm(user), { keepDirtyValues: true });
   }, [user, reset]);
 
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }
+  const isCandidate = user?.role === 'CANDIDATE';
+  const values = watch();
 
-  function onSubmit(values: ProfileForm) {
-    updateProfile(
-      {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        phone: values.phone || undefined,
-        headline: values.headline || undefined,
-        bio: values.bio || undefined,
-        skills: values.skills,
-        portfolioLinks: values.portfolioLinks.map((p) => p.url).filter(Boolean),
-        openToWork: values.openToWork,
+  function onSubmit(v: ProfileForm) {
+    const payload: Partial<User> = {
+      firstName: v.firstName.trim(),
+      lastName: v.lastName.trim(),
+      phone: v.phone.trim(),
+      headline: v.headline.trim(),
+      bio: v.bio.trim(),
+    };
+    if (isCandidate) {
+      payload.skills = v.skills;
+      payload.portfolioLinks = v.portfolioLinks.map((p) => p.url.trim()).filter(Boolean);
+      payload.openToWork = v.openToWork;
+    }
+    updateProfile(payload, {
+      onSuccess: (updated) => {
+        reset(toForm(updated));
+        toast.success('Profile saved');
       },
-      {
-        onSuccess: () => showToast('Profile updated successfully!'),
-      }
-    );
-  }
-
-  function handleAvatarSelected(file: File) {
-    const objectUrl = URL.createObjectURL(file);
-    setLocalAvatarUrl(objectUrl);
-  }
-
-  function handleAvatarUpload(url: string) {
-    updateProfile({ avatarUrl: url }, {
-      onSuccess: () => {
-        setLocalAvatarUrl(null); // server URL now in cache — drop the blob
-      },
+      onError: (err) => toast.error("Couldn't save your profile", getErrorMessage(err)),
     });
   }
 
-  const skills = watch('skills');
-  const openToWork = watch('openToWork');
+  if (isError) {
+    return (
+      <Card className="max-w-md mx-auto mt-10">
+        <ErrorState title="We couldn't load your profile" error={error} onRetry={() => refetch()} retrying={isRefetching} />
+      </Card>
+    );
+  }
 
   if (isLoading || !user) return <ProfileSkeleton />;
 
+  // Live completeness reflects unsaved edits too, so the meter responds as the form is filled in.
+  const completeness = getProfileCompleteness({
+    avatarUrl: user.avatarUrl,
+    headline: values.headline,
+    bio: values.bio,
+    skills: values.skills,
+    phone: values.phone,
+    portfolioLinks: values.portfolioLinks?.map((p) => p.url),
+  });
+  const portfolioError = errors.portfolioLinks?.find?.((e) => e?.url)?.url?.message;
+
   return (
-    <div className="pb-20 lg:pb-0">
-      {/* Header */}
-      <div className="mb-8 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
-          <User2 className="w-5 h-5 text-primary-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Manage your personal information and public presence.</p>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title="Profile"
+        description={isCandidate ? 'Recruiters see this information when you apply for a job.' : 'Your name and details as candidates and teammates see them.'}
+      />
 
-      {/* Success toast */}
-      {toast && (
-        <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-sm font-medium">
-          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          {toast}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* ── Left column: avatar + account info ── */}
-          <div className="space-y-4">
-            {/* Avatar card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 text-center space-y-4">
-              <Avatar user={user} previewUrl={localAvatarUrl ?? undefined} />
-              <div>
-                <p className="font-semibold text-slate-800">{user.fullName}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{user.email}</p>
-                {user.headline && (
-                  <p className="text-xs text-primary-600 mt-1 font-medium">{user.headline}</p>
-                )}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Left column */}
+          <div className="space-y-6">
+            <Card className="p-6">
+              <PhotoPicker user={user} />
+              <div className="mt-5 pt-5 border-t border-slate-100 text-center">
+                <p className="font-semibold text-slate-900">{user.fullName}</p>
+                <p className="text-sm text-slate-500 break-all">{user.email}</p>
+                {user.headline && <p className="mt-1 text-sm text-slate-700">{user.headline}</p>}
               </div>
-              <FileUpload
-                onUpload={handleAvatarUpload}
-                onFileSelected={handleAvatarSelected}
-                accept="image/*"
-                label="Upload Photo"
-                hint="JPG, PNG or WebP · max 10 MB"
-                currentUrl={user.avatarUrl}
-              />
-            </div>
-
-            {/* Account info card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-slate-700">Account Info</h2>
-              <div className="space-y-2 text-xs text-slate-500">
-                <div className="flex justify-between">
-                  <span>Role</span>
-                  <span className="font-medium text-slate-700 capitalize">{user.role.toLowerCase()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Email verified</span>
-                  <span className={user.emailVerified ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>
-                    {user.emailVerified ? 'Verified' : 'Unverified'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Member since</span>
-                  <span className="font-medium text-slate-700">
-                    {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Open to work toggle — candidates only */}
-            {user.role === 'CANDIDATE' && (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <dl className="mt-5 pt-5 border-t border-slate-100 space-y-2.5 text-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700">Open to work</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Let recruiters know you&apos;re looking for opportunities</p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={openToWork}
-                    onClick={() => setValue('openToWork', !openToWork, { shouldDirty: true })}
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${openToWork ? 'bg-green-500' : 'bg-slate-200'}`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition duration-200 ${openToWork ? 'translate-x-5' : 'translate-x-0'}`}
-                    />
-                  </button>
+                  <dt className="text-slate-500">Account type</dt>
+                  <dd><Badge tone={ROLE_STYLES[user.role]}>{ROLE_LABELS[user.role]}</Badge></dd>
                 </div>
-                {openToWork && (
-                  <p className="mt-2 text-xs text-green-600 font-medium">Visible to recruiters as &quot;Open to work&quot;</p>
-                )}
-              </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-slate-500">Email</dt>
+                  <dd>
+                    {user.emailVerified ? (
+                      <Badge tone="bg-emerald-50 text-emerald-700 ring-emerald-600/20">Verified</Badge>
+                    ) : (
+                      <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">Not verified</Badge>
+                    )}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-slate-500">Member since</dt>
+                  <dd className="font-medium text-slate-700">{formatMonthYear(user.createdAt)}</dd>
+                </div>
+              </dl>
+            </Card>
+
+            {isCandidate && (
+              <Card className="p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-semibold text-slate-900">Profile strength</h2>
+                  <span className="text-sm font-semibold text-primary-700 tabular-nums">{completeness.percent}%</span>
+                </div>
+                <div
+                  className="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden"
+                  role="progressbar"
+                  aria-label="Profile completeness"
+                  aria-valuenow={completeness.percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${completeness.percent}%` }} />
+                </div>
+                <ul className="mt-4 space-y-2 text-sm">
+                  {completeness.items.map((item) => (
+                    <li key={item.key} className={item.done ? 'flex items-center gap-2 text-slate-500' : 'flex items-center gap-2 text-slate-800'}>
+                      {item.done
+                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" aria-hidden />
+                        : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0" aria-hidden />}
+                      {item.label}
+                      <span className="sr-only">{item.done ? '— complete' : '— missing'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
+            {isCandidate && (
+              <Card className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p id={openToWorkLabelId} className="text-sm font-semibold text-slate-900">Open to work</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Show recruiters that you&apos;re actively looking.</p>
+                  </div>
+                  <Toggle
+                    checked={values.openToWork}
+                    onChange={(checked) => setValue('openToWork', checked, { shouldDirty: true })}
+                    labelledBy={openToWorkLabelId}
+                  />
+                </div>
+                <p className="mt-3 text-xs text-slate-500">Saved with the rest of your profile.</p>
+              </Card>
             )}
           </div>
 
-          {/* ── Right column: editable fields ── */}
-          <div className="lg:col-span-2 space-y-5">
-
-            {/* Basic info card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-              <h2 className="text-base font-semibold text-slate-800">Basic Information</h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="First Name" error={errors.firstName?.message}>
-                  <input
-                    {...register('firstName', { required: 'First name is required' })}
-                    className={inputCls}
-                    placeholder="Jane"
-                  />
-                </Field>
-                <Field label="Last Name" error={errors.lastName?.message}>
-                  <input
-                    {...register('lastName', { required: 'Last name is required' })}
-                    className={inputCls}
-                    placeholder="Smith"
-                  />
-                </Field>
-              </div>
-
-              <Field label="Phone">
-                <input
-                  {...register('phone')}
-                  className={inputCls}
-                  placeholder="+1 (555) 000-0000"
-                  type="tel"
-                />
-              </Field>
-
-              <Field label="Headline">
-                <input
-                  {...register('headline')}
-                  className={inputCls}
-                  placeholder="e.g. Senior React Developer"
-                />
-              </Field>
-
-              <Field label="Bio">
-                <textarea
-                  {...register('bio')}
-                  rows={4}
-                  className={inputCls + ' resize-none'}
-                  placeholder="Tell employers a bit about yourself, your experience, and what you're looking for."
-                />
-              </Field>
-            </div>
-
-            {/* Skills card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-              <h2 className="text-base font-semibold text-slate-800">Skills</h2>
-              <SkillsInput
-                value={skills}
-                onChange={(updated) => setValue('skills', updated, { shouldDirty: true })}
-                placeholder="e.g. React, TypeScript, Node.js…"
-              />
-            </div>
-
-            {/* Portfolio links card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-800">Portfolio Links</h2>
-                <button
-                  type="button"
-                  onClick={() => append({ url: '' })}
-                  className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Link
-                </button>
-              </div>
-
-              {fields.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 border-2 border-dashed border-slate-100 rounded-lg">
-                  <LinkIcon className="w-6 h-6 mx-auto mb-1.5 opacity-40" />
-                  <p className="text-xs">No portfolio links yet. Click "Add Link" to add one.</p>
+          {/* Right column */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader title="Basic information" />
+              <div className="p-5 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="First name" required error={errors.firstName?.message}>
+                    {(id) => (
+                      <Input id={id} autoComplete="given-name" invalid={!!errors.firstName}
+                        {...register('firstName', { validate: (v) => !!v.trim() || 'Enter your first name' })} />
+                    )}
+                  </FormField>
+                  <FormField label="Last name" required error={errors.lastName?.message}>
+                    {(id) => (
+                      <Input id={id} autoComplete="family-name" invalid={!!errors.lastName}
+                        {...register('lastName', { validate: (v) => !!v.trim() || 'Enter your last name' })} />
+                    )}
+                  </FormField>
                 </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="flex items-center gap-2">
-                      <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
-                        <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
-                      </div>
-                      <input
-                        {...register(`portfolioLinks.${index}.url`, {
-                          pattern: {
-                            value: /^https?:\/\/.+/,
-                            message: 'Enter a valid URL starting with http(s)://',
-                          },
-                        })}
-                        className={inputCls + ' flex-1'}
-                        placeholder="https://github.com/yourprofile"
-                        type="url"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        aria-label="Remove link"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {/* Field-level errors */}
-                  {errors.portfolioLinks && (
-                    <p className="text-xs text-red-500">
-                      {errors.portfolioLinks.find?.((e) => e?.url)?.url?.message}
-                    </p>
+
+                <FormField label="Phone" hint="Only shared with recruiters you apply to.">
+                  {(id) => <Input id={id} type="tel" autoComplete="tel" placeholder="+1 555 000 0000" {...register('phone')} />}
+                </FormField>
+
+                <FormField label="Headline" hint={isCandidate ? 'Your current role or the role you want, e.g. "Senior React Developer".' : 'Your title, e.g. "Talent Partner at Acme".'}>
+                  {(id) => <Input id={id} maxLength={120} {...register('headline')} />}
+                </FormField>
+
+                <FormField label={isCandidate ? 'About you' : 'Bio'}>
+                  {(id) => (
+                    <Textarea
+                      id={id}
+                      rows={5}
+                      className="resize-y"
+                      placeholder={isCandidate ? 'Your experience, strengths and what you are looking for next.' : 'A short introduction for candidates.'}
+                      {...register('bio')}
+                    />
                   )}
-                </div>
-              )}
-            </div>
+                </FormField>
+              </div>
+            </Card>
 
-            {/* Save button */}
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
-              >
-                {isPending ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    Saving…
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
+            {isCandidate && (
+              <Card>
+                <CardHeader title="Skills" description="Add the tools, languages and strengths recruiters search for." />
+                <div className="p-5">
+                  <SkillsInput
+                    value={values.skills}
+                    onChange={(updated) => setValue('skills', updated, { shouldDirty: true })}
+                    placeholder="e.g. React, TypeScript, Node.js"
+                  />
+                </div>
+              </Card>
+            )}
+
+            {isCandidate && (
+              <Card>
+                <CardHeader
+                  title="Portfolio links"
+                  description="GitHub, personal site, Behance, LinkedIn…"
+                  action={
+                    <Button variant="ghost" size="sm" onClick={() => append({ url: '' })}>
+                      <Plus className="w-3.5 h-3.5" aria-hidden /> Add link
+                    </Button>
+                  }
+                />
+                <div className="p-5">
+                  {fields.length === 0 ? (
+                    <p className="text-sm text-slate-500">No links yet.</p>
+                  ) : (
+                    <ul className="space-y-2.5">
+                      {fields.map((field, index) => (
+                        <li key={field.id} className="flex items-center gap-2">
+                          <LinkIcon className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden />
+                          <Input
+                            type="url"
+                            aria-label={`Portfolio link ${index + 1}`}
+                            placeholder="https://github.com/you"
+                            invalid={!!errors.portfolioLinks?.[index]?.url}
+                            className="flex-1 min-w-0"
+                            {...register(`portfolioLinks.${index}.url`, {
+                              pattern: { value: /^https?:\/\/\S+$/, message: 'Links must start with http:// or https://' },
+                            })}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            aria-label={`Remove portfolio link ${index + 1}`}
+                            className="flex-shrink-0 p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                          >
+                            <Trash2 className="w-4 h-4" aria-hidden />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {portfolioError && <p className="mt-2 text-xs text-rose-600" role="alert">{portfolioError}</p>}
+                </div>
+              </Card>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
+              {isDirty && <p className="text-sm text-slate-500 sm:mr-auto">You have unsaved changes.</p>}
+              <Button variant="secondary" onClick={() => reset(toForm(user))} disabled={!isDirty || isPending}>
+                Discard
+              </Button>
+              <Button type="submit" loading={isPending} disabled={!isDirty}>
+                Save changes
+              </Button>
             </div>
           </div>
         </div>

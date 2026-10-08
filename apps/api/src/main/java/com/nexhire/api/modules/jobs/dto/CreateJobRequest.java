@@ -1,5 +1,7 @@
 package com.nexhire.api.modules.jobs.dto;
 
+import java.util.List;
+
 import com.nexhire.api.modules.jobs.ExperienceLevel;
 import com.nexhire.api.modules.jobs.JobType;
 import jakarta.validation.constraints.NotBlank;
@@ -23,5 +25,6 @@ public record CreateJobRequest(
     BigDecimal salaryMax,
     String salaryCurrency,
     String tags,
-    LocalDate deadline
+    LocalDate deadline,
+    List<String> screeningQuestions
 ) {}

@@ -1,5 +1,7 @@
 package com.nexhire.api.modules.jobs.dto;
 
+import java.util.List;
+
 import com.nexhire.api.modules.jobs.ExperienceLevel;
 import com.nexhire.api.modules.jobs.JobStatus;
 import com.nexhire.api.modules.jobs.JobType;
@@ -31,7 +33,7 @@ public record JobDTO(
     Instant createdAt,
     Instant updatedAt,
     int viewCount,
-    String screeningQuestions,
+    List<String> screeningQuestions,
     boolean isSaved,
     Integer applicationCount
 ) {}

@@ -5,76 +5,93 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import { MailCheck } from 'lucide-react';
 import { useForgotPassword } from '@/hooks/useAuth';
+import { getErrorMessage } from '@/lib/format';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthAlert } from '@/components/auth/AuthAlert';
+import { FormField, Input } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
 
 const schema = z.object({
-  email: z.string().email('Must be a valid email address'),
+  email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
-  const [success, setSuccess] = useState(false);
-  const { mutate: forgotPassword, isPending, error } = useForgotPassword();
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const { mutate: forgotPassword, isPending, error, reset } = useForgotPassword();
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = (data: FormData) => {
-    forgotPassword(data, {
-      onSuccess: () => setSuccess(true),
-    });
+    forgotPassword(data, { onSuccess: () => setSentTo(data.email) });
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary-700">NexHire</Link>
-          <h1 className="mt-4 text-2xl font-semibold text-slate-800">Reset your password</h1>
-          <p className="text-slate-500 mt-1">Enter your email to receive reset instructions</p>
-        </div>
+  const footer = (
+    <>
+      Remembered it?{' '}
+      <Link href="/login" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
+        Back to sign in
+      </Link>
+    </>
+  );
 
-        {success ? (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-            Check your server logs for the reset token
+  if (sentTo) {
+    return (
+      <AuthShell title="Check your email" footer={footer}>
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+            <MailCheck className="h-6 w-6 text-emerald-600" aria-hidden />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email address</label>
-              <input
-                {...register('email')}
-                type="email"
-                placeholder="you@example.com"
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Something went wrong. Please try again.'}
-              </div>
-            )}
-
+          <p className="text-sm text-slate-600 leading-relaxed" role="status">
+            If an account exists for <span className="font-medium text-slate-900 break-all">{sentTo}</span>,
+            we&apos;ve sent a link to reset your password.
+          </p>
+          <p className="mt-4 text-xs text-slate-500">
+            Didn&apos;t get it? Check your spam folder, or{' '}
             <button
-              type="submit"
-              disabled={isPending}
-              className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              type="button"
+              onClick={() => { reset(); setSentTo(null); }}
+              className="font-medium text-primary-600 hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
-              {isPending ? 'Sending...' : 'Send reset instructions'}
+              try another email
             </button>
-          </form>
-        )}
+            .
+          </p>
+        </div>
+      </AuthShell>
+    );
+  }
 
-        <p className="mt-6 text-center text-sm text-slate-600">
-          Remember your password?{' '}
-          <Link href="/login" className="text-primary-600 hover:underline font-medium">
-            Sign in &rarr;
-          </Link>
-        </p>
-      </div>
-    </div>
+  return (
+    <AuthShell
+      title="Forgot your password?"
+      subtitle="Enter the email you signed up with and we'll send you a link to reset it."
+      footer={footer}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        <FormField label="Email" error={errors.email?.message}>
+          {(id) => (
+            <Input
+              id={id}
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              invalid={!!errors.email}
+              {...register('email')}
+            />
+          )}
+        </FormField>
+
+        {error && <AuthAlert>{getErrorMessage(error)}</AuthAlert>}
+
+        <Button type="submit" size="lg" className="w-full" loading={isPending}>
+          {isPending ? 'Sending…' : 'Send reset link'}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

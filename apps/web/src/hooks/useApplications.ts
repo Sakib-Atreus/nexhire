@@ -7,14 +7,14 @@ import type { Application, ApplicationStats, ApplicationStatus, Page } from '@/t
 export function useMyApplications(page = 0) {
   return useQuery({
     queryKey: ['applications', 'my', page],
-    queryFn: () => api.get<Page<Application>>('/applications/my', { params: { page, size: 10 } }).then((r) => r.data),
+    queryFn: () => api.get<Page<Application>>('/applications/my', { params: { page, size: 10, sort: 'appliedAt,desc' } }).then((r) => r.data),
   });
 }
 
 export function useJobApplications(jobId: string) {
   return useQuery({
     queryKey: ['applications', 'job', jobId],
-    queryFn: () => api.get<Page<Application>>(`/applications/job/${jobId}`).then((r) => r.data),
+    queryFn: () => api.get<Page<Application>>(`/applications/job/${jobId}`, { params: { size: 100, sort: 'appliedAt,desc' } }).then((r) => r.data),
     enabled: !!jobId,
   });
 }
@@ -40,14 +40,19 @@ export function useUpdateApplicationStatus() {
 export function useRecruiterApplications() {
   return useQuery({
     queryKey: ['applications', 'recruiter'],
-    queryFn: () => api.get<Page<Application>>('/applications/recruiter').then((r) => r.data),
+    queryFn: () => api.get<Page<Application>>('/applications/recruiter', { params: { sort: 'appliedAt,desc' } }).then((r) => r.data),
   });
 }
 
-export function useCheckApplied(jobId: string) {
-  const { data } = useMyApplications();
-  const applied = data?.content.find((a) => a.jobId === jobId && a.status !== 'WITHDRAWN');
-  return { applied: !!applied, application: applied };
+/** The candidate's own application for a job (null when they haven't applied). */
+export function useCheckApplied(jobId: string, enabled = true) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['applications', 'my', 'job', jobId],
+    queryFn: () =>
+      api.get<Application | ''>(`/applications/my/job/${jobId}`).then((r) => (r.status === 204 || !r.data ? null : r.data)),
+    enabled: enabled && !!jobId,
+  });
+  return { applied: !!data && data.status !== 'WITHDRAWN', application: data ?? undefined, isLoading };
 }
 
 export function useBulkUpdateStatus() {

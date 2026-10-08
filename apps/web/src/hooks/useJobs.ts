@@ -1,8 +1,28 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/axios';
-import type { Job, Page } from '@/types';
+import type { ExperienceLevel, Job, JobStatus, JobType, Page } from '@/types';
+
+/** Body accepted by POST /jobs and PATCH /jobs/{id}. */
+export interface JobPayload {
+  title?: string;
+  description?: string;
+  requirements?: string;
+  responsibilities?: string;
+  companyName?: string;
+  companyLogoUrl?: string;
+  location?: string;
+  jobType?: JobType;
+  experienceLevel?: ExperienceLevel;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string;
+  status?: JobStatus;
+  tags?: string;
+  deadline?: string | null;
+  screeningQuestions?: string[];
+}
 
 interface JobSearchParams {
   keyword?: string;
@@ -14,6 +34,8 @@ interface JobSearchParams {
   salaryMax?: number;
   page?: number;
   size?: number;
+  /** Spring sort, e.g. "createdAt,desc". */
+  sort?: string;
 }
 
 export function useJobs(params: JobSearchParams = {}) {
@@ -21,6 +43,7 @@ export function useJobs(params: JobSearchParams = {}) {
     queryKey: ['jobs', params],
     queryFn: () =>
       api.get<Page<Job>>('/jobs', { params: { ...params, size: params.size ?? 10 } }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -32,17 +55,19 @@ export function useJob(id: string) {
   });
 }
 
-export function useMyJobs() {
+export function useMyJobs(page = 0, size = 50) {
   return useQuery({
-    queryKey: ['jobs', 'my'],
-    queryFn: () => api.get<Page<Job>>('/jobs/my').then((r) => r.data),
+    queryKey: ['jobs', 'my', page, size],
+    queryFn: () =>
+      api.get<Page<Job>>('/jobs/my', { params: { page, size, sort: 'createdAt,desc' } }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 
 export function useCreateJob() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Job>) => api.post<Job>('/jobs', data).then((r) => r.data),
+    mutationFn: (data: JobPayload) => api.post<Job>('/jobs', data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   });
 }
@@ -50,7 +75,7 @@ export function useCreateJob() {
 export function useUpdateJob(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Job>) => api.patch<Job>(`/jobs/${id}`, data).then((r) => r.data),
+    mutationFn: (data: JobPayload) => api.patch<Job>(`/jobs/${id}`, data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   });
 }
@@ -67,6 +92,7 @@ export function useSavedJobs(page = 0) {
   return useQuery({
     queryKey: ['jobs', 'saved', page],
     queryFn: () => api.get<Page<Job>>('/jobs/saved', { params: { page, size: 10 } }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 

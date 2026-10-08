@@ -6,128 +6,149 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Building2, Search } from 'lucide-react';
 import { useRegister } from '@/hooks/useAuth';
-import type { Role } from '@/types';
+import { getErrorMessage } from '@/lib/format';
+import { cn } from '@/lib/cn';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthAlert } from '@/components/auth/AuthAlert';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { FormField, Input } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().trim().min(1, 'First name is required').max(100, 'First name is too long'),
+  lastName: z.string().trim().min(1, 'Last name is required').max(100, 'Last name is too long'),
+  email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be 128 characters or fewer'),
   role: z.enum(['CANDIDATE', 'RECRUITER']),
 });
 
 type FormData = z.infer<typeof schema>;
 
+const ROLE_OPTIONS = [
+  { value: 'CANDIDATE', label: "I'm looking for a job", description: 'Find roles and track applications', Icon: Search },
+  { value: 'RECRUITER', label: "I'm hiring", description: 'Post jobs and review applicants', Icon: Building2 },
+] as const;
+
 function RegisterForm() {
   const searchParams = useSearchParams();
-  const defaultRole = (searchParams.get('role') as Role) ?? 'CANDIDATE';
+  const initialRole = searchParams.get('role')?.toUpperCase() === 'RECRUITER' ? 'RECRUITER' : 'CANDIDATE';
 
-  const { mutate: register, isPending, error } = useRegister();
-  const { register: reg, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+  const { mutate: registerUser, isPending, error } = useRegister();
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: defaultRole === 'RECRUITER' ? 'RECRUITER' : 'CANDIDATE' },
+    defaultValues: { role: initialRole },
   });
 
   const role = watch('role');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary-700">NexHire</Link>
-          <h1 className="mt-4 text-2xl font-semibold text-slate-800">Create your account</h1>
+    <form onSubmit={handleSubmit((data) => registerUser(data))} className="space-y-5" noValidate>
+      <fieldset>
+        <legend className="block text-sm font-medium text-slate-700 mb-2">How will you use NexHire?</legend>
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
+          {ROLE_OPTIONS.map(({ value, label, description, Icon }) => {
+            const selected = role === value;
+            return (
+              <label
+                key={value}
+                className={cn(
+                  'relative flex cursor-pointer flex-col gap-1 rounded-lg border p-3.5 transition-colors',
+                  'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500 has-[:focus-visible]:ring-offset-2',
+                  selected
+                    ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500'
+                    : 'border-slate-300 bg-white hover:bg-slate-50'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value={value}
+                  checked={selected}
+                  onChange={() => setValue('role', value, { shouldValidate: true })}
+                  className="sr-only"
+                />
+                <Icon className={cn('w-5 h-5', selected ? 'text-primary-600' : 'text-slate-400')} aria-hidden />
+                <span className={cn('text-sm font-semibold', selected ? 'text-primary-900' : 'text-slate-900')}>
+                  {label}
+                </span>
+                <span className="text-xs text-slate-500">{description}</span>
+              </label>
+            );
+          })}
         </div>
+      </fieldset>
 
-        <div className="flex rounded-lg border border-slate-200 p-1 mb-6">
-          {(['CANDIDATE', 'RECRUITER'] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setValue('role', r)}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                role === r ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {r === 'CANDIDATE' ? 'Job Seeker' : 'Recruiter'}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit((data) => register(data))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
-              <input
-                {...reg('firstName')}
-                placeholder="John"
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
-              <input
-                {...reg('lastName')}
-                placeholder="Doe"
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName.message}</p>}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input
-              {...reg('email')}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input
-              {...reg('password')}
-              type="password"
-              placeholder="Min 8 characters"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-              Registration failed. Please try again.
-            </div>
+      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-4">
+        <FormField label="First name" error={errors.firstName?.message}>
+          {(id) => (
+            <Input id={id} autoComplete="given-name" invalid={!!errors.firstName} {...register('firstName')} />
           )}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors"
-          >
-            {isPending ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-600">
-          Already have an account?{' '}
-          <Link href="/login" className="text-primary-600 hover:underline font-medium">
-            Sign in
-          </Link>
-        </p>
+        </FormField>
+        <FormField label="Last name" error={errors.lastName?.message}>
+          {(id) => (
+            <Input id={id} autoComplete="family-name" invalid={!!errors.lastName} {...register('lastName')} />
+          )}
+        </FormField>
       </div>
-    </div>
+
+      <FormField
+        label={role === 'RECRUITER' ? 'Work email' : 'Email'}
+        error={errors.email?.message}
+      >
+        {(id) => (
+          <Input
+            id={id}
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            invalid={!!errors.email}
+            {...register('email')}
+          />
+        )}
+      </FormField>
+
+      <FormField label="Password" error={errors.password?.message} hint="Use at least 8 characters.">
+        {(id) => (
+          <PasswordInput
+            id={id}
+            autoComplete="new-password"
+            invalid={!!errors.password}
+            {...register('password')}
+          />
+        )}
+      </FormField>
+
+      {error && <AuthAlert>{getErrorMessage(error, 'We could not create your account. Please try again.')}</AuthAlert>}
+
+      <Button type="submit" size="lg" className="w-full" loading={isPending}>
+        {isPending ? 'Creating account…' : 'Create account'}
+      </Button>
+    </form>
   );
 }
 
 export default function RegisterPage() {
   return (
-    <Suspense>
-      <RegisterForm />
-    </Suspense>
+    <AuthShell
+      title="Create your account"
+      subtitle="Join as a job seeker or as a recruiter."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <Suspense>
+        <RegisterForm />
+      </Suspense>
+    </AuthShell>
   );
 }

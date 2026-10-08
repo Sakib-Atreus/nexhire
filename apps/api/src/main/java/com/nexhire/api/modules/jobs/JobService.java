@@ -20,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,11 +37,12 @@ public class JobService {
     private final SavedJobRepository savedJobRepository;
     private final NotificationService notificationService;
     private final ApplicationRepository applicationRepository;
+    private final ObjectMapper objectMapper;
 
     public Page<JobDTO> search(String keyword, String location, String companyName, JobType jobType, ExperienceLevel experienceLevel,
-                               BigDecimal salaryMin, BigDecimal salaryMax, Pageable pageable) {
+                               BigDecimal salaryMin, BigDecimal salaryMax, Pageable pageable, UUID currentUserId) {
         return jobRepository.searchExtended(JobStatus.OPEN, keyword, location, companyName, jobType, experienceLevel, salaryMin, salaryMax, pageable)
-            .map(j -> toDTO(j, null));
+            .map(j -> toDTO(j, currentUserId));
     }
 
     public Page<JobDTO> getAll(Pageable pageable) {
@@ -86,6 +91,7 @@ public class JobService {
             .salaryCurrency(request.salaryCurrency() != null ? request.salaryCurrency() : "USD")
             .tags(request.tags())
             .deadline(request.deadline())
+            .screeningQuestions(toJson(request.screeningQuestions()))
             .recruiter(recruiter)
             .status(JobStatus.OPEN)
             .build();
@@ -112,12 +118,15 @@ public class JobService {
         if (request.description() != null) job.setDescription(request.description());
         if (request.requirements() != null) job.setRequirements(request.requirements());
         if (request.responsibilities() != null) job.setResponsibilities(request.responsibilities());
+        if (request.companyName() != null && !request.companyName().isBlank()) job.setCompanyName(request.companyName());
         if (request.companyLogoUrl() != null) job.setCompanyLogoUrl(request.companyLogoUrl());
         if (request.location() != null) job.setLocation(request.location());
         if (request.jobType() != null) job.setJobType(request.jobType());
         if (request.experienceLevel() != null) job.setExperienceLevel(request.experienceLevel());
         if (request.salaryMin() != null) job.setSalaryMin(request.salaryMin());
         if (request.salaryMax() != null) job.setSalaryMax(request.salaryMax());
+        if (request.salaryCurrency() != null && !request.salaryCurrency().isBlank()) job.setSalaryCurrency(request.salaryCurrency());
+        if (request.screeningQuestions() != null) job.setScreeningQuestions(toJson(request.screeningQuestions()));
         if (request.status() != null) job.setStatus(request.status());
         if (request.tags() != null) job.setTags(request.tags());
         if (request.deadline() != null) job.setDeadline(request.deadline());
@@ -197,9 +206,28 @@ public class JobService {
             job.getCreatedAt(),
             job.getUpdatedAt(),
             job.getViewCount(),
-            job.getScreeningQuestions(),
+            parseQuestions(job.getScreeningQuestions()),
             saved,
             applicationCount
         );
+    }
+
+    private List<String> parseQuestions(String json) {
+        if (json == null || json.isBlank()) return Collections.emptyList();
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private String toJson(List<String> questions) {
+        if (questions == null) return "[]";
+        try {
+            return objectMapper.writeValueAsString(
+                questions.stream().filter(q -> q != null && !q.isBlank()).map(String::trim).toList());
+        } catch (Exception e) {
+            return "[]";
+        }
     }
 }

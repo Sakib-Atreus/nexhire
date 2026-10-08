@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -119,7 +120,23 @@ public class ApplicationService {
         return applicationRepository.saveAll(apps).stream().map(this::toDTO).toList();
     }
 
+    public Optional<ApplicationDTO> getMyApplicationForJob(UUID jobId, UUID candidateId) {
+        return applicationRepository.findByJobIdAndCandidateId(jobId, candidateId).map(this::toDTO);
+    }
+
     public ApplicationStatsDTO getRecruiterStats(User recruiter) {
+        if (recruiter.getRole() == Role.ADMIN) {
+            return new ApplicationStatsDTO(
+                applicationRepository.countByStatus(ApplicationStatus.PENDING),
+                applicationRepository.countByStatus(ApplicationStatus.REVIEWING),
+                applicationRepository.countByStatus(ApplicationStatus.SHORTLISTED),
+                applicationRepository.countByStatus(ApplicationStatus.INTERVIEWED),
+                applicationRepository.countByStatus(ApplicationStatus.OFFERED),
+                applicationRepository.countByStatus(ApplicationStatus.REJECTED),
+                applicationRepository.countByStatus(ApplicationStatus.WITHDRAWN),
+                applicationRepository.count()
+            );
+        }
         UUID rid = recruiter.getId();
         long total = applicationRepository.countByRecruiterId(rid);
         return new ApplicationStatsDTO(

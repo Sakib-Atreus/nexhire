@@ -37,9 +37,11 @@ public class JobController {
         @RequestParam(required = false) ExperienceLevel experienceLevel,
         @RequestParam(required = false) BigDecimal salaryMin,
         @RequestParam(required = false) BigDecimal salaryMax,
-        Pageable pageable
+        Pageable pageable,
+        @AuthenticationPrincipal User currentUser
     ) {
-        return ResponseEntity.ok(jobService.search(keyword, location, companyName, jobType, experienceLevel, salaryMin, salaryMax, pageable));
+        UUID userId = currentUser != null ? currentUser.getId() : null;
+        return ResponseEntity.ok(jobService.search(keyword, location, companyName, jobType, experienceLevel, salaryMin, salaryMax, pageable, userId));
     }
 
     @GetMapping("/saved")

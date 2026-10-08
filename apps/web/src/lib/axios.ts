@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { useAuthStore } from '@/store/authStore';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
@@ -26,12 +27,13 @@ api.interceptors.response.use(
   res => res,
   async err => {
     const orig = err.config;
-    if (err.response?.status !== 401 || orig?._retry) return Promise.reject(err);
+    // Auth endpoints (login, register, refresh…) report their own 401s; don't treat them as an expired session.
+    const isAuthCall = typeof orig?.url === 'string' && orig.url.startsWith('/auth/');
+    if (err.response?.status !== 401 || orig?._retry || isAuthCall) return Promise.reject(err);
     const refreshToken = Cookies.get('refreshToken');
     if (!refreshToken) {
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      if (typeof window !== 'undefined') window.location.href = '/login';
+      useAuthStore.getState().clearAuth();
+      if (typeof window !== 'undefined') window.location.href = '/login?expired=1';
       return Promise.reject(err);
     }
     if (isRefreshing) {
@@ -53,9 +55,8 @@ api.interceptors.response.use(
       return api(orig);
     } catch (refreshErr) {
       flushQueue(refreshErr, null);
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      if (typeof window !== 'undefined') window.location.href = '/login';
+      useAuthStore.getState().clearAuth();
+      if (typeof window !== 'undefined') window.location.href = '/login?expired=1';
       return Promise.reject(refreshErr);
     } finally {
       isRefreshing = false;

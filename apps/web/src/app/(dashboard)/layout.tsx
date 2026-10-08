@@ -1,14 +1,7 @@
-import { Navbar } from '@/components/layout/Navbar';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { AppShell } from '@/components/layout/AppShell';
 
+// The shell (sidebar, top bar, mobile tab bar, auth guard) lives in a client component;
+// <main> keeps `pb-24 lg:pb-10` there so content clears the mobile bottom nav.
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Sidebar />
-      <div className="lg:pl-64">
-        <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">{children}</main>
-      </div>
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 }

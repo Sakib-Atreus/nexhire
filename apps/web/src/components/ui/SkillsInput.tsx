@@ -54,17 +54,17 @@ export function SkillsInput({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5 min-h-[2.5rem] rounded-lg border border-slate-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition">
+      <div className="flex flex-wrap gap-1.5 min-h-[2.5rem] rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/30 focus-within:border-primary-500 transition">
         {value.map((skill) => (
           <span
             key={skill}
-            className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700"
+            className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20"
           >
             {skill}
             <button
               type="button"
               onClick={() => removeSkill(skill)}
-              className="ml-0.5 rounded-full p-0.5 hover:bg-blue-200 transition-colors"
+              className="ml-0.5 rounded-full p-0.5 hover:bg-primary-100 transition-colors"
               aria-label={`Remove ${skill}`}
             >
               <X className="w-3 h-3" />

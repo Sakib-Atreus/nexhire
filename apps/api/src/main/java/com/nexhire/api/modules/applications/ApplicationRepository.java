@@ -25,6 +25,8 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     long countByJobId(UUID jobId);
 
+    long countByStatus(ApplicationStatus status);
+
     @Query("SELECT COUNT(a) FROM Application a WHERE a.job.recruiter.id = :recruiterId AND a.status = :status")
     long countByRecruiterIdAndStatus(@Param("recruiterId") UUID recruiterId, @Param("status") ApplicationStatus status);
 

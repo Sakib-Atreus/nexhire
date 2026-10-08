@@ -1,507 +1,423 @@
 'use client';
 
-import { useAuthStore } from '@/store/authStore';
-import { useMyApplications, useRecruiterApplications } from '@/hooks/useApplications';
-import { useAllUsers } from '@/hooks/useUsers';
-import { useMyJobs } from '@/hooks/useJobs';
-import { useUnreadCount } from '@/hooks/useNotifications';
 import Link from 'next/link';
-import { cn } from '@/lib/cn';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Briefcase, FileText, Bell, Plus, ChevronRight, Clock, CheckCircle2,
-  Users, TrendingUp, Eye, ShieldCheck,
+  ArrowRight, Bookmark, Briefcase, CheckCircle2, Circle, Clock, FileText, Inbox, Plus, Search,
+  Send, ShieldCheck, Trophy, UserCheck, Users, BarChart3,
 } from 'lucide-react';
-import type { ApplicationStatus } from '@/types';
+import api from '@/lib/axios';
+import { useAuthStore } from '@/store/authStore';
+import { useRecruiterStats } from '@/hooks/useApplications';
+import { useJobs, useMyJobs, useSavedJobs } from '@/hooks/useJobs';
+import { useAllUsers } from '@/hooks/useUsers';
+import { useMe } from '@/hooks/useProfile';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { buttonClasses } from '@/components/ui/Button';
+import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { PipelineBars, statsToCounts, type StatusCounts } from '@/components/dashboard/PipelineBars';
+import { getProfileCompleteness } from '@/components/profile/completeness';
+import {
+  APPLICATION_STATUS_LABELS, APPLICATION_STATUS_ORDER, APPLICATION_STATUS_STYLES, JOB_STATUS_LABELS, JOB_STATUS_STYLES,
+} from '@/lib/constants';
+import { pluralize, timeAgo } from '@/lib/format';
+import type { Application, Page } from '@/types';
 
-// ─── Status helpers ───────────────────────────────────────────────
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  PENDING: 'Pending',
-  REVIEWING: 'Under Review',
-  SHORTLISTED: 'Shortlisted',
-  INTERVIEWED: 'Interviewed',
-  OFFERED: 'Offered',
-  REJECTED: 'Rejected',
-  WITHDRAWN: 'Withdrawn',
-};
+const RECENT_WINDOW = 50;
 
-const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  PENDING: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  REVIEWING: 'bg-blue-50 text-blue-700 border-blue-200',
-  SHORTLISTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  INTERVIEWED: 'bg-purple-50 text-purple-700 border-purple-200',
-  OFFERED: 'bg-green-50 text-green-700 border-green-200',
-  REJECTED: 'bg-red-50 text-red-700 border-red-200',
-  WITHDRAWN: 'bg-slate-50 text-slate-500 border-slate-200',
-};
-
-const STATUS_BAR_COLORS: Record<ApplicationStatus, string> = {
-  PENDING: '#facc15',
-  REVIEWING: '#3b82f6',
-  SHORTLISTED: '#6366f1',
-  INTERVIEWED: '#a855f7',
-  OFFERED: '#22c55e',
-  REJECTED: '#ef4444',
-  WITHDRAWN: '#94a3b8',
-};
-
-// ─── Shared stat card ─────────────────────────────────────────────
-function StatCard({
-  label, value, icon: Icon, iconColor, bg, href,
-}: {
-  label: string; value: number | string;
-  icon: React.ElementType; iconColor: string; bg: string; href?: string;
-}) {
-  const inner = (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow group">
-      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3', bg)}>
-        <Icon className={cn('w-5 h-5', iconColor)} />
-      </div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1">
-        {label}
-        {href && <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />}
-      </p>
-    </div>
-  );
-  return href ? <Link href={href}>{inner}</Link> : inner;
-}
-
-// ─── Donut chart (pure SVG) ───────────────────────────────────────
-function DonutChart({
-  segments, size = 140, strokeWidth = 22,
-}: {
-  segments: { value: number; color: string; label: string }[];
-  size?: number;
-  strokeWidth?: number;
-}) {
-  const r = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * r;
-  const total = segments.reduce((s, seg) => s + seg.value, 0);
-  if (total === 0) {
-    return (
-      <svg width={size} height={size}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e2e8f0" strokeWidth={strokeWidth} />
-        <text x="50%" y="50%" textAnchor="middle" dy="0.35em" className="text-xs" fill="#94a3b8" fontSize={13} fontWeight="600">0</text>
-      </svg>
-    );
-  }
-
-  let offset = 0;
-  const arcs = segments.filter((s) => s.value > 0).map((seg) => {
-    const pct = seg.value / total;
-    const dash = pct * circumference;
-    const gap = circumference - dash;
-    const arc = { ...seg, dash, gap, offset };
-    offset += dash;
-    return arc;
+/** Most recent applications first (the list hooks don't request a sort order). */
+function useRecentApplications(scope: 'my' | 'recruiter', size: number) {
+  return useQuery({
+    queryKey: ['applications', scope, 'recent', size],
+    queryFn: () =>
+      api
+        .get<Page<Application>>(`/applications/${scope}`, { params: { page: 0, size, sort: 'appliedAt,desc' } })
+        .then((r) => r.data),
   });
-
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      {arcs.map((arc) => (
-        <circle
-          key={arc.label}
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={arc.color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${arc.dash} ${arc.gap}`}
-          strokeDashoffset={-arc.offset}
-          strokeLinecap="round"
-        />
-      ))}
-      <text
-        x="50%" y="50%"
-        textAnchor="middle" dy="0.35em"
-        fill="#0f172a" fontSize={22} fontWeight="700"
-        style={{ transform: 'rotate(90deg)', transformOrigin: '50% 50%' }}
-      >
-        {total}
-      </text>
-    </svg>
-  );
 }
 
-// ─── Horizontal bar chart (pure CSS) ─────────────────────────────
-function BarChart({
-  data,
-}: {
-  data: { label: string; value: number; color: string }[];
-}) {
-  const max = Math.max(...data.map((d) => d.value), 1);
+function ListSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="space-y-3">
-      {data.map((item) => (
-        <div key={item.label}>
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-slate-600 font-medium truncate max-w-[140px]">{item.label}</span>
-            <span className="font-bold text-slate-800 ml-2 flex-shrink-0">{item.value}</span>
+    <div className="p-5 space-y-4">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center justify-between gap-4">
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }}
-            />
-          </div>
+          <Skeleton className="h-5 w-20 rounded-full" />
         </div>
       ))}
     </div>
   );
 }
 
-// ─── Vertical bar chart (pure SVG) ────────────────────────────────
-function VerticalBarChart({ data }: { data: { label: string; value: number; color: string }[] }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-  const chartH = 100;
-
+function ViewAll({ href, label = 'View all' }: { href: string; label?: string }) {
   return (
-    <div className="flex items-end gap-2 h-[130px] pt-2">
-      {data.map((item) => {
-        const pct = item.value / max;
-        const barH = Math.max(pct * chartH, item.value > 0 ? 6 : 0);
-        return (
-          <div key={item.label} className="flex-1 flex flex-col items-center gap-1">
-            <span className="text-[10px] font-bold text-slate-700">{item.value > 0 ? item.value : ''}</span>
-            <div
-              className="w-full rounded-t-lg transition-all duration-500"
-              style={{ height: barH, backgroundColor: item.color, minHeight: item.value > 0 ? 4 : 0 }}
-            />
-            <span className="text-[9px] text-slate-400 text-center leading-tight line-clamp-2">{item.label}</span>
-          </div>
-        );
-      })}
-    </div>
+    <Link href={href} className="text-sm font-medium text-primary-600 hover:text-primary-700 whitespace-nowrap">
+      {label}
+    </Link>
   );
 }
 
-// ─── Candidate dashboard ──────────────────────────────────────────
+function NextStep({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <Card className="p-5 border-primary-100 bg-gradient-to-br from-primary-50/80 to-white">
+      <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">Next step</p>
+      <h2 className="mt-1 text-base font-semibold text-slate-900">{title}</h2>
+      <p className="mt-1 text-sm text-slate-600">{description}</p>
+      <div className="mt-4 flex flex-wrap gap-2">{children}</div>
+    </Card>
+  );
+}
+
+// ─── Candidate ────────────────────────────────────────────────────
 function CandidateDashboard() {
-  const { data: applications, isLoading } = useMyApplications();
+  const apps = useRecentApplications('my', RECENT_WINDOW);
+  const saved = useSavedJobs(0);
+  const me = useMe();
 
-  const count = (s: ApplicationStatus) => applications?.content.filter((a) => a.status === s).length ?? 0;
-  const total = applications?.totalElements ?? 0;
-  const reviewing = count('REVIEWING');
-  const shortlisted = count('SHORTLISTED');
-  const offered = count('OFFERED');
-  const recent = applications?.content.slice(0, 5) ?? [];
-
-  const donutSegments: { value: number; color: string; label: string }[] = [
-    { label: 'Pending', value: count('PENDING'), color: STATUS_BAR_COLORS.PENDING },
-    { label: 'Reviewing', value: reviewing, color: STATUS_BAR_COLORS.REVIEWING },
-    { label: 'Shortlisted', value: shortlisted, color: STATUS_BAR_COLORS.SHORTLISTED },
-    { label: 'Interviewed', value: count('INTERVIEWED'), color: STATUS_BAR_COLORS.INTERVIEWED },
-    { label: 'Offered', value: offered, color: STATUS_BAR_COLORS.OFFERED },
-    { label: 'Rejected', value: count('REJECTED'), color: STATUS_BAR_COLORS.REJECTED },
-  ].filter((s) => s.value > 0);
-
-  const pipelineBars = [
-    { label: 'Pending', value: count('PENDING'), color: STATUS_BAR_COLORS.PENDING },
-    { label: 'Under Review', value: reviewing, color: STATUS_BAR_COLORS.REVIEWING },
-    { label: 'Shortlisted', value: shortlisted, color: STATUS_BAR_COLORS.SHORTLISTED },
-    { label: 'Interviewed', value: count('INTERVIEWED'), color: STATUS_BAR_COLORS.INTERVIEWED },
-    { label: 'Offered', value: offered, color: STATUS_BAR_COLORS.OFFERED },
-    { label: 'Rejected', value: count('REJECTED'), color: STATUS_BAR_COLORS.REJECTED },
-  ];
+  const list = apps.data?.content ?? [];
+  const total = apps.data?.totalElements;
+  const partial = (total ?? 0) > list.length;
+  const counts = APPLICATION_STATUS_ORDER.reduce(
+    (acc, s) => ({ ...acc, [s]: list.filter((a) => a.status === s).length }),
+    {} as StatusCounts
+  );
+  const inProgress = counts.PENDING + counts.REVIEWING + counts.SHORTLISTED + counts.INTERVIEWED;
+  const completeness = me.data ? getProfileCompleteness(me.data) : null;
+  const scopeHint = partial ? `In your ${RECENT_WINDOW} latest` : undefined;
 
   return (
     <div className="space-y-6">
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Applied" value={total} icon={FileText} iconColor="text-blue-600" bg="bg-blue-50" href="/applications" />
-        <StatCard label="Under Review" value={reviewing} icon={Eye} iconColor="text-indigo-600" bg="bg-indigo-50" />
-        <StatCard label="Shortlisted" value={shortlisted} icon={TrendingUp} iconColor="text-purple-600" bg="bg-purple-50" />
-        <StatCard label="Offers" value={offered} icon={CheckCircle2} iconColor="text-green-600" bg="bg-green-50" />
+        <StatCard label="Applications" value={apps.isError ? null : total} icon={Send} href="/applications" hint="All time" />
+        <StatCard label="In progress" value={apps.isError ? null : apps.data ? inProgress : undefined} icon={Clock} tone="bg-sky-50 text-sky-600" hint={scopeHint ?? 'Awaiting a decision'} />
+        <StatCard label="Offers" value={apps.isError ? null : apps.data ? counts.OFFERED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={scopeHint} />
+        <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent applications */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800">Recent Applications</h2>
-            <Link href="/applications" className="text-xs text-primary-600 hover:underline font-medium flex items-center gap-1">
-              View all <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-          {isLoading ? (
-            <div className="p-5 space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}
-            </div>
-          ) : recent.length === 0 ? (
-            <div className="py-12 text-center text-slate-400">
-              <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No applications yet.</p>
-              <Link href="/jobs" className="text-xs text-primary-600 hover:underline mt-1 inline-block">Browse jobs →</Link>
-            </div>
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardHeader title="Recent applications" description="Your latest submissions and where they stand" action={list.length > 0 ? <ViewAll href="/applications" /> : undefined} />
+          {apps.isLoading ? (
+            <ListSkeleton />
+          ) : apps.isError ? (
+            <ErrorState title="Couldn't load your applications" error={apps.error} onRetry={() => apps.refetch()} retrying={apps.isRefetching} />
+          ) : list.length === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title="No applications yet"
+              description="When you apply for a job, you can follow its progress here."
+              action={<Link href="/jobs" className={buttonClasses('primary', 'sm')}>Browse jobs</Link>}
+            />
           ) : (
-            <ul className="divide-y divide-slate-50">
-              {recent.map((app) => (
-                <li key={app.id} className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div>
-                    <Link href={`/jobs/${app.jobId}`} className="text-sm font-medium text-slate-800 hover:text-primary-600 transition-colors">
+            <ul className="divide-y divide-slate-100">
+              {list.slice(0, 5).map((app) => (
+                <li key={app.id} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70">
+                  <div className="min-w-0">
+                    <Link href={`/jobs/${app.jobId}`} className="block text-sm font-medium text-slate-900 hover:text-primary-600 truncate">
                       {app.jobTitle}
                     </Link>
-                    <p className="text-xs text-slate-400 mt-0.5">{app.companyName} · {new Date(app.appliedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                      {app.companyName} · Applied {timeAgo(app.appliedAt)}
+                    </p>
                   </div>
-                  <span className={cn('text-xs px-2.5 py-1 rounded-full border font-medium flex-shrink-0', STATUS_COLORS[app.status])}>
-                    {STATUS_LABELS[app.status]}
-                  </span>
+                  <Badge tone={APPLICATION_STATUS_STYLES[app.status]} className="flex-shrink-0">
+                    {APPLICATION_STATUS_LABELS[app.status]}
+                  </Badge>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </Card>
 
-        {/* Right column */}
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl p-5 text-white">
-            <h3 className="font-semibold mb-1">Find your next role</h3>
-            <p className="text-primary-100 text-sm mb-4">Thousands of openings updated daily.</p>
-            <Link href="/jobs" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-primary-700 rounded-lg text-sm font-semibold hover:bg-primary-50 transition-colors">
-              Browse Jobs <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Donut chart */}
-          {total > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-800 text-sm mb-4">Application Breakdown</h3>
-              <div className="flex items-center gap-4">
-                <DonutChart segments={donutSegments} />
-                <div className="flex-1 space-y-1.5 min-w-0">
-                  {donutSegments.map((seg) => (
-                    <div key={seg.label} className="flex items-center gap-1.5 text-xs">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
-                      <span className="text-slate-600 truncate">{seg.label}</span>
-                      <span className="ml-auto font-semibold text-slate-800 flex-shrink-0">{seg.value}</span>
-                    </div>
-                  ))}
+        <div className="space-y-6">
+          {completeness && completeness.percent < 100 ? (
+            <NextStep
+              title="Complete your profile"
+              description={`Recruiters see your profile when you apply. ${completeness.done} of ${completeness.total} sections are filled in.`}
+            >
+              <div className="w-full">
+                <div className="h-2 rounded-full bg-primary-100 overflow-hidden" role="progressbar" aria-valuenow={completeness.percent} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
+                  <div className="h-full bg-primary-600 rounded-full" style={{ width: `${completeness.percent}%` }} />
                 </div>
+                <ul className="mt-3 grid grid-cols-2 gap-1.5 text-xs">
+                  {completeness.items.map((item) => (
+                    <li key={item.key} className={item.done ? 'flex items-center gap-1.5 text-slate-500' : 'flex items-center gap-1.5 text-slate-700'}>
+                      {item.done ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" aria-hidden /> : <Circle className="w-3.5 h-3.5 text-slate-300" aria-hidden />}
+                      {item.label}
+                      <span className="sr-only">{item.done ? '(done)' : '(missing)'}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+              <Link href="/profile" className={buttonClasses('primary', 'sm')}>Complete profile</Link>
+            </NextStep>
+          ) : (
+            <NextStep
+              title={total ? 'Keep your search going' : 'Find your first role'}
+              description="Search open positions by title, company, location or salary."
+            >
+              <Link href="/jobs" className={buttonClasses('primary', 'sm')}>
+                <Search className="w-4 h-4" aria-hidden /> Browse jobs
+              </Link>
+              {!!saved.data?.totalElements && (
+                <Link href="/jobs/saved" className={buttonClasses('secondary', 'sm')}>Saved jobs</Link>
+              )}
+            </NextStep>
+          )}
+
+          {list.length > 0 && (
+            <Card>
+              <CardHeader
+                title="Application status"
+                description={partial ? `Your ${list.length} most recent applications` : 'All your applications'}
+              />
+              <div className="p-5">
+                <PipelineBars counts={counts} hideEmpty />
+              </div>
+            </Card>
           )}
         </div>
       </div>
-
-      {/* Pipeline bar chart */}
-      {total > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <h3 className="font-semibold text-slate-800 mb-5">Application Pipeline</h3>
-          <BarChart data={pipelineBars} />
-        </div>
-      )}
     </div>
   );
 }
 
-// ─── Recruiter dashboard ──────────────────────────────────────────
+// ─── Recruiter ────────────────────────────────────────────────────
 function RecruiterDashboard() {
-  const { data: jobs, isLoading: jobsLoading } = useMyJobs();
-  const { data: allApplications, isLoading: appsLoading } = useRecruiterApplications();
-  const { data: unread } = useUnreadCount();
+  const stats = useRecruiterStats();
+  const jobs = useMyJobs(0, 5);
+  const recent = useRecentApplications('recruiter', 6);
 
-  const activeJobs = jobs?.content.filter((j) => j.status === 'OPEN').length ?? 0;
-  const totalApplicants = allApplications?.totalElements ?? 0;
-  const pending = allApplications?.content.filter((a) => a.status === 'PENDING').length ?? 0;
-  const recentApplications = allApplications?.content.slice(0, 5) ?? [];
-  const recentJobs = jobs?.content.slice(0, 4) ?? [];
-
-  // Applicants per job for bar chart (top 6 jobs by applicant count)
-  const jobApplicantCounts = recentJobs.map((job) => ({
-    label: job.title.length > 18 ? job.title.slice(0, 18) + '…' : job.title,
-    value: allApplications?.content.filter((a) => a.jobId === job.id).length ?? 0,
-    color: '#3b82f6',
-  }));
-
-  // Status breakdown for the recruiter
-  const statusBreakdown = (['PENDING', 'REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED', 'REJECTED'] as ApplicationStatus[]).map(
-    (s) => ({
-      label: STATUS_LABELS[s],
-      value: allApplications?.content.filter((a) => a.status === s).length ?? 0,
-      color: STATUS_BAR_COLORS[s],
-    })
-  ).filter((d) => d.value > 0);
+  const jobList = jobs.data?.content ?? [];
+  const recentList = recent.data?.content ?? [];
+  const noJobs = jobs.data?.totalElements === 0;
+  const pending = stats.data?.pending ?? 0;
+  const firstPending = recentList.find((a) => a.status === 'PENDING');
 
   return (
     <div className="space-y-6">
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Jobs" value={activeJobs} icon={Briefcase} iconColor="text-primary-600" bg="bg-primary-50" href="/jobs/my" />
-        <StatCard label="Total Applicants" value={totalApplicants} icon={Users} iconColor="text-indigo-600" bg="bg-indigo-50" />
-        <StatCard label="Pending Review" value={pending} icon={Clock} iconColor="text-yellow-600" bg="bg-yellow-50" />
-        <StatCard label="Notifications" value={unread ?? 0} icon={Bell} iconColor="text-rose-600" bg="bg-rose-50" href="/notifications" />
+        <StatCard label="Job posts" value={jobs.isError ? null : jobs.data?.totalElements} icon={Briefcase} href="/jobs/my" hint="All statuses" />
+        <StatCard label="Applicants" value={stats.isError ? null : stats.data?.total} icon={Users} tone="bg-sky-50 text-sky-600" hint="Across all your jobs" />
+        <StatCard label="Awaiting review" value={stats.isError ? null : stats.data?.pending} icon={Inbox} tone="bg-amber-50 text-amber-600" hint="New, not yet reviewed" />
+        <StatCard label="Offers extended" value={stats.isError ? null : stats.data?.offered} icon={Trophy} tone="bg-emerald-50 text-emerald-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent applicants */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800">Recent Applicants</h2>
-          </div>
-          {appsLoading ? (
-            <div className="p-5 space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}
-            </div>
-          ) : recentApplications.length === 0 ? (
-            <div className="py-12 text-center text-slate-400">
-              <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No applicants yet. Post a job to get started.</p>
-            </div>
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardHeader title="Recent applicants" description="Latest candidates across your job posts" />
+          {recent.isLoading ? (
+            <ListSkeleton />
+          ) : recent.isError ? (
+            <ErrorState title="Couldn't load applicants" error={recent.error} onRetry={() => recent.refetch()} retrying={recent.isRefetching} />
+          ) : recentList.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="No applicants yet"
+              description={noJobs ? 'Post a job to start receiving applications.' : 'New applications to your open jobs will appear here.'}
+              action={noJobs ? <Link href="/jobs/create" className={buttonClasses('primary', 'sm')}>Post a job</Link> : undefined}
+            />
           ) : (
-            <ul className="divide-y divide-slate-50">
-              {recentApplications.map((app) => (
-                <li key={app.id} className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{app.candidateName}</p>
-                    <Link href={`/jobs/${app.jobId}`} className="text-xs text-slate-400 hover:text-primary-600 mt-0.5 block">
-                      {app.jobTitle} · {new Date(app.appliedAt).toLocaleDateString()}
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={cn('text-xs px-2.5 py-1 rounded-full border font-medium', STATUS_COLORS[app.status])}>
-                      {STATUS_LABELS[app.status]}
+            <ul className="divide-y divide-slate-100">
+              {recentList.map((app) => (
+                <li key={app.id}>
+                  <Link
+                    href={`/jobs/${app.jobId}/applicants`}
+                    className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 focus:outline-none focus-visible:bg-slate-50"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-slate-900 truncate">{app.candidateName}</span>
+                      <span className="block text-xs text-slate-500 mt-0.5 truncate">
+                        {app.jobTitle} · {timeAgo(app.appliedAt)}
+                      </span>
                     </span>
-                    <Link href={`/jobs/${app.jobId}/applicants`} className="p-1.5 rounded-lg hover:bg-primary-50 text-slate-400 hover:text-primary-600 transition-colors">
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  </div>
+                    <Badge tone={APPLICATION_STATUS_STYLES[app.status]} className="flex-shrink-0">
+                      {APPLICATION_STATUS_LABELS[app.status]}
+                    </Badge>
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </Card>
 
-        {/* Right column */}
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl p-5 text-white">
-            <h3 className="font-semibold mb-1">Post a new job</h3>
-            <p className="text-primary-100 text-sm mb-4">Reach qualified candidates quickly.</p>
-            <Link href="/jobs/create" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-primary-700 rounded-lg text-sm font-semibold hover:bg-primary-50 transition-colors">
-              <Plus className="w-3.5 h-3.5" /> Post Job
-            </Link>
-          </div>
+        <div className="space-y-6">
+          {noJobs ? (
+            <NextStep title="Post your first job" description="Describe the role and start receiving applications from candidates.">
+              <Link href="/jobs/create" className={buttonClasses('primary', 'sm')}><Plus className="w-4 h-4" aria-hidden /> Post a job</Link>
+            </NextStep>
+          ) : pending > 0 ? (
+            <NextStep
+              title={`Review ${pluralize(pending, 'new applicant')}`}
+              description="Move candidates forward or let them know where they stand."
+            >
+              <Link href={firstPending ? `/jobs/${firstPending.jobId}/applicants` : '/jobs/my'} className={buttonClasses('primary', 'sm')}>
+                Review applicants <ArrowRight className="w-4 h-4" aria-hidden />
+              </Link>
+              <Link href="/jobs/create" className={buttonClasses('secondary', 'sm')}>Post a job</Link>
+            </NextStep>
+          ) : (
+            <NextStep title="You're all caught up" description="Every application has been reviewed. Open a new role to keep your pipeline full.">
+              <Link href="/jobs/create" className={buttonClasses('primary', 'sm')}><Plus className="w-4 h-4" aria-hidden /> Post a job</Link>
+            </NextStep>
+          )}
 
-          {/* My jobs mini list */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800 text-sm">My Jobs</h3>
-              <Link href="/jobs/my" className="text-xs text-primary-600 hover:underline">View all</Link>
-            </div>
-            {jobsLoading ? (
-              <div className="p-4 space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-10 bg-slate-100 rounded animate-pulse" />)}
-              </div>
-            ) : recentJobs.length === 0 ? (
-              <p className="text-xs text-slate-400 p-4 text-center">No jobs posted yet.</p>
+          <Card className="overflow-hidden">
+            <CardHeader title="Your latest jobs" action={jobList.length > 0 ? <ViewAll href="/jobs/my" /> : undefined} />
+            {jobs.isLoading ? (
+              <ListSkeleton rows={3} />
+            ) : jobs.isError ? (
+              <ErrorState title="Couldn't load your jobs" error={jobs.error} onRetry={() => jobs.refetch()} retrying={jobs.isRefetching} />
+            ) : jobList.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-slate-500 text-center">You haven&apos;t posted any jobs yet.</p>
             ) : (
-              <ul className="divide-y divide-slate-50">
-                {recentJobs.map((job) => (
+              <ul className="divide-y divide-slate-100">
+                {jobList.map((job) => (
                   <li key={job.id}>
-                    <Link href={`/jobs/${job.id}/applicants`} className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-700 truncate">{job.title}</p>
-                        <p className="text-xs text-slate-400">{job.status}</p>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                    <Link href={`/jobs/${job.id}/applicants`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50/70 focus:outline-none focus-visible:bg-slate-50">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-slate-900 truncate">{job.title}</span>
+                        <span className="block text-xs text-slate-500 mt-0.5">
+                          {pluralize(job.applicationCount ?? 0, 'applicant')}
+                        </span>
+                      </span>
+                      <Badge tone={JOB_STATUS_STYLES[job.status]} className="flex-shrink-0">{JOB_STATUS_LABELS[job.status]}</Badge>
                     </Link>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
-      {/* Charts row */}
-      {totalApplicants > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Applicants per job — vertical bar chart */}
-          {jobApplicantCounts.some((d) => d.value > 0) && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-800 mb-2">Applicants per Job</h3>
-              <p className="text-xs text-slate-400 mb-4">Your most recent job listings</p>
-              <VerticalBarChart data={jobApplicantCounts} />
-            </div>
-          )}
-
-          {/* Application status breakdown — horizontal bars */}
-          {statusBreakdown.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-800 mb-2">Applicant Status Breakdown</h3>
-              <p className="text-xs text-slate-400 mb-4">Across all your job postings</p>
-              <BarChart data={statusBreakdown} />
-            </div>
+      <Card>
+        <CardHeader title="Hiring pipeline" description="Applications by stage across all your job posts" />
+        <div className="p-5">
+          {stats.isLoading ? (
+            <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6" />)}</div>
+          ) : stats.isError ? (
+            <ErrorState title="Couldn't load pipeline" error={stats.error} onRetry={() => stats.refetch()} retrying={stats.isRefetching} />
+          ) : !stats.data || stats.data.total === 0 ? (
+            <p className="text-sm text-slate-500">No applications yet. Stages will fill in as candidates apply.</p>
+          ) : (
+            <PipelineBars counts={statsToCounts(stats.data)} />
           )}
         </div>
-      )}
+      </Card>
     </div>
   );
 }
 
-// ─── Admin dashboard ──────────────────────────────────────────────
+// ─── Admin ────────────────────────────────────────────────────────
 function AdminDashboard() {
-  const { data: usersData } = useAllUsers(0, 1);
-  const { data: unread } = useUnreadCount();
+  const users = useAllUsers(0, 1);
+  const openJobs = useJobs({ size: 1 });
+  const stats = useRecruiterStats();
+
+  const links = [
+    { href: '/admin/users', label: 'Manage users', description: 'Change roles, suspend or restore accounts', icon: UserCheck },
+    { href: '/admin/analytics', label: 'Analytics', description: 'Platform-wide hiring funnel', icon: BarChart3 },
+    { href: '/jobs', label: 'Browse jobs', description: 'Review live job listings', icon: Search },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Users" value={usersData?.totalElements ?? 0} icon={Users} iconColor="text-blue-600" bg="bg-blue-50" href="/admin/users" />
-        <StatCard label="Notifications" value={unread ?? 0} icon={Bell} iconColor="text-rose-600" bg="bg-rose-50" href="/notifications" />
-        <StatCard label="Admin Panel" value="Active" icon={ShieldCheck} iconColor="text-green-600" bg="bg-green-50" href="/admin" />
-        <StatCard label="Analytics" value="View" icon={FileText} iconColor="text-indigo-600" bg="bg-indigo-50" href="/admin/analytics" />
+        <StatCard label="Users" value={users.isError ? null : users.data?.totalElements} icon={Users} href="/admin/users" hint="Registered accounts" />
+        <StatCard label="Open jobs" value={openJobs.isError ? null : openJobs.data?.totalElements} icon={Briefcase} tone="bg-sky-50 text-sky-600" href="/jobs" hint="Accepting applications" />
+        <StatCard label="Applications" value={stats.isError ? null : stats.data?.total} icon={FileText} tone="bg-violet-50 text-violet-600" href="/admin/analytics" hint="Platform-wide" />
+        <StatCard label="Awaiting review" value={stats.isError ? null : stats.data?.pending} icon={Inbox} tone="bg-amber-50 text-amber-600" hint="Not yet reviewed by recruiters" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <h2 className="font-semibold text-slate-800 mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/admin" className="px-4 py-2 bg-primary-50 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-100 transition-colors">
-            Manage Users
-          </Link>
-          <Link href="/jobs" className="px-4 py-2 bg-slate-50 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-            All Jobs
-          </Link>
-          <Link href="/jobs/create" className="px-4 py-2 bg-slate-50 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-            Post Job
-          </Link>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader title="Hiring pipeline" description="All applications on the platform, by stage" action={<ViewAll href="/admin/analytics" label="Details" />} />
+          <div className="p-5">
+            {stats.isLoading ? (
+              <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6" />)}</div>
+            ) : stats.isError ? (
+              <ErrorState title="Couldn't load pipeline" error={stats.error} onRetry={() => stats.refetch()} retrying={stats.isRefetching} />
+            ) : !stats.data || stats.data.total === 0 ? (
+              <p className="text-sm text-slate-500">No applications have been submitted yet.</p>
+            ) : (
+              <PipelineBars counts={statsToCounts(stats.data)} />
+            )}
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardHeader title="Administration" />
+          <ul className="divide-y divide-slate-100">
+            {links.map(({ href, label, description, icon: Icon }) => (
+              <li key={href}>
+                <Link href={href} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/70 focus:outline-none focus-visible:bg-slate-50 group">
+                  <span className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-slate-900">{label}</span>
+                    <span className="block text-xs text-slate-500 truncate">{description}</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary-600" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
     </div>
   );
 }
 
-// ─── Page entry point ─────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────
+const SUBTITLES = {
+  CANDIDATE: 'Track your applications and find your next role.',
+  RECRUITER: 'Review new applicants and manage your job posts.',
+  ADMIN: 'Platform activity at a glance.',
+} as const;
+
 export default function DashboardPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  if (!user) return null;
 
-  const greeting = (() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  })();
-
-  const subtitle: Record<string, string> = {
-    CANDIDATE: 'Track your job applications and explore new opportunities.',
-    RECRUITER: 'Manage your job posts and review incoming applications.',
-    ADMIN: 'Monitor platform activity and manage users.',
-  };
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="pb-20 lg:pb-0">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">
-          {greeting}, {user?.firstName}!
-        </h1>
-        <p className="text-slate-500 mt-1 text-sm">
-          {subtitle[user?.role ?? 'CANDIDATE']}
-        </p>
+    <div>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {greeting}, {user.firstName}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">{SUBTITLES[user.role]}</p>
+        </div>
+        {user.role === 'RECRUITER' && (
+          <Link href="/jobs/create" className={buttonClasses('primary', 'md', 'self-start sm:self-auto')}>
+            <Plus className="w-4 h-4" aria-hidden /> Post a job
+          </Link>
+        )}
+        {user.role === 'CANDIDATE' && (
+          <Link href="/jobs" className={buttonClasses('primary', 'md', 'self-start sm:self-auto')}>
+            <Search className="w-4 h-4" aria-hidden /> Browse jobs
+          </Link>
+        )}
+        {user.role === 'ADMIN' && (
+          <Link href="/admin/users" className={buttonClasses('secondary', 'md', 'self-start sm:self-auto')}>
+            <ShieldCheck className="w-4 h-4" aria-hidden /> Manage users
+          </Link>
+        )}
       </div>
 
-      {user?.role === 'CANDIDATE' && <CandidateDashboard />}
-      {user?.role === 'RECRUITER' && <RecruiterDashboard />}
-      {user?.role === 'ADMIN' && <AdminDashboard />}
+      {user.role === 'CANDIDATE' && <CandidateDashboard />}
+      {user.role === 'RECRUITER' && <RecruiterDashboard />}
+      {user.role === 'ADMIN' && <AdminDashboard />}
     </div>
   );
 }

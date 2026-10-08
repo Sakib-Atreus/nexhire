@@ -1,5 +1,7 @@
 package com.nexhire.api.modules.jobs.dto;
 
+import java.util.List;
+
 import com.nexhire.api.modules.jobs.ExperienceLevel;
 import com.nexhire.api.modules.jobs.JobStatus;
 import com.nexhire.api.modules.jobs.JobType;
@@ -13,6 +15,7 @@ public record UpdateJobRequest(
     String description,
     String requirements,
     String responsibilities,
+    @Size(max = 255) String companyName,
     String companyLogoUrl,
     String location,
     JobType jobType,
@@ -22,5 +25,6 @@ public record UpdateJobRequest(
     String salaryCurrency,
     JobStatus status,
     String tags,
-    LocalDate deadline
+    LocalDate deadline,
+    List<String> screeningQuestions
 ) {}

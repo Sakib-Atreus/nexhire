@@ -1,5 +1,6 @@
 package com.nexhire.api.modules.users;
 
+import com.nexhire.api.exception.BadRequestException;
 import com.nexhire.api.modules.users.dto.BanUserRequest;
 import com.nexhire.api.modules.users.dto.UpdateRoleRequest;
 import com.nexhire.api.modules.users.dto.UpdateUserRequest;
@@ -57,7 +58,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user (ADMIN only)")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal User currentUser) {
+        if (currentUser.getId().equals(id)) throw new BadRequestException("You cannot delete your own account");
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -65,14 +67,24 @@ public class UserController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Ban or unban a user (ADMIN only)")
-    public ResponseEntity<UserDTO> updateStatus(@PathVariable UUID id, @RequestBody BanUserRequest request) {
+    public ResponseEntity<UserDTO> updateStatus(
+        @PathVariable UUID id,
+        @RequestBody BanUserRequest request,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        if (currentUser.getId().equals(id)) throw new BadRequestException("You cannot suspend your own account");
         return ResponseEntity.ok(userService.banUser(id, request.enabled()));
     }
 
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user role (ADMIN only)")
-    public ResponseEntity<UserDTO> updateRole(@PathVariable UUID id, @Valid @RequestBody UpdateRoleRequest request) {
+    public ResponseEntity<UserDTO> updateRole(
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateRoleRequest request,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        if (currentUser.getId().equals(id)) throw new BadRequestException("You cannot change your own role");
         return ResponseEntity.ok(userService.promoteUser(id, request.role()));
     }
 }

@@ -9,15 +9,32 @@ import type { Notification, NotificationPreferences, Page } from '@/types';
 export function useNotifications() {
   return useQuery({
     queryKey: ['notifications'],
-    queryFn: () => api.get<Page<Notification>>('/notifications').then((r) => r.data),
+    queryFn: () =>
+      api.get<Page<Notification>>('/notifications', { params: { sort: 'createdAt,desc' } }).then((r) => r.data),
   });
 }
 
-export function useUnreadCount() {
+/** Unread badge count. Pass `enabled: false` for signed-out visitors so no 401 is triggered. */
+export function useUnreadCount(enabled = true) {
   return useQuery({
     queryKey: ['notifications', 'unread'],
     queryFn: () => api.get<{ count: number }>('/notifications/unread-count').then((r) => r.data.count),
     refetchInterval: 30000,
+    enabled,
+  });
+}
+
+/** Mark a single notification as read (optimistically updates the list). */
+export function useMarkRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/notifications/${id}/read`),
+    onMutate: (id) => {
+      qc.setQueryData<Page<Notification>>(['notifications'], (old) =>
+        old ? { ...old, content: old.content.map((n) => (n.id === id ? { ...n, read: true } : n)) } : old
+      );
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   });
 }
 
@@ -43,8 +60,7 @@ export function useNotificationStream() {
       es = new EventSource(url);
       es.addEventListener('notification', () => {
         qc.invalidateQueries({ queryKey: ['notifications'] });
-        qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
-      });
+              });
       es.onerror = () => {
         es.close();
         reconnectTimer = setTimeout(connect, 5000);

@@ -1,137 +1,278 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Search, MapPin, Building2, SlidersHorizontal, X, SearchX } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
-import { JobCard } from '@/components/jobs/JobCard';
-import { Search, Building2 } from 'lucide-react';
+import { JobCard, JobCardSkeleton } from '@/components/jobs/JobCard';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input, Select } from '@/components/ui/Field';
+import { EmptyState, ErrorState, Spinner } from '@/components/ui/States';
+import { Pagination } from '@/components/ui/Pagination';
+import { EXPERIENCE_LABELS, EXPERIENCE_OPTIONS, JOB_TYPE_LABELS, JOB_TYPE_OPTIONS } from '@/lib/constants';
+import { pluralize } from '@/lib/format';
+import { cn } from '@/lib/cn';
+import type { ExperienceLevel, JobType } from '@/types';
+
+const DEBOUNCE_MS = 350;
+
+function useDebouncedValue<T>(value: T, delay = DEBOUNCE_MS): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+function isJobType(v: string | null): v is JobType {
+  return !!v && v in JOB_TYPE_LABELS;
+}
+function isLevel(v: string | null): v is ExperienceLevel {
+  return !!v && v in EXPERIENCE_LABELS;
+}
 
 export default function JobsPage() {
-  const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState('');
-  const [company, setCompany] = useState('');
-  const [jobType, setJobType] = useState('');
-  const [salaryMin, setSalaryMin] = useState<number | undefined>(undefined);
-  const [salaryMax, setSalaryMax] = useState<number | undefined>(undefined);
-  const [page, setPage] = useState(0);
+  return (
+    <Suspense fallback={<JobsPageFallback />}>
+      <JobsBrowser />
+    </Suspense>
+  );
+}
 
-  const { data, isLoading, isError } = useJobs({
-    keyword: keyword || undefined,
-    location: location || undefined,
-    companyName: company || undefined,
-    jobType: jobType || undefined,
-    salaryMin,
-    salaryMax,
-    page,
+function JobsPageFallback() {
+  return (
+    <div>
+      <PageHeader title="Find jobs" description="Search open roles and filter by location, job type and experience level." />
+      <div className="grid gap-3">
+        {Array.from({ length: 4 }).map((_, i) => <JobCardSkeleton key={i} />)}
+      </div>
+    </div>
+  );
+}
+
+function JobsBrowser() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initial state comes from the URL so links like /jobs?keyword=react work and are shareable.
+  const [keyword, setKeyword] = useState(() => searchParams.get('keyword') ?? '');
+  const [location, setLocation] = useState(() => searchParams.get('location') ?? '');
+  const [company, setCompany] = useState(() => searchParams.get('company') ?? '');
+  const [jobType, setJobType] = useState<JobType | ''>(() => {
+    const v = searchParams.get('type');
+    return isJobType(v) ? v : '';
   });
+  const [level, setLevel] = useState<ExperienceLevel | ''>(() => {
+    const v = searchParams.get('level');
+    return isLevel(v) ? v : '';
+  });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const debouncedKeyword = useDebouncedValue(keyword.trim());
+  const debouncedLocation = useDebouncedValue(location.trim());
+  const debouncedCompany = useDebouncedValue(company.trim());
+
+  const filterKey = [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level].join('|');
+
+  // The page belongs to a specific filter combination; changing any filter returns to page 1.
+  const [pageState, setPageState] = useState(() => ({
+    key: filterKey,
+    page: Math.max(0, (Number(searchParams.get('page')) || 1) - 1),
+  }));
+  const page = pageState.key === filterKey ? pageState.page : 0;
+
+  // Keep the URL in sync (replace, so typing doesn't flood browser history).
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedKeyword) params.set('keyword', debouncedKeyword);
+    if (debouncedLocation) params.set('location', debouncedLocation);
+    if (debouncedCompany) params.set('company', debouncedCompany);
+    if (jobType) params.set('type', jobType);
+    if (level) params.set('level', level);
+    if (page > 0) params.set('page', String(page + 1));
+    const qs = params.toString();
+    const next = qs ? `${pathname}?${qs}` : pathname;
+    if (next !== `${pathname}${window.location.search}`) {
+      router.replace(next, { scroll: false });
+    }
+  }, [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, page, pathname, router]);
+
+  const query = useMemo(
+    () => ({
+      keyword: debouncedKeyword || undefined,
+      location: debouncedLocation || undefined,
+      companyName: debouncedCompany || undefined,
+      jobType: jobType || undefined,
+      experienceLevel: level || undefined,
+      page,
+    }),
+    [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, page]
+  );
+  const { data, isLoading, isError, error, refetch, isPlaceholderData, isRefetching } = useJobs(query);
+
+  const secondaryFilterCount = [company.trim(), jobType, level].filter(Boolean).length;
+  const hasFilters = !!(keyword.trim() || location.trim() || secondaryFilterCount);
+
+  const clearFilters = () => {
+    setKeyword('');
+    setLocation('');
+    setCompany('');
+    setJobType('');
+    setLevel('');
+  };
+
+  const goToPage = (p: number) => {
+    setPageState({ key: filterKey, page: p });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const jobs = data?.content ?? [];
+  const total = data?.totalElements ?? 0;
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Browse Jobs</h1>
+      <PageHeader title="Find jobs" description="Search open roles and filter by location, job type and experience level." />
 
-      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={keyword}
-              onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
-              placeholder="Job title, keywords..."
-              className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div className="relative sm:w-48">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={company}
-              onChange={(e) => { setCompany(e.target.value); setPage(0); }}
-              placeholder="Company name"
-              className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <input
-            value={location}
-            onChange={(e) => { setLocation(e.target.value); setPage(0); }}
-            placeholder="Location"
-            className="sm:w-40 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <select
-            value={jobType}
-            onChange={(e) => { setJobType(e.target.value); setPage(0); }}
-            className="sm:w-44 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-          >
-            <option value="">All Types</option>
-            <option value="FULL_TIME">Full-time</option>
-            <option value="PART_TIME">Part-time</option>
-            <option value="CONTRACT">Contract</option>
-            <option value="INTERNSHIP">Internship</option>
-            <option value="REMOTE">Remote</option>
-          </select>
-        </div>
-        <div className="flex gap-3 mt-3">
-          <input
-            type="number"
-            min={0}
-            value={salaryMin ?? ''}
-            onChange={(e) => { setSalaryMin(e.target.value ? Number(e.target.value) : undefined); setPage(0); }}
-            placeholder="Min salary ($)"
-            className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <input
-            type="number"
-            min={0}
-            value={salaryMax ?? ''}
-            onChange={(e) => { setSalaryMax(e.target.value ? Number(e.target.value) : undefined); setPage(0); }}
-            placeholder="Max salary ($)"
-            className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
+      {/* Filter bar */}
+      <div className="lg:sticky lg:top-16 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-4 lg:pt-3 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80">
+        <Card className="p-3">
+          <form role="search" onSubmit={(e) => e.preventDefault()} className="space-y-3">
+            <div className="flex gap-2 sm:gap-3">
+              <div className="relative flex-1 min-w-0">
+                <label htmlFor="job-keyword" className="sr-only">Keyword</label>
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <Input
+                  id="job-keyword"
+                  type="search"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="Job title, skill or keyword"
+                  className="pl-9"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="relative hidden sm:block sm:w-56">
+                <label htmlFor="job-location" className="sr-only">Location</label>
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <Input
+                  id="job-location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="City, country or remote"
+                  className="pl-9"
+                />
+              </div>
+              <Button
+                variant="secondary"
+                className="sm:hidden px-3"
+                onClick={() => setFiltersOpen((o) => !o)}
+                aria-expanded={filtersOpen}
+                aria-controls="job-filters"
+              >
+                <SlidersHorizontal className="w-4 h-4" aria-hidden />
+                <span className="sr-only">Filters</span>
+                {(secondaryFilterCount + (location.trim() ? 1 : 0)) > 0 && (
+                  <span className="min-w-5 h-5 px-1 rounded-full bg-primary-600 text-[11px] font-semibold text-white flex items-center justify-center">
+                    {secondaryFilterCount + (location.trim() ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            <div
+              id="job-filters"
+              className={cn('grid-cols-1 gap-3 sm:grid sm:grid-cols-3', filtersOpen ? 'grid' : 'hidden')}
+            >
+              <div className="relative sm:hidden">
+                <label htmlFor="job-location-mobile" className="sr-only">Location</label>
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <Input
+                  id="job-location-mobile"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="City, country or remote"
+                  className="pl-9"
+                />
+              </div>
+              <div className="relative">
+                <label htmlFor="job-company" className="sr-only">Company</label>
+                <Building2 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <Input
+                  id="job-company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Company"
+                  className="pl-9"
+                />
+              </div>
+              <div>
+                <label htmlFor="job-type" className="sr-only">Job type</label>
+                <Select id="job-type" value={jobType} onChange={(e) => setJobType(e.target.value as JobType | '')}>
+                  <option value="">All job types</option>
+                  {JOB_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </Select>
+              </div>
+              <div>
+                <label htmlFor="job-level" className="sr-only">Experience level</label>
+                <Select id="job-level" value={level} onChange={(e) => setLevel(e.target.value as ExperienceLevel | '')}>
+                  <option value="">All experience levels</option>
+                  {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </Select>
+              </div>
+            </div>
+          </form>
+        </Card>
       </div>
 
+      {/* Results summary */}
+      {!isLoading && !isError && (
+        <div className="flex items-center justify-between gap-3 mb-3 min-h-8">
+          <p className="text-sm text-slate-600" aria-live="polite">
+            <span className="font-semibold text-slate-900">{pluralize(total, 'job')}</span>
+            {hasFilters ? ' match your search' : ' open now'}
+          </p>
+          <div className="flex items-center gap-2">
+            {isPlaceholderData && <Spinner className="w-4 h-4" />}
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="w-3.5 h-3.5" aria-hidden /> Clear filters
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
-        <div className="grid gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 p-6 animate-pulse h-32" />
-          ))}
+        <div className="grid gap-3" aria-busy="true" aria-label="Loading jobs">
+          {Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
         </div>
       ) : isError ? (
-        <div className="text-center py-16 text-slate-500">
-          <p className="text-lg font-medium text-red-500">Failed to load jobs</p>
-          <p className="text-sm mt-1">Make sure the API server is running and try refreshing</p>
-        </div>
-      ) : !data || data.content.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <Search className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">No jobs found</p>
-          <p className="text-sm mt-1">Try adjusting your search filters</p>
-        </div>
+        <Card>
+          <ErrorState title="We couldn't load jobs" error={error} onRetry={() => refetch()} retrying={isRefetching} />
+        </Card>
+      ) : jobs.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={SearchX}
+            title={hasFilters ? 'No jobs match your search' : 'No open jobs right now'}
+            description={
+              hasFilters
+                ? 'Try a different keyword, widen the location, or remove a filter.'
+                : 'New roles are posted regularly. Check back soon.'
+            }
+            action={hasFilters ? <Button variant="secondary" onClick={clearFilters}>Clear filters</Button> : undefined}
+          />
+        </Card>
       ) : (
         <>
-          <p className="text-sm text-slate-500 mb-4">{data.totalElements} jobs found</p>
-          <div className="grid gap-4">
-            {data.content.map((job) => <JobCard key={job.id} job={job} />)}
+          <div className={cn('grid gap-3 transition-opacity', isPlaceholderData && 'opacity-60')} aria-busy={isPlaceholderData}>
+            {jobs.map((job) => <JobCard key={job.id} job={job} />)}
           </div>
-
-          {data && data.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              <button
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="px-4 py-2 border border-slate-300 rounded-lg text-sm disabled:opacity-50 hover:bg-slate-50"
-              >
-                Previous
-              </button>
-              <span className="px-4 py-2 text-sm text-slate-600">
-                Page {page + 1} of {data.totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={data.last}
-                className="px-4 py-2 border border-slate-300 rounded-lg text-sm disabled:opacity-50 hover:bg-slate-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <Pagination page={page} totalPages={data?.totalPages ?? 0} onChange={goToPage} />
         </>
       )}
     </div>

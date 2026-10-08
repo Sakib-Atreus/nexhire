@@ -1,227 +1,230 @@
 'use client';
 
-import { useState } from 'react';
-import { useMyApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
-import { FileText, ExternalLink, Search, AlertCircle } from 'lucide-react';
+import { useCallback, useId, useState } from 'react';
 import Link from 'next/link';
+import { FileText, ExternalLink, ChevronDown, PartyPopper, Send } from 'lucide-react';
+import type { Application } from '@/types';
+import { useMyApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
+import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_STYLES } from '@/lib/constants';
+import { formatDate, getErrorMessage, pluralize, timeAgo } from '@/lib/format';
+import { toast } from '@/store/toastStore';
 import { cn } from '@/lib/cn';
-import type { ApplicationStatus } from '@/types';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button, buttonClasses } from '@/components/ui/Button';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
+import { Pagination } from '@/components/ui/Pagination';
+import { ApplicationProgress } from '@/components/applications/ApplicationProgress';
 
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  PENDING: 'Pending',
-  REVIEWING: 'Under Review',
-  SHORTLISTED: 'Shortlisted',
-  INTERVIEWED: 'Interviewed',
-  OFFERED: 'Offered',
-  REJECTED: 'Rejected',
-  WITHDRAWN: 'Withdrawn',
-};
+const CLOSED_STATUSES = new Set(['REJECTED', 'WITHDRAWN']);
 
-const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  PENDING: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  REVIEWING: 'bg-blue-50 text-blue-700 border-blue-200',
-  SHORTLISTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  INTERVIEWED: 'bg-purple-50 text-purple-700 border-purple-200',
-  OFFERED: 'bg-green-50 text-green-700 border-green-200',
-  REJECTED: 'bg-red-50 text-red-700 border-red-200',
-  WITHDRAWN: 'bg-slate-50 text-slate-400 border-slate-200',
-};
+function ApplicationCard({ app, onWithdraw }: { app: Application; onWithdraw: (app: Application) => void }) {
+  const [showLetter, setShowLetter] = useState(false);
+  const letterId = useId();
+  const closed = CLOSED_STATUSES.has(app.status);
+  const updated = app.updatedAt && app.updatedAt !== app.appliedAt;
 
-const STATUS_DOTS: Record<ApplicationStatus, string> = {
-  PENDING: 'bg-yellow-400',
-  REVIEWING: 'bg-blue-500',
-  SHORTLISTED: 'bg-indigo-500',
-  INTERVIEWED: 'bg-purple-500',
-  OFFERED: 'bg-green-500',
-  REJECTED: 'bg-red-500',
-  WITHDRAWN: 'bg-slate-300',
-};
+  return (
+    <Card className={cn('p-5', closed && 'bg-slate-50/60')}>
+      <div className="flex items-start gap-4">
+        <CompanyLogo name={app.companyName} size="sm" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold leading-snug">
+                <Link href={`/jobs/${app.jobId}`} className="text-slate-900 hover:text-primary-700 break-words">
+                  {app.jobTitle}
+                </Link>
+              </h2>
+              <p className="text-sm text-slate-600 truncate">{app.companyName}</p>
+            </div>
+            <Badge tone={APPLICATION_STATUS_STYLES[app.status]} className="self-start">
+              {APPLICATION_STATUS_LABELS[app.status]}
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            Applied {formatDate(app.appliedAt)}
+            {updated && <> · Updated {timeAgo(app.updatedAt)}</>}
+          </p>
+        </div>
+      </div>
 
-const ALL_STATUSES = Object.keys(STATUS_LABELS) as ApplicationStatus[];
+      <div className="mt-4 sm:pl-14">
+        {app.status === 'OFFERED' && (
+          <div className="mb-4 flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <PartyPopper className="w-5 h-5 flex-shrink-0 text-emerald-600" aria-hidden />
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">You received an offer</p>
+              <p className="text-xs text-emerald-700 mt-0.5">Congratulations! Expect the recruiter to reach out with next steps.</p>
+            </div>
+          </div>
+        )}
+
+        {app.status === 'REJECTED' ? (
+          <p className="text-sm text-slate-500">The employer has decided not to move forward with this application.</p>
+        ) : app.status === 'WITHDRAWN' ? (
+          <p className="text-sm text-slate-500">You withdrew this application.</p>
+        ) : (
+          <ApplicationProgress status={app.status} />
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-t border-slate-100 pt-3">
+          {app.coverLetter && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowLetter((s) => !s)}
+              aria-expanded={showLetter}
+              aria-controls={letterId}
+            >
+              <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', showLetter && 'rotate-180')} aria-hidden />
+              {showLetter ? 'Hide cover letter' : 'Cover letter'}
+            </Button>
+          )}
+          {app.resumeUrl && (
+            <a
+              href={app.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClasses('ghost', 'sm')}
+            >
+              <FileText className="w-3.5 h-3.5" aria-hidden /> Resume
+              <ExternalLink className="w-3 h-3 opacity-60" aria-hidden />
+              <span className="sr-only">(opens in a new tab)</span>
+            </a>
+          )}
+          <Link href={`/jobs/${app.jobId}`} className={buttonClasses('ghost', 'sm')}>
+            View job
+          </Link>
+          {!closed && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+              onClick={() => onWithdraw(app)}
+            >
+              Withdraw
+            </Button>
+          )}
+        </div>
+
+        {app.coverLetter && showLetter && (
+          <div id={letterId} className="mt-2 rounded-lg bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+            <p className="whitespace-pre-line break-words text-sm leading-relaxed text-slate-700">{app.coverLetter}</p>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function ApplicationSkeleton() {
+  return (
+    <Card className="p-5" aria-hidden>
+      <div className="flex items-start gap-4">
+        <Skeleton className="w-10 h-10 rounded-xl" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3.5 w-1/3" />
+          <Skeleton className="h-3 w-1/4" />
+        </div>
+      </div>
+      <div className="mt-5 sm:pl-14 grid grid-cols-5 gap-1.5">
+        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-1.5 rounded-full" />)}
+      </div>
+    </Card>
+  );
+}
 
 export default function ApplicationsPage() {
   const [page, setPage] = useState(0);
-  const { data, isLoading } = useMyApplications(page);
-  const { mutate: updateStatus, isPending } = useUpdateApplicationStatus();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const { data, isLoading, isError, error, refetch, isRefetching } = useMyApplications(page);
+  const { mutate: updateStatus, isPending: withdrawing } = useUpdateApplicationStatus();
+  const [target, setTarget] = useState<Application | null>(null);
 
   const apps = data?.content ?? [];
-  const filtered = apps.filter((a) => {
-    const matchSearch = !search || a.jobTitle.toLowerCase().includes(search.toLowerCase()) || a.companyName.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || a.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const total = data?.totalElements ?? 0;
 
-  const countByStatus = (s: string) => apps.filter((a) => a.status === s).length;
-  const activeCount = apps.filter((a) => !['REJECTED', 'WITHDRAWN'].includes(a.status)).length;
-  const offeredCount = apps.filter((a) => a.status === 'OFFERED').length;
+  const closeConfirm = useCallback(() => {
+    if (!withdrawing) setTarget(null);
+  }, [withdrawing]);
+
+  const confirmWithdraw = () => {
+    if (!target) return;
+    const app = target;
+    updateStatus(
+      { id: app.id, status: 'WITHDRAWN' },
+      {
+        onSuccess: () => {
+          toast.success('Application withdrawn', `${app.jobTitle} at ${app.companyName}`);
+          setTarget(null);
+        },
+        onError: (err) => toast.error('Could not withdraw application', getErrorMessage(err)),
+      }
+    );
+  };
+
+  const goToPage = (p: number) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="pb-20 lg:pb-0">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">My Applications</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          {apps.length > 0
-            ? `${apps.length} total · ${activeCount} active · ${offeredCount} offers`
-            : 'Track all your job applications here.'}
-        </p>
-      </div>
-
-      {/* Pipeline summary */}
-      {apps.length > 0 && (
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-6">
-          {ALL_STATUSES.map((s) => {
-            const count = countByStatus(s);
-            if (!count) return null;
-            return (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
-                className={cn(
-                  'bg-white rounded-xl border p-3 text-center transition-all hover:shadow-sm',
-                  statusFilter === s ? 'border-primary-300 ring-1 ring-primary-200' : 'border-slate-100'
-                )}
-              >
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <span className={cn('w-2 h-2 rounded-full flex-shrink-0', STATUS_DOTS[s])} />
-                  <span className="text-base font-bold text-slate-900">{count}</span>
-                </div>
-                <p className="text-xs text-slate-500 leading-tight truncate">{STATUS_LABELS[s]}</p>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Search + filter */}
-      {apps.length > 0 && (
-        <div className="flex gap-3 mb-5">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by job title or company..."
-              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-            />
-          </div>
-          {statusFilter && (
-            <button
-              onClick={() => setStatusFilter('')}
-              className="px-3.5 py-2.5 bg-primary-50 text-primary-700 rounded-xl text-sm font-medium hover:bg-primary-100 transition-colors border border-primary-200"
-            >
-              Clear filter
-            </button>
-          )}
-        </div>
-      )}
+    <div className="max-w-4xl">
+      <PageHeader
+        title="My applications"
+        description={
+          total > 0
+            ? `${pluralize(total, 'application')} · track where each one stands in the hiring process.`
+            : 'Track where each application stands in the hiring process.'
+        }
+        actions={
+          total > 0 ? <Link href="/jobs" className={buttonClasses('secondary')}>Find more jobs</Link> : undefined
+        }
+      />
 
       {isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-white rounded-2xl border border-slate-100 animate-pulse" />)}
+        <div className="space-y-3" aria-busy="true" aria-label="Loading applications">
+          {Array.from({ length: 4 }).map((_, i) => <ApplicationSkeleton key={i} />)}
         </div>
+      ) : isError ? (
+        <Card>
+          <ErrorState title="We couldn't load your applications" error={error} onRetry={() => refetch()} retrying={isRefetching} />
+        </Card>
       ) : apps.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
-          <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-          <p className="text-slate-500 font-medium text-lg">No applications yet</p>
-          <p className="text-slate-400 text-sm mt-1 mb-5">Start applying to jobs to track your progress here.</p>
-          <Link href="/jobs" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors">
-            Browse Jobs
-          </Link>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
-          <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-          <p className="text-slate-500 text-sm">No applications match your filter.</p>
-          <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="mt-2 text-primary-600 text-sm hover:underline">
-            Clear filters
-          </button>
-        </div>
+        <Card>
+          <EmptyState
+            icon={Send}
+            title="No applications yet"
+            description="When you apply for a job, you can follow its progress here, from review to offer."
+            action={<Link href="/jobs" className={buttonClasses()}>Browse jobs</Link>}
+          />
+        </Card>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((app) => (
-            <div key={app.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow p-5">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                {/* Job info */}
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className={cn('w-2 h-2 rounded-full mt-2 flex-shrink-0', STATUS_DOTS[app.status])} />
-                  <div className="min-w-0">
-                    <Link
-                      href={`/jobs/${app.jobId}`}
-                      className="font-semibold text-slate-900 hover:text-primary-600 transition-colors flex items-center gap-1.5 group"
-                    >
-                      {app.jobTitle}
-                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                    </Link>
-                    <p className="text-sm text-slate-500 mt-0.5">{app.companyName}</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Applied {new Date(app.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      {app.updatedAt !== app.appliedAt && ` · Updated ${new Date(app.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Status + actions */}
-                <div className="flex items-center gap-2 flex-shrink-0 self-start">
-                  <span className={cn('text-xs px-3 py-1.5 rounded-full border font-semibold', STATUS_COLORS[app.status])}>
-                    {STATUS_LABELS[app.status]}
-                  </span>
-                  {app.status !== 'WITHDRAWN' && app.status !== 'REJECTED' && (
-                    <button
-                      onClick={() => updateStatus({ id: app.id, status: 'WITHDRAWN' })}
-                      disabled={isPending}
-                      className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
-                    >
-                      Withdraw
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Cover letter preview */}
-              {app.coverLetter && (
-                <div className="mt-3 pl-5 border-l-2 border-slate-100">
-                  <p className="text-xs text-slate-400 mb-1 font-medium">Your note</p>
-                  <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{app.coverLetter}</p>
-                </div>
-              )}
-
-              {/* Offer highlight */}
-              {app.status === 'OFFERED' && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 animate-pulse" />
-                  <p className="text-sm font-semibold text-green-700">You received an offer for this position!</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
-          <p className="text-xs text-slate-500">
-            Page {data.number + 1} of {data.totalPages} · {data.totalElements} applications
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={data.first}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
-            >
-              Previous
-            </button>
-            <button
-              disabled={data.last}
-              onClick={() => setPage((p) => p + 1)}
-              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
-            >
-              Next
-            </button>
+        <>
+          <div className="space-y-3">
+            {apps.map((app) => <ApplicationCard key={app.id} app={app} onWithdraw={setTarget} />)}
           </div>
-        </div>
+          <Pagination page={page} totalPages={data?.totalPages ?? 0} onChange={goToPage} />
+        </>
       )}
+
+      <ConfirmDialog
+        open={!!target}
+        onClose={closeConfirm}
+        onConfirm={confirmWithdraw}
+        loading={withdrawing}
+        title="Withdraw this application?"
+        description={
+          target
+            ? `Your application for ${target.jobTitle} at ${target.companyName} will be withdrawn. You won't be able to apply to this job again.`
+            : undefined
+        }
+        confirmLabel="Withdraw application"
+      />
     </div>
   );
 }

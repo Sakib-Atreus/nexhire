@@ -1,78 +1,107 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import axios from 'axios';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useLogin } from '@/hooks/useAuth';
+import { getErrorMessage } from '@/lib/format';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthAlert } from '@/components/auth/AuthAlert';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { FormField, Input } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-export default function LoginPage() {
+function loginErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error) && error.response?.status === 401) {
+    return 'Invalid email or password.';
+  }
+  return getErrorMessage(error, 'We could not sign you in. Please try again.');
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const expired = searchParams.get('expired') === '1';
   const { mutate: login, isPending, error } = useLogin();
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary-700">NexHire</Link>
-          <h1 className="mt-4 text-2xl font-semibold text-slate-800">Welcome back</h1>
-          <p className="text-slate-500 mt-1">Sign in to your account</p>
-        </div>
+    <form onSubmit={handleSubmit((data) => login(data))} className="space-y-5" noValidate>
+      {expired && !error && (
+        <AuthAlert tone="info">Your session expired. Please sign in again.</AuthAlert>
+      )}
+      {error && <AuthAlert>{loginErrorMessage(error)}</AuthAlert>}
 
-        <form onSubmit={handleSubmit((data) => login(data))} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input
-              {...register('email')}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
-          </div>
+      <FormField label="Email" error={errors.email?.message}>
+        {(id) => (
+          <Input
+            id={id}
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            invalid={!!errors.email}
+            {...register('email')}
+          />
+        )}
+      </FormField>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input
+      <div className="space-y-1.5">
+        <FormField label="Password" error={errors.password?.message}>
+          {(id) => (
+            <PasswordInput
+              id={id}
+              autoComplete="current-password"
+              invalid={!!errors.password}
               {...register('password')}
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
-            {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-              Invalid email or password
-            </div>
           )}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        </FormField>
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            {isPending ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-600">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-primary-600 hover:underline font-medium">
-            Sign up
+            Forgot password?
           </Link>
-        </p>
+        </div>
       </div>
-    </div>
+
+      <Button type="submit" size="lg" className="w-full" loading={isPending}>
+        {isPending ? 'Signing in…' : 'Sign in'}
+      </Button>
+    </form>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to your NexHire account."
+      footer={
+        <>
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
+            Create one
+          </Link>
+        </>
+      }
+    >
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </AuthShell>
   );
 }

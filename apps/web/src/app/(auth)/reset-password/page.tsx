@@ -6,12 +6,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { CheckCircle2, KeyRound } from 'lucide-react';
 import { useResetPassword } from '@/hooks/useAuth';
+import { getErrorMessage } from '@/lib/format';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthAlert } from '@/components/auth/AuthAlert';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { FormField } from '@/components/ui/Field';
+import { Button, buttonClasses } from '@/components/ui/Button';
 
 const schema = z
   .object({
-    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be 128 characters or fewer'),
+    confirmPassword: z.string().min(1, 'Please confirm your new password'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -32,8 +42,32 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-        Invalid reset link. Please request a new one.
+      <div className="text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
+          <KeyRound className="h-6 w-6 text-amber-600" aria-hidden />
+        </div>
+        <h2 className="text-sm font-semibold text-slate-900">This reset link is incomplete</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Open the link from your email again, or request a new one.
+        </p>
+        <Link href="/forgot-password" className={buttonClasses('primary', 'lg', 'mt-6 w-full')}>
+          Request a new reset link
+        </Link>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="text-center" role="status">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+          <CheckCircle2 className="h-6 w-6 text-emerald-600" aria-hidden />
+        </div>
+        <h2 className="text-sm font-semibold text-slate-900">Password updated</h2>
+        <p className="mt-1 text-sm text-slate-500">Taking you to sign in…</p>
+        <Link href="/login" className={buttonClasses('secondary', 'md', 'mt-6')}>
+          Sign in now
+        </Link>
       </div>
     );
   }
@@ -50,76 +84,63 @@ function ResetPasswordForm() {
     );
   };
 
-  if (success) {
-    return (
-      <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-        Password reset successfully! Redirecting to login...
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
-        <input
-          {...register('newPassword')}
-          type="password"
-          placeholder="••••••••"
-          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        />
-        {errors.newPassword && <p className="mt-1 text-sm text-red-500">{errors.newPassword.message}</p>}
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <FormField label="New password" error={errors.newPassword?.message} hint="Use at least 8 characters.">
+        {(id) => (
+          <PasswordInput
+            id={id}
+            autoComplete="new-password"
+            invalid={!!errors.newPassword}
+            {...register('newPassword')}
+          />
+        )}
+      </FormField>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Confirm password</label>
-        <input
-          {...register('confirmPassword')}
-          type="password"
-          placeholder="••••••••"
-          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        />
-        {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>}
-      </div>
+      <FormField label="Confirm new password" error={errors.confirmPassword?.message}>
+        {(id) => (
+          <PasswordInput
+            id={id}
+            autoComplete="new-password"
+            invalid={!!errors.confirmPassword}
+            {...register('confirmPassword')}
+          />
+        )}
+      </FormField>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-          {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Something went wrong. Please try again.'}
-        </div>
+        <AuthAlert>
+          {getErrorMessage(error, 'We could not reset your password. The link may have expired.')}{' '}
+          <Link href="/forgot-password" className="font-medium underline">
+            Request a new link
+          </Link>
+        </AuthAlert>
       )}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {isPending ? 'Resetting...' : 'Reset Password'}
-      </button>
+      <Button type="submit" size="lg" className="w-full" loading={isPending}>
+        {isPending ? 'Updating…' : 'Update password'}
+      </Button>
     </form>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary-700">NexHire</Link>
-          <h1 className="mt-4 text-2xl font-semibold text-slate-800">Set new password</h1>
-          <p className="text-slate-500 mt-1">Choose a strong password for your account</p>
-        </div>
-
-        <Suspense>
-          <ResetPasswordForm />
-        </Suspense>
-
-        <p className="mt-6 text-center text-sm text-slate-600">
+    <AuthShell
+      title="Set a new password"
+      subtitle="Choose a strong password for your NexHire account."
+      footer={
+        <>
           Back to{' '}
-          <Link href="/login" className="text-primary-600 hover:underline font-medium">
+          <Link href="/login" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
             Sign in
           </Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <Suspense>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthShell>
   );
 }
