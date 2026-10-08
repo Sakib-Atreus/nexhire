@@ -38,6 +38,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+        // Not signed in (or the token was invalid): 401 so the client refreshes its session or asks to log in.
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            ApiError unauthorized = new ApiError(HttpStatus.UNAUTHORIZED.value(), "Please sign in to continue", request.getDescription(false));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(unauthorized);
+        }
         ApiError error = new ApiError(HttpStatus.FORBIDDEN.value(), "Access denied", request.getDescription(false));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }

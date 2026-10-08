@@ -1,31 +1,25 @@
 import { Check } from 'lucide-react';
 import type { ApplicationStatus } from '@/types';
-import { APPLICATION_STATUS_LABELS } from '@/lib/constants';
+import { APPLICATION_STATUS_LABELS, PIPELINE_STAGES } from '@/lib/constants';
 import { cn } from '@/lib/cn';
 
-/** The forward hiring pipeline. Rejected / withdrawn are terminal states shown separately. */
-export const PIPELINE_STAGES: ApplicationStatus[] = ['PENDING', 'REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED'];
+/** The forward hiring pipeline, Applied → Hired. Rejected / withdrawn are terminal states shown separately. */
+const STAGES: ApplicationStatus[] = PIPELINE_STAGES.map((s) => s.status);
+const SHORT_LABELS = Object.fromEntries(PIPELINE_STAGES.map((s) => [s.status, s.label])) as Partial<Record<ApplicationStatus, string>>;
 
-const SHORT_LABELS: Partial<Record<ApplicationStatus, string>> = {
-  PENDING: 'Applied',
-  REVIEWING: 'Review',
-  SHORTLISTED: 'Shortlisted',
-  INTERVIEWED: 'Interview',
-  OFFERED: 'Offer',
-};
-
-/** Compact stepper: Applied → Under review → Shortlisted → Interviewed → Offer. */
+/** Compact stepper: Applied → Review → Shortlist → Interview → Offer → Hired. */
 export function ApplicationProgress({ status, className }: { status: ApplicationStatus; className?: string }) {
-  const current = PIPELINE_STAGES.indexOf(status);
+  const current = STAGES.indexOf(status);
   if (current === -1) return null;
+  const hired = status === 'HIRED';
 
   return (
     <div className={className}>
       <p className="sr-only">
-        Stage {current + 1} of {PIPELINE_STAGES.length}: {APPLICATION_STATUS_LABELS[status]}
+        Stage {current + 1} of {STAGES.length}: {APPLICATION_STATUS_LABELS[status]}
       </p>
-      <ol className="grid grid-cols-5 gap-1.5" aria-hidden>
-        {PIPELINE_STAGES.map((stage, i) => {
+      <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${STAGES.length}, minmax(0, 1fr))` }} aria-hidden>
+        {STAGES.map((stage, i) => {
           const done = i < current;
           const active = i === current;
           return (
@@ -33,7 +27,13 @@ export function ApplicationProgress({ status, className }: { status: Application
               <div
                 className={cn(
                   'h-1.5 rounded-full',
-                  done ? 'bg-primary-500' : active ? (stage === 'OFFERED' ? 'bg-emerald-500' : 'bg-primary-500') : 'bg-slate-200'
+                  hired && (done || active)
+                    ? 'bg-emerald-500'
+                    : done
+                      ? 'bg-primary-500'
+                      : active
+                        ? stage === 'OFFERED' ? 'bg-teal-500' : 'bg-primary-500'
+                        : 'bg-slate-200'
                 )}
               />
               <p
@@ -42,7 +42,9 @@ export function ApplicationProgress({ status, className }: { status: Application
                   active ? 'text-slate-900' : done ? 'text-slate-500' : 'text-slate-400'
                 )}
               >
-                {done && <Check className="w-3 h-3 flex-shrink-0 text-primary-500" />}
+                {(done || (active && hired)) && (
+                  <Check className={cn('w-3 h-3 flex-shrink-0', hired ? 'text-emerald-600' : 'text-primary-500')} />
+                )}
                 <span className="truncate">{SHORT_LABELS[stage]}</span>
               </p>
             </li>
@@ -50,7 +52,7 @@ export function ApplicationProgress({ status, className }: { status: Application
         })}
       </ol>
       <p className="mt-1.5 text-xs text-slate-500 sm:hidden">
-        Step {current + 1} of {PIPELINE_STAGES.length} · <span className="font-medium text-slate-700">{APPLICATION_STATUS_LABELS[status]}</span>
+        Step {current + 1} of {STAGES.length} · <span className="font-medium text-slate-700">{APPLICATION_STATUS_LABELS[status]}</span>
       </p>
     </div>
   );

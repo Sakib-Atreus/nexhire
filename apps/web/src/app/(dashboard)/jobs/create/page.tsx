@@ -50,10 +50,15 @@ export default function CreateJobPage() {
         mode="create"
         cancelHref="/jobs/my"
         isSubmitting={createJob.isPending}
-        serverError={createJob.error ? getErrorMessage(createJob.error, 'We could not publish this job. Please try again.') : null}
-        onSubmit={(payload) =>
+        serverError={createJob.error ? getErrorMessage(createJob.error, 'We could not save this job. Please try again.') : null}
+        onSubmit={(payload, action) =>
           createJob.mutate(payload, {
             onSuccess: (job) => {
+              if (action === 'draft') {
+                toast.success('Draft saved', `“${job.title}” is only visible to your hiring team until you publish it.`);
+                router.push('/jobs/my?status=DRAFT');
+                return;
+              }
               toast.success('Job published', `“${job.title}” is now live.`);
               router.push(`/jobs/${job.id}`);
             },

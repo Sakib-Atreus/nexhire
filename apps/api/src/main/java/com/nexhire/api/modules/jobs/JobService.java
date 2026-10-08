@@ -48,6 +48,8 @@ public class JobService {
     private final ApplicationRepository applicationRepository;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
+    private final JobAccess jobAccess;
+    private final com.nexhire.api.modules.companies.CompanyRepository companyRepository;
 
     public Page<JobDTO> search(String keyword, String location, String companyName, JobType jobType, ExperienceLevel experienceLevel,
                                BigDecimal salaryMin, BigDecimal salaryMax, String category, boolean featuredOnly,
@@ -75,17 +77,19 @@ public class JobService {
     public JobDTO getByIdForUser(UUID id, User currentUser) {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job", "id", id));
-        boolean canSeeHidden = currentUser != null
-            && (currentUser.getRole() == Role.ADMIN || job.getRecruiter().getId().equals(currentUser.getId()));
-        if (job.isHidden() && !canSeeHidden) {
+        boolean manager = jobAccess.canManage(job, currentUser);
+        boolean restricted = job.isHidden() || job.getStatus() == JobStatus.DRAFT;
+        if (restricted && !manager) {
             throw new ResourceNotFoundException("Job", "id", id);
         }
-        jobRepository.incrementViewCount(id);
-        return toDTO(job, currentUser != null ? currentUser.getId() : null);
+        // Only count views from people outside the hiring team, so analytics reflect real interest.
+        if (!manager) jobRepository.incrementViewCount(id);
+        return toDTO(job, currentUser != null ? currentUser.getId() : null, null, manager);
     }
 
-    public Page<JobDTO> getByRecruiter(UUID recruiterId, Pageable pageable) {
-        return jobRepository.findByRecruiterId(recruiterId, pageable)
+    /** "My jobs": the recruiter's own jobs plus every job of their company team. */
+    public Page<JobDTO> getByRecruiter(User recruiter, Pageable pageable) {
+        return jobRepository.findManagedBy(recruiter.getId(), JobAccess.companyOrNone(recruiter), pageable)
             .map(j -> toDTO(j, null, (int) applicationRepository.countByJobId(j.getId())));
     }
 
@@ -112,9 +116,18 @@ public class JobService {
             .deadline(request.deadline())
             .screeningQuestions(toJson(request.screeningQuestions()))
             .category(blankToNull(request.category()))
+            .openings(request.openings() != null ? request.openings() : 1)
             .recruiter(recruiter)
-            .status(JobStatus.OPEN)
+            .status(request.status() == JobStatus.DRAFT ? JobStatus.DRAFT : JobStatus.OPEN)
             .build();
+        // Recruiters on a company team always post as that company.
+        if (recruiter.getCompanyId() != null) {
+            companyRepository.findById(recruiter.getCompanyId()).ifPresent(c -> {
+                job.setCompany(c);
+                job.setCompanyName(c.getName());
+                job.setCompanyLogoUrl(c.getLogoUrl());
+            });
+        }
 
         return toDTO(jobRepository.save(job), null);
     }
@@ -124,7 +137,7 @@ public class JobService {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job", "id", id));
 
-        if (!job.getRecruiter().getId().equals(currentUser.getId()) && currentUser.getRole() != Role.ADMIN) {
+        if (!jobAccess.canManage(job, currentUser)) {
             throw new ForbiddenException("You do not have permission to update this job");
         }
 
@@ -138,8 +151,12 @@ public class JobService {
         if (request.description() != null) job.setDescription(request.description());
         if (request.requirements() != null) job.setRequirements(request.requirements());
         if (request.responsibilities() != null) job.setResponsibilities(request.responsibilities());
-        if (request.companyName() != null && !request.companyName().isBlank()) job.setCompanyName(request.companyName());
-        if (request.companyLogoUrl() != null) job.setCompanyLogoUrl(request.companyLogoUrl());
+        // Company jobs take their name and logo from the company profile.
+        if (job.getCompany() == null) {
+            if (request.companyName() != null && !request.companyName().isBlank()) job.setCompanyName(request.companyName());
+            if (request.companyLogoUrl() != null) job.setCompanyLogoUrl(request.companyLogoUrl());
+        }
+        if (request.openings() != null) job.setOpenings(request.openings());
         if (request.location() != null) job.setLocation(request.location());
         if (request.jobType() != null) job.setJobType(request.jobType());
         if (request.experienceLevel() != null) job.setExperienceLevel(request.experienceLevel());
@@ -160,12 +177,12 @@ public class JobService {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job", "id", id));
 
-        if (!job.getRecruiter().getId().equals(currentUser.getId()) && currentUser.getRole() != Role.ADMIN) {
+        if (!jobAccess.canManage(job, currentUser)) {
             throw new ForbiddenException("You do not have permission to delete this job");
         }
 
         jobRepository.deleteById(id);
-        if (!job.getRecruiter().getId().equals(currentUser.getId())) {
+        if (currentUser.getRole() == Role.ADMIN && !job.getRecruiter().getId().equals(currentUser.getId())) {
             auditService.record(currentUser, AuditAction.JOB_DELETED, AuditService.TARGET_JOB, id,
                 job.getTitle() + " · " + job.getCompanyName(), null);
         }
@@ -208,6 +225,10 @@ public class JobService {
     }
 
     public JobDTO toDTO(Job job, UUID currentUserId, Integer applicationCount) {
+        return toDTO(job, currentUserId, applicationCount, false);
+    }
+
+    private JobDTO toDTO(Job job, UUID currentUserId, Integer applicationCount, boolean canManage) {
         boolean saved = currentUserId != null && savedJobRepository.existsByUserIdAndJobId(currentUserId, job.getId());
         return new JobDTO(
             job.getId(),
@@ -237,7 +258,12 @@ public class JobService {
             job.getCategory(),
             job.isFeatured(),
             job.isHidden(),
-            job.getRecruiter().isVerified()
+            job.getRecruiter().isVerified(),
+            job.getCompany() != null ? job.getCompany().getId() : null,
+            job.getCompany() != null ? job.getCompany().getSlug() : null,
+            job.getCompany() != null && job.getCompany().isVerified(),
+            job.getOpenings(),
+            canManage
         );
     }
 
@@ -258,6 +284,43 @@ public class JobService {
         } catch (Exception e) {
             return "[]";
         }
+    }
+
+    /** Copy a job as a new DRAFT (no deadline, not featured, no views) for the caller to edit and publish. */
+    @Transactional
+    public JobDTO duplicate(UUID id, User currentUser) {
+        Job source = jobRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Job", "id", id));
+        if (!jobAccess.canManage(source, currentUser)) {
+            throw new ForbiddenException("You do not have permission to copy this job");
+        }
+        String title = source.getTitle().length() > 240 ? source.getTitle().substring(0, 240) : source.getTitle();
+        Job copy = Job.builder()
+            .title(title + " (copy)")
+            .description(source.getDescription())
+            .requirements(source.getRequirements())
+            .responsibilities(source.getResponsibilities())
+            .companyName(source.getCompanyName())
+            .companyLogoUrl(source.getCompanyLogoUrl())
+            .company(source.getCompany())
+            .location(source.getLocation())
+            .jobType(source.getJobType())
+            .experienceLevel(source.getExperienceLevel())
+            .salaryMin(source.getSalaryMin())
+            .salaryMax(source.getSalaryMax())
+            .salaryCurrency(source.getSalaryCurrency())
+            .tags(source.getTags())
+            .category(source.getCategory())
+            .screeningQuestions(source.getScreeningQuestions())
+            .openings(source.getOpenings())
+            .recruiter(currentUser.getRole() == Role.ADMIN ? source.getRecruiter() : currentUser)
+            .status(JobStatus.DRAFT)
+            .build();
+        return toDTO(jobRepository.save(copy), null, 0);
+    }
+
+    public boolean canManage(Job job, User user) {
+        return jobAccess.canManage(job, user);
     }
 
     // ─── Admin ──────────────────────────────────────────────────────────────

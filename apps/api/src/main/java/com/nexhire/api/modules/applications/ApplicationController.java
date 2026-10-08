@@ -79,7 +79,7 @@ public class ApplicationController {
         @AuthenticationPrincipal User currentUser,
         Pageable pageable
     ) {
-        return ResponseEntity.ok(applicationService.getRecruiterApplications(currentUser.getId(), pageable));
+        return ResponseEntity.ok(applicationService.getRecruiterApplications(currentUser, pageable));
     }
 
     @PatchMapping("/{id}/status")

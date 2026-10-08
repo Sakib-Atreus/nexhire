@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/Badge';
 import { buttonClasses } from '@/components/ui/Button';
 import { EmptyState, ErrorState, Skeleton, Spinner } from '@/components/ui/States';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { UpcomingInterviewsCard } from '@/components/interviews/UpcomingInterviewsCard';
 import { PipelineBars, statsToCounts, type StatusCounts } from '@/components/dashboard/PipelineBars';
 import { getProfileCompleteness } from '@/components/profile/completeness';
 import {
@@ -96,7 +97,7 @@ function CandidateDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Applications" value={apps.isError ? null : total} icon={Send} href="/applications" hint="All time" />
         <StatCard label="In progress" value={apps.isError ? null : apps.data ? inProgress : undefined} icon={Clock} tone="bg-sky-50 text-sky-600" hint={scopeHint ?? 'Awaiting a decision'} />
-        <StatCard label="Offers" value={apps.isError ? null : apps.data ? counts.OFFERED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={scopeHint} />
+        <StatCard label="Offers & hires" value={apps.isError ? null : apps.data ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={scopeHint} />
         <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" />
       </div>
 
@@ -136,6 +137,7 @@ function CandidateDashboard() {
         </Card>
 
         <div className="space-y-6">
+          <UpcomingInterviewsCard viewer="CANDIDATE" />
           {completeness && completeness.percent < 100 ? (
             <NextStep
               title="Complete your profile"
@@ -206,7 +208,7 @@ function RecruiterDashboard() {
         <StatCard label="Job posts" value={jobs.isError ? null : jobs.data?.totalElements} icon={Briefcase} href="/jobs/my" hint="All statuses" />
         <StatCard label="Applicants" value={stats.isError ? null : stats.data?.total} icon={Users} tone="bg-sky-50 text-sky-600" hint="Across all your jobs" />
         <StatCard label="Awaiting review" value={stats.isError ? null : stats.data?.pending} icon={Inbox} tone="bg-amber-50 text-amber-600" hint="New, not yet reviewed" />
-        <StatCard label="Offers extended" value={stats.isError ? null : stats.data?.offered} icon={Trophy} tone="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Hired" value={stats.isError ? null : stats.data ? (stats.data.hired ?? 0) : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={stats.data ? `${pluralize(stats.data.offered, 'offer')} pending` : undefined} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -248,6 +250,7 @@ function RecruiterDashboard() {
         </Card>
 
         <div className="space-y-6">
+          <UpcomingInterviewsCard viewer="RECRUITER" />
           {noJobs ? (
             <NextStep title="Post your first job" description="Describe the role and start receiving applications from candidates.">
               <Link href="/jobs/create" className={buttonClasses('primary', 'sm')}><Plus className="w-4 h-4" aria-hidden /> Post a job</Link>

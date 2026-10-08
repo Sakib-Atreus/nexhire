@@ -11,51 +11,66 @@ import { Badge } from '@/components/ui/Badge';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { Skeleton } from '@/components/ui/States';
 import { buttonClasses } from '@/components/ui/Button';
+import { VerifiedIcon } from '@/components/companies/VerifiedBadge';
 
 // `sort` is forwarded to the API as a query param (Spring Pageable) so the newest roles come first.
 const LATEST_PARAMS = { size: 6, sort: 'createdAt,desc' };
 
 export function JobCard({ job }: { job: Job }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
+  const verifiedEmployer = !!(job.companyVerified || job.recruiterVerified);
   return (
-    <Link
-      href={`/jobs/${job.id}`}
-      className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-    >
-      <Card className="h-full p-5 transition-all group-hover:border-primary-200 group-hover:shadow-md">
-        <div className="flex items-start gap-3">
-          <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="sm" />
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-slate-900 leading-snug line-clamp-2 group-hover:text-primary-700">
+    <Card className="group relative h-full p-5 transition-all hover:border-primary-200 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2">
+      <div className="flex items-start gap-3">
+        <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="sm" />
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-slate-900 leading-snug line-clamp-2 group-hover:text-primary-700">
+            {/* Overlay link: makes the whole card clickable while the company link stays separate. */}
+            <Link
+              href={`/jobs/${job.id}`}
+              className="focus:outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
+            >
               {job.title}
-            </h3>
-            <p className="mt-0.5 text-sm text-slate-600 truncate">{job.companyName}</p>
-          </div>
+            </Link>
+          </h3>
+          <p className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-slate-600">
+            {job.companySlug ? (
+              <Link
+                href={`/companies/${job.companySlug}`}
+                className="relative z-10 min-w-0 truncate rounded hover:text-primary-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              >
+                {job.companyName}
+              </Link>
+            ) : (
+              <span className="min-w-0 truncate">{job.companyName}</span>
+            )}
+            {verifiedEmployer && <VerifiedIcon />}
+          </p>
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
-          {job.location && (
-            <span className="inline-flex items-center gap-1 min-w-0">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-              <span className="truncate max-w-[12rem]">{job.location}</span>
-            </span>
-          )}
-          <Badge>{JOB_TYPE_LABELS[job.jobType] ?? job.jobType}</Badge>
-          {job.featured && (
-            <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-500" aria-hidden />
-              Featured
-            </Badge>
-          )}
-        </div>
-        <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
-          <span className="font-semibold text-slate-800 truncate">{salary ?? 'Salary not listed'}</span>
-          <span className="inline-flex items-center gap-1 text-slate-400 whitespace-nowrap">
-            <Clock className="w-3.5 h-3.5" aria-hidden />
-            {timeAgo(job.createdAt)}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+        {job.location && (
+          <span className="inline-flex items-center gap-1 min-w-0">
+            <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
+            <span className="truncate max-w-[12rem]">{job.location}</span>
           </span>
-        </div>
-      </Card>
-    </Link>
+        )}
+        <Badge>{JOB_TYPE_LABELS[job.jobType] ?? job.jobType}</Badge>
+        {job.featured && (
+          <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-500" aria-hidden />
+            Featured
+          </Badge>
+        )}
+      </div>
+      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
+        <span className="font-semibold text-slate-800 truncate">{salary ?? 'Salary not listed'}</span>
+        <span className="inline-flex items-center gap-1 text-slate-400 whitespace-nowrap">
+          <Clock className="w-3.5 h-3.5" aria-hidden />
+          {timeAgo(job.createdAt)}
+        </span>
+      </div>
+    </Card>
   );
 }
 

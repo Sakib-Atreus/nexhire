@@ -18,8 +18,8 @@ import type { AuditAction } from '@/types';
 
 const PAGE_SIZE = 25;
 const DEBOUNCE_MS = 350;
-const TARGET_TYPES: AuditTargetType[] = ['USER', 'JOB', 'REPORT', 'SETTINGS'];
-const TARGET_NOUNS: Record<AuditTargetType, string> = { USER: 'user', JOB: 'job', REPORT: 'report', SETTINGS: 'settings' };
+const TARGET_TYPES: AuditTargetType[] = ['USER', 'JOB', 'COMPANY', 'REPORT', 'SETTINGS'];
+const TARGET_NOUNS: Record<AuditTargetType, string> = { USER: 'user', JOB: 'job', COMPANY: 'company', REPORT: 'report', SETTINGS: 'settings' };
 
 const TITLE = 'Audit log';
 const DESCRIPTION = 'Every moderation and settings change made by administrators, newest first.';

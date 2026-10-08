@@ -10,6 +10,7 @@ export function statsToCounts(stats: ApplicationStats): StatusCounts {
     SHORTLISTED: stats.shortlisted,
     INTERVIEWED: stats.interviewed,
     OFFERED: stats.offered,
+    HIRED: stats.hired ?? 0,
     REJECTED: stats.rejected,
     WITHDRAWN: stats.withdrawn,
   };

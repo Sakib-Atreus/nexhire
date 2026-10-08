@@ -25,6 +25,7 @@ public class AuditService {
     public static final String TARGET_JOB = "JOB";
     public static final String TARGET_REPORT = "REPORT";
     public static final String TARGET_SETTINGS = "SETTINGS";
+    public static final String TARGET_COMPANY = "COMPANY";
 
     private final AuditLogRepository auditLogRepository;
 

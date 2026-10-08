@@ -26,6 +26,10 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     long countByRole(Role role);
 
+    long countByCompanyId(UUID companyId);
+
+    List<User> findByCompanyIdOrderByCreatedAtAsc(UUID companyId);
+
     long countByEnabledFalse();
 
     long countByRoleAndVerifiedFalse(Role role);

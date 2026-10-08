@@ -3,7 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import type {
-  AdminOverview, AdminUserDetail, Announcement, AuditAction, AuditLogEntry, Job, JobReport, JobStatus, Page,
+  AdminOverview, AdminUserDetail, Company, Announcement, AuditAction, AuditLogEntry, Job, JobReport, JobStatus, Page,
   ReportStatus, Role, User,
 } from '@/types';
 
@@ -202,6 +202,30 @@ export function useUpdateSettingList(key: 'categories' | 'skills') {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['settings'] });
       qc.invalidateQueries({ queryKey: ['admin', 'audit'] });
+    },
+  });
+}
+
+// ─── Companies ───────────────────────────────────────────────────────────────
+
+export function useAdminCompanies(filters: { q?: string; verified?: boolean; page?: number; size?: number }) {
+  const { page = 0, size = 20, ...rest } = filters;
+  return useQuery({
+    queryKey: ['admin', 'companies', filters],
+    queryFn: () => api.get<Page<Company>>('/admin/companies', { params: { ...rest, page, size } }).then((r) => r.data),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useSetCompanyVerified() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, verified }: { id: string; verified: boolean }) =>
+      api.patch<Company>(`/admin/companies/${id}/verified`, { verified }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin'] });
+      qc.invalidateQueries({ queryKey: ['companies'] });
+      qc.invalidateQueries({ queryKey: ['jobs'] });
     },
   });
 }

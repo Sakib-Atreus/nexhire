@@ -6,6 +6,7 @@ public record ApplicationStatsDTO(
     long shortlisted,
     long interviewed,
     long offered,
+    long hired,
     long rejected,
     long withdrawn,
     long total

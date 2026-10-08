@@ -8,7 +8,13 @@ import com.nexhire.api.modules.applications.dto.ApplicationStatsDTO;
 import com.nexhire.api.modules.applications.dto.ApplyJobRequest;
 import com.nexhire.api.modules.applications.dto.BulkUpdateStatusRequest;
 import com.nexhire.api.modules.applications.dto.UpdateApplicationStatusRequest;
+import com.nexhire.api.modules.hiring.ApplicationMessageRepository;
+import com.nexhire.api.modules.hiring.ApplicationNoteRepository;
+import com.nexhire.api.modules.hiring.Interview;
+import com.nexhire.api.modules.hiring.InterviewRepository;
+import com.nexhire.api.modules.hiring.InterviewStatus;
 import com.nexhire.api.modules.jobs.Job;
+import com.nexhire.api.modules.jobs.JobAccess;
 import com.nexhire.api.modules.jobs.JobRepository;
 import com.nexhire.api.modules.jobs.JobStatus;
 import com.nexhire.api.modules.notifications.NotificationService;
@@ -20,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,13 +39,17 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
     private final NotificationService notificationService;
+    private final JobAccess jobAccess;
+    private final InterviewRepository interviewRepository;
+    private final ApplicationNoteRepository noteRepository;
+    private final ApplicationMessageRepository messageRepository;
 
     @Transactional
     public ApplicationDTO apply(ApplyJobRequest request, User candidate) {
         Job job = jobRepository.findById(request.jobId())
             .orElseThrow(() -> new ResourceNotFoundException("Job", "id", request.jobId()));
 
-        if (job.getStatus() != JobStatus.OPEN) {
+        if (job.getStatus() != JobStatus.OPEN || job.isHidden()) {
             throw new BadRequestException("This job is not accepting applications");
         }
 
@@ -58,26 +69,32 @@ public class ApplicationService {
 
         notificationService.notifyApplicationReceived(saved);
 
-        return toDTO(saved);
+        return toCandidateDTO(saved);
     }
 
     public Page<ApplicationDTO> getMyApplications(UUID candidateId, Pageable pageable) {
-        return applicationRepository.findByCandidateId(candidateId, pageable).map(this::toDTO);
+        return applicationRepository.findByCandidateId(candidateId, pageable).map(this::toCandidateDTO);
+    }
+
+    public Optional<ApplicationDTO> getMyApplicationForJob(UUID jobId, UUID candidateId) {
+        return applicationRepository.findByJobIdAndCandidateId(jobId, candidateId).map(this::toCandidateDTO);
     }
 
     public Page<ApplicationDTO> getJobApplications(UUID jobId, User currentUser, Pageable pageable) {
         Job job = jobRepository.findById(jobId)
             .orElseThrow(() -> new ResourceNotFoundException("Job", "id", jobId));
 
-        if (!job.getRecruiter().getId().equals(currentUser.getId()) && currentUser.getRole() != Role.ADMIN) {
+        if (!jobAccess.canManage(job, currentUser)) {
             throw new ForbiddenException("You do not have permission to view these applications");
         }
 
         return applicationRepository.findByJobId(jobId, pageable).map(this::toDTO);
     }
 
-    public Page<ApplicationDTO> getRecruiterApplications(UUID recruiterId, Pageable pageable) {
-        return applicationRepository.findByJobRecruiterId(recruiterId, pageable).map(this::toDTO);
+    /** Applications across every job the recruiter manages (own + company team). */
+    public Page<ApplicationDTO> getRecruiterApplications(User recruiter, Pageable pageable) {
+        return applicationRepository.findManagedBy(recruiter.getId(), JobAccess.companyOrNone(recruiter), pageable)
+            .map(this::toDTO);
     }
 
     @Transactional
@@ -85,43 +102,59 @@ public class ApplicationService {
         Application application = applicationRepository.findById(applicationId)
             .orElseThrow(() -> new ResourceNotFoundException("Application", "id", applicationId));
 
-        boolean isRecruiter = application.getJob().getRecruiter().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         boolean isOwner = application.getCandidate().getId().equals(currentUser.getId());
 
         if (request.status() == ApplicationStatus.WITHDRAWN) {
             if (!isOwner) throw new ForbiddenException("Only the applicant can withdraw an application");
         } else {
-            if (!isRecruiter && !isAdmin) throw new ForbiddenException("Only the recruiter can update application status");
+            requireManage(application, currentUser);
+            if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
+                throw new BadRequestException("This candidate withdrew their application");
+            }
         }
 
+        ApplicationStatus previous = application.getStatus();
         application.setStatus(request.status());
         if (request.notes() != null) application.setNotes(request.notes());
 
         Application saved = applicationRepository.save(application);
-        notificationService.notifyApplicationStatusChanged(saved);
+        if (previous != saved.getStatus()) notificationService.notifyApplicationStatusChanged(saved);
+        if (saved.getStatus() == ApplicationStatus.HIRED) closeIfFilled(saved.getJob());
 
-        return toDTO(saved);
+        return isOwner ? toCandidateDTO(saved) : toDTO(saved);
     }
 
     @Transactional
     public List<ApplicationDTO> bulkUpdateStatus(BulkUpdateStatusRequest request, User currentUser) {
+        if (request.status() == ApplicationStatus.WITHDRAWN) {
+            throw new BadRequestException("Only the applicant can withdraw an application");
+        }
         List<Application> apps = applicationRepository.findAllById(request.applicationIds());
-        boolean hasUnauthorized = apps.stream().anyMatch(app ->
-            !app.getJob().getRecruiter().getId().equals(currentUser.getId())
-            && currentUser.getRole() != Role.ADMIN);
-        if (hasUnauthorized) {
+        if (apps.stream().anyMatch(app -> !jobAccess.canManage(app.getJob(), currentUser))) {
             throw new ForbiddenException("You do not have permission to update one or more of the selected applications");
         }
-        apps.forEach(app -> {
+        List<Application> changed = apps.stream()
+            .filter(app -> app.getStatus() != ApplicationStatus.WITHDRAWN && app.getStatus() != request.status())
+            .toList();
+        changed.forEach(app -> {
             app.setStatus(request.status());
             if (request.notes() != null) app.setNotes(request.notes());
         });
-        return applicationRepository.saveAll(apps).stream().map(this::toDTO).toList();
+        List<Application> saved = applicationRepository.saveAll(changed);
+        saved.forEach(notificationService::notifyApplicationStatusChanged);
+        if (request.status() == ApplicationStatus.HIRED) {
+            saved.stream().map(Application::getJob).distinct().forEach(this::closeIfFilled);
+        }
+        return apps.stream().map(this::toDTO).toList();
     }
 
-    public Optional<ApplicationDTO> getMyApplicationForJob(UUID jobId, UUID candidateId) {
-        return applicationRepository.findByJobIdAndCandidateId(jobId, candidateId).map(this::toDTO);
+    /** Private 1–5 rating (null clears it). */
+    @Transactional
+    public ApplicationDTO rate(UUID applicationId, Integer rating, User currentUser) {
+        if (rating != null && (rating < 1 || rating > 5)) throw new BadRequestException("Rating must be between 1 and 5");
+        Application application = getManaged(applicationId, currentUser);
+        application.setRating(rating);
+        return toDTO(applicationRepository.save(application));
     }
 
     public long countByCandidate(UUID candidateId) {
@@ -140,40 +173,101 @@ public class ApplicationService {
                 applicationRepository.countByStatus(ApplicationStatus.SHORTLISTED),
                 applicationRepository.countByStatus(ApplicationStatus.INTERVIEWED),
                 applicationRepository.countByStatus(ApplicationStatus.OFFERED),
+                applicationRepository.countByStatus(ApplicationStatus.HIRED),
                 applicationRepository.countByStatus(ApplicationStatus.REJECTED),
                 applicationRepository.countByStatus(ApplicationStatus.WITHDRAWN),
                 applicationRepository.count()
             );
         }
-        UUID rid = recruiter.getId();
-        long total = applicationRepository.countByRecruiterId(rid);
+        UUID uid = recruiter.getId();
+        UUID cid = JobAccess.companyOrNone(recruiter);
         return new ApplicationStatsDTO(
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.PENDING),
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.REVIEWING),
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.SHORTLISTED),
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.INTERVIEWED),
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.OFFERED),
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.REJECTED),
-            applicationRepository.countByRecruiterIdAndStatus(rid, ApplicationStatus.WITHDRAWN),
-            total
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.PENDING),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.REVIEWING),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.SHORTLISTED),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.INTERVIEWED),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.OFFERED),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.HIRED),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.REJECTED),
+            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.WITHDRAWN),
+            applicationRepository.countManaged(uid, cid)
         );
     }
 
+    // ─── Access helpers (also used by the hiring tools) ─────────────────────
+
+    public Application getManaged(UUID applicationId, User user) {
+        Application application = applicationRepository.findById(applicationId)
+            .orElseThrow(() -> new ResourceNotFoundException("Application", "id", applicationId));
+        requireManage(application, user);
+        return application;
+    }
+
+    /** The application if the user is its candidate or on its hiring team. */
+    public Application getParticipating(UUID applicationId, User user) {
+        Application application = applicationRepository.findById(applicationId)
+            .orElseThrow(() -> new ResourceNotFoundException("Application", "id", applicationId));
+        boolean isCandidate = application.getCandidate().getId().equals(user.getId());
+        if (!isCandidate && !jobAccess.canManage(application.getJob(), user)) {
+            throw new ForbiddenException("You do not have access to this application");
+        }
+        return application;
+    }
+
+    private void requireManage(Application application, User user) {
+        if (!jobAccess.canManage(application.getJob(), user)) {
+            throw new ForbiddenException("Only the hiring team can manage this application");
+        }
+    }
+
+    /** Mark the job FILLED once it has as many hires as openings. */
+    private void closeIfFilled(Job job) {
+        if (job.getStatus() != JobStatus.OPEN) return;
+        long hired = applicationRepository.countByJobIdAndStatus(job.getId(), ApplicationStatus.HIRED);
+        if (hired >= job.getOpenings()) {
+            job.setStatus(JobStatus.FILLED);
+            job.setFeatured(false);
+            jobRepository.save(job);
+        }
+    }
+
+    // ─── DTOs ───────────────────────────────────────────────────────────────
+
+    /** Hiring-team view, including the private rating and note count. */
     public ApplicationDTO toDTO(Application application) {
+        return toDTO(application, true);
+    }
+
+    /** Candidate view: private hiring-team fields are left out. */
+    public ApplicationDTO toCandidateDTO(Application application) {
+        return toDTO(application, false);
+    }
+
+    private ApplicationDTO toDTO(Application application, boolean hiringTeam) {
+        User candidate = application.getCandidate();
+        Optional<Interview> next = interviewRepository
+            .findFirstByApplicationIdAndStatusAndScheduledAtAfterOrderByScheduledAtAsc(application.getId(), InterviewStatus.SCHEDULED, Instant.now());
         return new ApplicationDTO(
             application.getId(),
             application.getJob().getId(),
             application.getJob().getTitle(),
             application.getJob().getCompanyName(),
-            application.getCandidate().getId(),
-            application.getCandidate().getFullName(),
-            application.getCandidate().getEmail(),
+            candidate.getId(),
+            candidate.getFullName(),
+            candidate.getEmail(),
             application.getCoverLetter(),
             application.getResumeUrl(),
             application.getStatus(),
             application.getNotes(),
             application.getAppliedAt(),
-            application.getUpdatedAt()
+            application.getUpdatedAt(),
+            candidate.getAvatarUrl(),
+            candidate.getHeadline(),
+            next.map(Interview::getScheduledAt).orElse(null),
+            next.map(Interview::getResponse).orElse(null),
+            hiringTeam ? application.getRating() : null,
+            hiringTeam ? noteRepository.countByApplicationId(application.getId()) : null,
+            messageRepository.countByApplicationId(application.getId())
         );
     }
 }

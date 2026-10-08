@@ -37,6 +37,7 @@ public class AdminController {
     private final ReportService reportService;
     private final AuditService auditService;
     private final SettingsService settingsService;
+    private final com.nexhire.api.modules.companies.CompanyService companyService;
 
     // ─── Overview ───────────────────────────────────────────────────────────
 
@@ -100,6 +101,28 @@ public class AdminController {
         @AuthenticationPrincipal User admin
     ) {
         return ResponseEntity.ok(jobService.moderate(id, request, admin));
+    }
+
+    // ─── Companies ──────────────────────────────────────────────────────────
+
+    @GetMapping("/companies")
+    @Operation(summary = "All companies; filter by name/industry and verification")
+    public ResponseEntity<Page<com.nexhire.api.modules.companies.dto.CompanyDTO>> companies(
+        @RequestParam(required = false) String q,
+        @RequestParam(required = false) Boolean verified,
+        Pageable pageable
+    ) {
+        return ResponseEntity.ok(companyService.search(q, verified, pageable));
+    }
+
+    @PatchMapping("/companies/{id}/verified")
+    @Operation(summary = "Verify a company (or remove verification)")
+    public ResponseEntity<com.nexhire.api.modules.companies.dto.CompanyDTO> verifyCompany(
+        @PathVariable UUID id,
+        @RequestBody VerifyUserRequest request,
+        @AuthenticationPrincipal User admin
+    ) {
+        return ResponseEntity.ok(companyService.setVerified(id, request.verified(), admin));
     }
 
     // ─── Reports ────────────────────────────────────────────────────────────

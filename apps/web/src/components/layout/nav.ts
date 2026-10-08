@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Bell, Bookmark, Briefcase, FileText, Flag, LayoutDashboard, PlusCircle, ScrollText, Search, Settings, User2, Users,
+  Bell, Bookmark, Briefcase, Building2, CalendarClock, FileText, Flag, LayoutDashboard, MessageSquareText, PlusCircle,
+  ScrollText, Search, Settings, User2, Users,
 } from 'lucide-react';
 import type { Role } from '@/types';
 
@@ -24,6 +25,8 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
     BROWSE,
     { href: '/jobs/saved', label: 'Saved jobs', short: 'Saved', icon: Bookmark },
     { href: '/applications', label: 'Applications', short: 'Applied', icon: FileText },
+    { href: '/interviews', label: 'Interviews', icon: CalendarClock },
+    { href: '/companies', label: 'Companies', icon: Building2 },
     NOTIFICATIONS,
     PROFILE,
   ],
@@ -31,6 +34,9 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
     DASHBOARD,
     { href: '/jobs/my', label: 'My jobs', icon: Briefcase },
     { href: '/jobs/create', label: 'Post a job', short: 'Post job', icon: PlusCircle },
+    { href: '/interviews', label: 'Interviews', icon: CalendarClock },
+    { href: '/company', label: 'Company', icon: Building2 },
+    { href: '/templates', label: 'Message templates', short: 'Templates', icon: MessageSquareText },
     NOTIFICATIONS,
     PROFILE,
   ],
@@ -38,6 +44,7 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
     ADMIN_OVERVIEW,
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
+    { href: '/admin/companies', label: 'Companies', icon: Building2 },
     { href: '/admin/reports', label: 'Reports', icon: Flag },
     { href: '/admin/audit', label: 'Audit log', short: 'Audit', icon: ScrollText },
     { href: '/admin/settings', label: 'Site settings', short: 'Settings', icon: Settings },
@@ -49,15 +56,17 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
 /** At most five role-specific tabs for the mobile bottom bar (sign-out lives in the avatar menu). */
 export const MOBILE_NAV: Record<Role, NavItem[]> = {
   CANDIDATE: [DASHBOARD, BROWSE, SIDEBAR_NAV.CANDIDATE[3], SIDEBAR_NAV.CANDIDATE[2], PROFILE],
-  RECRUITER: [DASHBOARD, SIDEBAR_NAV.RECRUITER[1], SIDEBAR_NAV.RECRUITER[2], NOTIFICATIONS, PROFILE],
-  ADMIN: [ADMIN_OVERVIEW, SIDEBAR_NAV.ADMIN[1], SIDEBAR_NAV.ADMIN[2], SIDEBAR_NAV.ADMIN[3], PROFILE],
+  // Notifications stay reachable from the bell in the top bar.
+  RECRUITER: [DASHBOARD, SIDEBAR_NAV.RECRUITER[1], SIDEBAR_NAV.RECRUITER[2], SIDEBAR_NAV.RECRUITER[3], PROFILE],
+  ADMIN: [ADMIN_OVERVIEW, SIDEBAR_NAV.ADMIN[1], SIDEBAR_NAV.ADMIN[2], SIDEBAR_NAV.ADMIN[4], PROFILE],
 };
 
-export const PUBLIC_NAV: NavItem[] = [BROWSE];
+export const PUBLIC_NAV: NavItem[] = [BROWSE, { href: '/companies', label: 'Companies', icon: Building2 }];
 
-/** Job pages that signed-out visitors may view: the listing and a single job's detail page. */
+/** Pages signed-out visitors may view: job listing/detail and the company directory/profiles. */
 export function isPublicPath(pathname: string): boolean {
   if (pathname === '/jobs' || pathname === '/jobs/') return true;
+  if (pathname === '/companies' || pathname.startsWith('/companies/')) return true;
   const m = /^\/jobs\/([^/]+)\/?$/.exec(pathname);
   return !!m && !['my', 'saved', 'create'].includes(m[1]);
 }
@@ -73,7 +82,7 @@ export function isNavActive(href: string, pathname: string): boolean {
       return false;
     case '/jobs/my':
       // A recruiter's job pages (applicants, edit) belong to "My jobs".
-      return pathname.startsWith('/jobs/my') || /^\/jobs\/[^/]+\/(applicants|edit)/.test(pathname);
+      return pathname.startsWith('/jobs/my') || /^\/jobs\/[^/]+\/(applicants|edit|analytics)/.test(pathname);
     case '/jobs': {
       const m = /^\/jobs\/([^/]+)\/?$/.exec(pathname);
       return !!m && !RESERVED_JOB_SEGMENTS.includes(m[1]);
@@ -107,9 +116,16 @@ export function getBreadcrumbs(pathname: string, role?: Role): Crumb[] {
     '/admin/reports': [{ label: 'Administration', href: '/admin' }, { label: 'Reports' }],
     '/admin/audit': [{ label: 'Administration', href: '/admin' }, { label: 'Audit log' }],
     '/admin/settings': [{ label: 'Administration', href: '/admin' }, { label: 'Site settings' }],
+    '/admin/companies': [{ label: 'Administration', href: '/admin' }, { label: 'Companies' }],
+    '/companies': [{ label: 'Companies' }],
+    '/company': [{ label: 'Company' }],
+    '/templates': [{ label: 'Message templates' }],
+    '/interviews': [{ label: 'Interviews' }],
   };
   const clean = pathname.replace(/\/$/, '') || '/';
   if (exact[clean]) return exact[clean];
+  if (/^\/companies\/[^/]+$/.test(clean)) return [{ label: 'Companies', href: '/companies' }, { label: 'Company profile' }];
+  if (/^\/jobs\/[^/]+\/analytics$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Analytics' }];
   if (/^\/admin\/users\/[^/]+$/.test(clean)) return [{ label: 'Users', href: '/admin/users' }, { label: 'User details' }];
   if (/^\/jobs\/[^/]+\/applicants$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Applicants' }];
   if (/^\/jobs\/[^/]+\/edit$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Edit job' }];

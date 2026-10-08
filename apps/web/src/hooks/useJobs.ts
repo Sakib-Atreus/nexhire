@@ -18,11 +18,14 @@ export interface JobPayload {
   salaryMin?: number | null;
   salaryMax?: number | null;
   salaryCurrency?: string;
+  /** Create: OPEN (publish, default) or DRAFT. Edit: any status. */
   status?: JobStatus;
   tags?: string;
   deadline?: string | null;
   screeningQuestions?: string[];
   category?: string;
+  /** People to hire (1–500); the job closes as FILLED once reached. */
+  openings?: number;
 }
 
 interface JobSearchParams {

@@ -6,6 +6,7 @@ import com.nexhire.api.modules.applications.ApplicationRepository;
 import com.nexhire.api.modules.applications.ApplicationService;
 import com.nexhire.api.modules.applications.ApplicationStatus;
 import com.nexhire.api.modules.applications.dto.ApplyJobRequest;
+import com.nexhire.api.modules.applications.dto.UpdateApplicationStatusRequest;
 import com.nexhire.api.modules.jobs.Job;
 import com.nexhire.api.modules.jobs.JobRepository;
 import com.nexhire.api.modules.jobs.JobStatus;
@@ -34,6 +35,10 @@ class ApplicationServiceTest {
     @Mock private ApplicationRepository applicationRepository;
     @Mock private JobRepository jobRepository;
     @Mock private NotificationService notificationService;
+    @Mock private com.nexhire.api.modules.hiring.InterviewRepository interviewRepository;
+    @Mock private com.nexhire.api.modules.hiring.ApplicationNoteRepository noteRepository;
+    @Mock private com.nexhire.api.modules.hiring.ApplicationMessageRepository messageRepository;
+    @org.mockito.Spy private com.nexhire.api.modules.jobs.JobAccess jobAccess = new com.nexhire.api.modules.jobs.JobAccess();
     @InjectMocks private ApplicationService applicationService;
 
     private User candidate() {
@@ -111,5 +116,49 @@ class ApplicationServiceTest {
         assertThatThrownBy(() -> applicationService.apply(request, candidate))
             .isInstanceOf(BadRequestException.class)
             .hasMessageContaining("already applied");
+    }
+
+    @Test
+    void hiringLastOpening_marksJobFilled() {
+        User recruiter = User.builder()
+            .id(UUID.randomUUID()).role(Role.RECRUITER)
+            .email("r@test.com").firstName("R").lastName("R").build();
+        User candidate = User.builder()
+            .id(UUID.randomUUID()).role(Role.CANDIDATE)
+            .email("c@test.com").firstName("C").lastName("C").build();
+        Job job = Job.builder()
+            .id(UUID.randomUUID()).recruiter(recruiter).title("T").companyName("Acme")
+            .status(JobStatus.OPEN).featured(true).openings(1).build();
+        Application app = Application.builder()
+            .id(UUID.randomUUID()).job(job).candidate(candidate)
+            .status(ApplicationStatus.OFFERED).build();
+        when(applicationRepository.findById(app.getId())).thenReturn(Optional.of(app));
+        when(applicationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(applicationRepository.countByJobIdAndStatus(job.getId(), ApplicationStatus.HIRED)).thenReturn(1L);
+
+        applicationService.updateStatus(app.getId(),
+            new UpdateApplicationStatusRequest(ApplicationStatus.HIRED, null),
+            recruiter);
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FILLED);
+        assertThat(job.isFeatured()).isFalse();
+    }
+
+    @Test
+    void recruiterCannotChangeWithdrawnApplication() {
+        User recruiter = User.builder()
+            .id(UUID.randomUUID()).role(Role.RECRUITER)
+            .email("r@test.com").firstName("R").lastName("R").build();
+        Job job = Job.builder()
+            .id(UUID.randomUUID()).recruiter(recruiter).title("T").companyName("Acme").build();
+        Application app = Application.builder()
+            .id(UUID.randomUUID()).job(job)
+            .candidate(User.builder().id(UUID.randomUUID()).build())
+            .status(ApplicationStatus.WITHDRAWN).build();
+        when(applicationRepository.findById(app.getId())).thenReturn(Optional.of(app));
+
+        assertThatThrownBy(() -> applicationService.updateStatus(app.getId(),
+            new UpdateApplicationStatusRequest(ApplicationStatus.REVIEWING, null),
+            recruiter)).isInstanceOf(BadRequestException.class);
     }
 }

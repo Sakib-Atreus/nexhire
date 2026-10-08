@@ -81,6 +81,16 @@ public class Job {
     @Column(length = 50)
     private String category;
 
+    /** Posting company; companyName/companyLogoUrl are kept in sync as a denormalized copy. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private com.nexhire.api.modules.companies.Company company;
+
+    /** People to hire; the job is marked FILLED once this many applicants are hired. */
+    @Builder.Default
+    @Column(nullable = false)
+    private int openings = 1;
+
     /** Shown first in search and on the home page. */
     @Builder.Default
     @Column(nullable = false)

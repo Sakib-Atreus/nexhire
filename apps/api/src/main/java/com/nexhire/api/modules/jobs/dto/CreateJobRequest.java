@@ -27,5 +27,8 @@ public record CreateJobRequest(
     String tags,
     LocalDate deadline,
     List<String> screeningQuestions,
-    @Size(max = 50) String category
+    @Size(max = 50) String category,
+    /** OPEN (default) publishes immediately; DRAFT saves without publishing. */
+    com.nexhire.api.modules.jobs.JobStatus status,
+    @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(500) Integer openings
 ) {}

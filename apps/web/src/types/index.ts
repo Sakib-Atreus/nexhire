@@ -10,6 +10,7 @@ export type ApplicationStatus =
   | 'SHORTLISTED'
   | 'INTERVIEWED'
   | 'OFFERED'
+  | 'HIRED'
   | 'REJECTED'
   | 'WITHDRAWN';
 
@@ -18,7 +19,11 @@ export type NotificationType =
   | 'APPLICATION_STATUS_CHANGED'
   | 'JOB_POSTED'
   | 'JOB_CLOSED'
-  | 'GENERAL';
+  | 'GENERAL'
+  | 'INTERVIEW_SCHEDULED'
+  | 'INTERVIEW_UPDATED'
+  | 'MESSAGE_RECEIVED'
+  | 'INTERVIEW_RESPONSE';
 
 export interface User {
   id: string;
@@ -80,6 +85,14 @@ export interface Job {
   /** Hidden by moderation; only the owner and admins can see it. */
   hidden?: boolean;
   recruiterVerified?: boolean;
+  companyId?: string | null;
+  /** Public company page: /companies/{companySlug}. */
+  companySlug?: string | null;
+  companyVerified?: boolean;
+  /** People to hire; the job closes as FILLED once this many applicants are hired. */
+  openings?: number;
+  /** Job detail only: the viewer is on this job's hiring team (poster, company teammate or admin). */
+  canManage?: boolean;
 }
 
 export interface Application {
@@ -96,6 +109,17 @@ export interface Application {
   notes?: string;
   appliedAt: string;
   updatedAt: string;
+  candidateAvatarUrl?: string | null;
+  candidateHeadline?: string | null;
+  /** Next scheduled interview (ISO), if any. */
+  nextInterviewAt?: string | null;
+  /** The candidate's response to that next interview. */
+  nextInterviewResponse?: InterviewResponse | null;
+  /** Hiring team only; null/absent for candidates. */
+  rating?: number | null;
+  /** Hiring team only; null/absent for candidates. */
+  noteCount?: number | null;
+  messageCount?: number;
 }
 
 export interface Notification {
@@ -129,7 +153,7 @@ export interface ApiError {
 
 export interface SavedJob { id: string; jobId: string; savedAt: string; job: Job; }
 export interface FileUploadResponse { url: string; fileName: string; contentType: string; size: number; }
-export interface ApplicationStats { pending: number; reviewing: number; shortlisted: number; interviewed: number; offered: number; rejected: number; withdrawn: number; total: number; }
+export interface ApplicationStats { pending: number; reviewing: number; shortlisted: number; interviewed: number; offered: number; hired: number; rejected: number; withdrawn: number; total: number; }
 export interface NotificationPreferences { applicationReceived: boolean; statusChanged: boolean; general: boolean; }
 
 // ─── Admin panel ─────────────────────────────────────────────────────────────
@@ -141,7 +165,7 @@ export type AnnouncementTone = 'info' | 'success' | 'warning';
 export type AuditAction =
   | 'USER_SUSPENDED' | 'USER_RESTORED' | 'USER_ROLE_CHANGED' | 'USER_DELETED' | 'USER_VERIFIED' | 'USER_UNVERIFIED'
   | 'JOB_HIDDEN' | 'JOB_UNHIDDEN' | 'JOB_FEATURED' | 'JOB_UNFEATURED' | 'JOB_STATUS_CHANGED' | 'JOB_DELETED'
-  | 'REPORT_RESOLVED' | 'REPORT_DISMISSED' | 'SETTINGS_UPDATED';
+  | 'REPORT_RESOLVED' | 'REPORT_DISMISSED' | 'SETTINGS_UPDATED' | 'COMPANY_VERIFIED' | 'COMPANY_UNVERIFIED';
 
 export interface DailyCount { date: string; count: number; }
 export interface CompanyStat { companyName: string; openJobs: number; applications: number; }
@@ -173,7 +197,7 @@ export interface AuditLogEntry {
   actorName?: string | null;
   actorEmail?: string | null;
   action: AuditAction;
-  targetType?: 'USER' | 'JOB' | 'REPORT' | 'SETTINGS' | null;
+  targetType?: 'USER' | 'JOB' | 'REPORT' | 'SETTINGS' | 'COMPANY' | null;
   targetId?: string | null;
   targetLabel?: string | null;
   details?: string | null;
@@ -223,4 +247,159 @@ export interface PublicSettings {
   announcement: Announcement;
   categories: string[];
   skills: string[];
+}
+
+// ─── Companies & hiring tools ────────────────────────────────────────────────
+
+export interface Company {
+  id: string;
+  slug: string;
+  name: string;
+  logoUrl?: string | null;
+  website?: string | null;
+  /** Headcount band, one of CompanySize. */
+  size?: string | null;
+  industry?: string | null;
+  headquarters?: string | null;
+  description?: string | null;
+  verified: boolean;
+  openJobs: number;
+  members: number;
+  createdAt: string;
+}
+
+export interface CompanyMember {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string | null;
+  headline?: string | null;
+  owner: boolean;
+  joinedAt: string;
+}
+
+export interface MyCompany {
+  company: Company;
+  members: CompanyMember[];
+  isOwner: boolean;
+}
+
+export interface CompanyProfile {
+  company: Company;
+  openJobs: Job[];
+}
+
+export interface CompanyInput {
+  name: string;
+  logoUrl?: string;
+  website?: string;
+  size?: string;
+  industry?: string;
+  headquarters?: string;
+  description?: string;
+}
+
+export type InterviewType = 'VIDEO' | 'PHONE' | 'ONSITE';
+export type InterviewStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+/** The candidate's answer to the current invitation (resets to AWAITING whenever the recruiter picks a new time). */
+export type InterviewResponse = 'AWAITING' | 'ACCEPTED' | 'NEW_TIME_REQUESTED' | 'DECLINED';
+
+export interface Interview {
+  id: string;
+  applicationId: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  candidateId: string;
+  candidateName: string;
+  /** ISO instant (UTC). Display in the viewer's local time. */
+  scheduledAt: string;
+  durationMinutes: number;
+  type: InterviewType;
+  /** Video link, phone number or address. */
+  location?: string | null;
+  /** Shown to the candidate. */
+  message?: string | null;
+  status: InterviewStatus;
+  createdAt: string;
+  response: InterviewResponse;
+  /** Candidate's note with their response (reason for declining, or context for new times). */
+  responseNote?: string | null;
+  /** ISO instants the candidate suggested (when response = NEW_TIME_REQUESTED). */
+  proposedTimes: string[];
+  respondedAt?: string | null;
+  /** When the current time was sent to the candidate. */
+  invitedAt: string;
+  /** Scheduled, unanswered 48h after the invite, and still upcoming: the recruiter should follow up. */
+  needsFollowUp: boolean;
+}
+
+export interface InterviewInput {
+  scheduledAt?: string;
+  durationMinutes?: number;
+  type?: InterviewType;
+  location?: string;
+  message?: string;
+  status?: InterviewStatus;
+  /** Save even though it overlaps other interviews (after showing the clash warning). */
+  allowConflicts?: boolean;
+}
+
+/**
+ * One of YOUR interviews overlapping a proposed time. The candidate's schedule is never checked here
+ * (they see their own clashes when responding). Label is "Another interview" with null ids for jobs you
+ * can no longer manage.
+ */
+export interface InterviewConflict {
+  who: 'YOU';
+  interviewId: string | null;
+  applicationId: string | null;
+  scheduledAt: string;
+  durationMinutes: number;
+  label: string;
+}
+
+export interface ApplicationNote {
+  id: string;
+  applicationId: string;
+  authorId?: string | null;
+  authorName?: string | null;
+  body: string;
+  createdAt: string;
+}
+
+export interface ApplicationMessage {
+  id: string;
+  applicationId: string;
+  senderId?: string | null;
+  senderName?: string | null;
+  fromCandidate: boolean;
+  body: string;
+  createdAt: string;
+}
+
+/** Placeholders the server fills in: {{candidateName}} {{firstName}} {{jobTitle}} {{companyName}} {{recruiterName}}. */
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  body: string;
+  updatedAt: string;
+}
+
+export interface JobAnalytics {
+  views: number;
+  applications: number;
+  /** Reached at least the Interview stage (or had an interview booked). */
+  interviewed: number;
+  /** Reached at least Offer (includes hired). */
+  offered: number;
+  hired: number;
+  openings: number;
+  byStatus: Record<ApplicationStatus, number>;
+  /** Percentages, null when the base is 0. */
+  viewToApplyRate: number | null;
+  applyToHireRate: number | null;
+  averageRating: number | null;
+  daysOpen: number;
+  applicationsPerDay: DailyCount[];
 }

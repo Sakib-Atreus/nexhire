@@ -104,6 +104,19 @@ public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificatio
 
     long countByRecruiterId(UUID recruiterId);
 
+    long countByCompanyIdAndStatusAndHiddenFalse(UUID companyId, JobStatus status);
+
+    java.util.List<Job> findTop50ByCompanyIdAndStatusAndHiddenFalseOrderByFeaturedDescCreatedAtDesc(UUID companyId, JobStatus status);
+
+    /** Jobs a recruiter manages: their own, plus every job of their company (pass JobAccess.NO_COMPANY when none). */
+    @Query("SELECT j FROM Job j WHERE j.recruiter.id = :userId OR j.company.id = :companyId")
+    Page<Job> findManagedBy(@Param("userId") UUID userId, @Param("companyId") UUID companyId, Pageable pageable);
+
+    /** Keep the denormalized company name/logo on jobs in sync with the company profile. */
+    @Modifying
+    @Query("UPDATE Job j SET j.companyName = :name, j.companyLogoUrl = :logoUrl WHERE j.company.id = :companyId")
+    int syncCompanyDetails(@Param("companyId") UUID companyId, @Param("name") String name, @Param("logoUrl") String logoUrl);
+
     java.util.List<Job> findTop5ByRecruiterIdOrderByCreatedAtDesc(UUID recruiterId);
 
     /** [companyName, openJobs, applications] for the companies with the most applications. */

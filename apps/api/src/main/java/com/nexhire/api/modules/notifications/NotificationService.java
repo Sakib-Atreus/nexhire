@@ -49,6 +49,12 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    /** Send a notification built from plain values (safe to call with data read inside a transaction). */
+    @Async
+    public void notify(UUID userId, NotificationType type, String title, String message, UUID referenceId, String referenceType) {
+        notificationProducer.send(new NotificationMessage(userId, type, title, message, referenceId, referenceType));
+    }
+
     @Async
     public void notifyApplicationReceived(Application application) {
         NotificationMessage message = new NotificationMessage(

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useId, useState } from 'react';
+import { Suspense, useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
-import { FileText, ExternalLink, ChevronDown, PartyPopper, Send } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { CalendarClock, FileText, ExternalLink, ChevronDown, Info, MessagesSquare, PartyPopper, Send, X } from 'lucide-react';
 import type { Application } from '@/types';
 import { useMyApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
 import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_STYLES } from '@/lib/constants';
@@ -18,17 +19,29 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { Pagination } from '@/components/ui/Pagination';
 import { ApplicationProgress } from '@/components/applications/ApplicationProgress';
+import { ApplicationActivityPanel } from '@/components/applications/ApplicationActivityPanel';
+import { TimeZoneNote } from '@/components/interviews/InterviewParts';
+import { formatShortDate } from '@/components/interviews/interviewUtils';
 
 const CLOSED_STATUSES = new Set(['REJECTED', 'WITHDRAWN']);
 
-function ApplicationCard({ app, onWithdraw }: { app: Application; onWithdraw: (app: Application) => void }) {
+function ApplicationCard({ app, onWithdraw, activityOpen, onToggleActivity, highlighted }: {
+  app: Application;
+  onWithdraw: (app: Application) => void;
+  activityOpen: boolean;
+  onToggleActivity: () => void;
+  highlighted?: boolean;
+}) {
   const [showLetter, setShowLetter] = useState(false);
   const letterId = useId();
+  const activityId = useId();
+  const messageCount = app.messageCount ?? 0;
+  const nextInterview = app.nextInterviewAt && new Date(app.nextInterviewAt).getTime() > Date.now() - 60 * 60_000 ? app.nextInterviewAt : null;
   const closed = CLOSED_STATUSES.has(app.status);
   const updated = app.updatedAt && app.updatedAt !== app.appliedAt;
 
   return (
-    <Card className={cn('p-5', closed && 'bg-slate-50/60')}>
+    <Card id={`application-${app.id}`} className={cn('p-5 scroll-mt-6 transition-shadow', closed && 'bg-slate-50/60', highlighted && 'ring-2 ring-primary-500/60')}>
       <div className="flex items-start gap-4">
         <CompanyLogo name={app.companyName} size="sm" />
         <div className="min-w-0 flex-1">
@@ -49,6 +62,22 @@ function ApplicationCard({ app, onWithdraw }: { app: Application; onWithdraw: (a
             Applied {formatDate(app.appliedAt)}
             {updated && <> · Updated {timeAgo(app.updatedAt)}</>}
           </p>
+          {(nextInterview || messageCount > 0) && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {nextInterview && (
+                <Badge tone="bg-indigo-50 text-indigo-700 ring-indigo-600/20">
+                  <CalendarClock className="w-3 h-3" aria-hidden />
+                  <span suppressHydrationWarning>Interview {formatShortDate(nextInterview)}</span>
+                </Badge>
+              )}
+              {messageCount > 0 && (
+                <Badge>
+                  <MessagesSquare className="w-3 h-3" aria-hidden />
+                  {pluralize(messageCount, 'message')}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -72,6 +101,16 @@ function ApplicationCard({ app, onWithdraw }: { app: Application; onWithdraw: (a
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-t border-slate-100 pt-3">
+          <Button
+            variant={activityOpen ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={onToggleActivity}
+            aria-expanded={activityOpen}
+            aria-controls={activityId}
+          >
+            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', activityOpen && 'rotate-180')} aria-hidden />
+            Messages &amp; interviews
+          </Button>
           {app.coverLetter && (
             <Button
               variant="ghost"
@@ -116,6 +155,8 @@ function ApplicationCard({ app, onWithdraw }: { app: Application; onWithdraw: (a
             <p className="whitespace-pre-line break-words text-sm leading-relaxed text-slate-700">{app.coverLetter}</p>
           </div>
         )}
+
+        {activityOpen && <ApplicationActivityPanel application={app} id={activityId} />}
       </div>
     </Card>
   );
@@ -132,18 +173,56 @@ function ApplicationSkeleton() {
           <Skeleton className="h-3 w-1/4" />
         </div>
       </div>
-      <div className="mt-5 sm:pl-14 grid grid-cols-5 gap-1.5">
-        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-1.5 rounded-full" />)}
+      <div className="mt-5 sm:pl-14 grid grid-cols-6 gap-1.5">
+        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-1.5 rounded-full" />)}
       </div>
     </Card>
   );
 }
 
-export default function ApplicationsPage() {
+function ApplicationsPageContent() {
   const [page, setPage] = useState(0);
   const { data, isLoading, isError, error, refetch, isRefetching } = useMyApplications(page);
   const { mutate: updateStatus, isPending: withdrawing } = useUpdateApplicationStatus();
   const [target, setTarget] = useState<Application | null>(null);
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const searchParams = useSearchParams();
+  const deepLinkId = searchParams.get('application');
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [deepLinkMissing, setDeepLinkMissing] = useState(false);
+  const handledDeepLink = useRef<string | null>(null);
+
+  const toggle = useCallback((id: string) => {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Deep link from notifications: /applications?application=<id> opens and scrolls to that application.
+  useEffect(() => {
+    if (!deepLinkId || !data || handledDeepLink.current === deepLinkId) return;
+    handledDeepLink.current = deepLinkId;
+    const found = data.content.some((a) => a.id === deepLinkId);
+    if (!found) {
+      setDeepLinkMissing(true);
+      return;
+    }
+    setDeepLinkMissing(false);
+    setOpen((prev) => new Set(prev).add(deepLinkId));
+    setHighlightId(deepLinkId);
+    requestAnimationFrame(() => {
+      document.getElementById(`application-${deepLinkId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [deepLinkId, data]);
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const t = setTimeout(() => setHighlightId(null), 4000);
+    return () => clearTimeout(t);
+  }, [highlightId]);
 
   const apps = data?.content ?? [];
   const total = data?.totalElements ?? 0;
@@ -173,7 +252,7 @@ export default function ApplicationsPage() {
   };
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader
         title="My applications"
         description={
@@ -185,6 +264,18 @@ export default function ApplicationsPage() {
           total > 0 ? <Link href="/jobs" className={buttonClasses('secondary')}>Find more jobs</Link> : undefined
         }
       />
+
+      {deepLinkMissing && (
+        <div role="status" className="mb-4 flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800">
+          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden />
+          <p className="flex-1">
+            The application from your notification isn&apos;t on this page. It may be on another page of your list, or it may no longer be available.
+          </p>
+          <button type="button" onClick={() => setDeepLinkMissing(false)} className="-m-1 p-1 rounded text-sky-700 hover:bg-sky-100" aria-label="Dismiss">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-3" aria-busy="true" aria-label="Loading applications">
@@ -205,8 +296,18 @@ export default function ApplicationsPage() {
         </Card>
       ) : (
         <>
+          <TimeZoneNote className="mb-3" />
           <div className="space-y-3">
-            {apps.map((app) => <ApplicationCard key={app.id} app={app} onWithdraw={setTarget} />)}
+            {apps.map((app) => (
+              <ApplicationCard
+                key={app.id}
+                app={app}
+                onWithdraw={setTarget}
+                activityOpen={open.has(app.id)}
+                onToggleActivity={() => toggle(app.id)}
+                highlighted={highlightId === app.id}
+              />
+            ))}
           </div>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onChange={goToPage} />
         </>
@@ -226,5 +327,13 @@ export default function ApplicationsPage() {
         confirmLabel="Withdraw application"
       />
     </div>
+  );
+}
+
+export default function ApplicationsPage() {
+  return (
+    <Suspense>
+      <ApplicationsPageContent />
+    </Suspense>
   );
 }

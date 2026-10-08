@@ -79,6 +79,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean verified = false;
 
+    /** Company this recruiter belongs to (plain id: the security principal is a detached entity). */
+    @Column(name = "company_id")
+    private UUID companyId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

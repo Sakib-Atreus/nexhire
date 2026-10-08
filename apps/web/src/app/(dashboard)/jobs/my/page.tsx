@@ -1,13 +1,15 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import Link from 'next/link';
-import { Briefcase, CalendarClock, Eye, MapPin, Plus, SearchX, Users } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Briefcase, CalendarClock, Eye, MapPin, Plus, SearchX, UserRound } from 'lucide-react';
 import type { Job, JobStatus } from '@/types';
 import { useDeleteJob, useMyJobs } from '@/hooks/useJobs';
 import { JOB_STATUS_LABELS, JOB_STATUS_STYLES, JOB_TYPE_LABELS } from '@/lib/constants';
 import { daysUntil, formatDate, getErrorMessage, pluralize, timeAgo } from '@/lib/format';
 import { toast } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/cn';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +21,12 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { JobRowActions } from '@/components/recruiter/JobRowActions';
 
 const FILTERS: Array<JobStatus | ''> = ['', 'OPEN', 'DRAFT', 'CLOSED', 'FILLED'];
+const FILTER_LABELS: Record<JobStatus, string> = { OPEN: 'Open', DRAFT: 'Drafts', CLOSED: 'Closed', FILLED: 'Filled' };
+
+function parseStatus(value: string | null): JobStatus | '' {
+  const v = value?.toUpperCase();
+  return v === 'OPEN' || v === 'DRAFT' || v === 'CLOSED' || v === 'FILLED' ? v : '';
+}
 
 function Deadline({ value }: { value?: string }) {
   const days = daysUntil(value);
@@ -32,46 +40,56 @@ function Deadline({ value }: { value?: string }) {
   );
 }
 
-function JobRow({ job, onDelete }: { job: Job; onDelete: (job: Job) => void }) {
-  const applicants = job.applicationCount ?? 0;
+function JobRow({ job, currentUserId, onDelete }: { job: Job; currentUserId?: string; onDelete: (job: Job) => void }) {
+  const isDraft = job.status === 'DRAFT';
+  const byTeammate = !!currentUserId && job.recruiterId !== currentUserId;
+  const openings = job.openings ?? 1;
   return (
-    <Card className="p-4 sm:p-5 hover:shadow-md transition-shadow">
-      <div className="flex flex-col md:flex-row md:items-center gap-4">
+    <Card className={cn('p-4 sm:p-5 hover:shadow-md transition-shadow', isDraft && 'border-dashed')}>
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
         <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
           <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="sm" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <Link href={`/jobs/${job.id}`} className="font-semibold text-slate-900 hover:text-primary-600 break-words">
+              <Link
+                href={isDraft ? `/jobs/${job.id}/edit` : `/jobs/${job.id}`}
+                className="font-semibold text-slate-900 hover:text-primary-600 break-words min-w-0"
+              >
                 {job.title}
               </Link>
               <Badge tone={JOB_STATUS_STYLES[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
             </div>
             <p className="text-sm text-slate-500 mt-0.5 truncate">
-              {[job.companyName, JOB_TYPE_LABELS[job.jobType]].filter(Boolean).join(' · ')}
+              {[job.companyName, JOB_TYPE_LABELS[job.jobType], openings > 1 ? `${openings} openings` : null].filter(Boolean).join(' · ')}
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
+              {byTeammate && (
+                <span className="inline-flex items-center gap-1 min-w-0">
+                  <UserRound className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
+                  <span className="truncate">Posted by {job.recruiterName}</span>
+                </span>
+              )}
               {job.location && (
                 <span className="inline-flex items-center gap-1 min-w-0">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden /> <span className="truncate">{job.location}</span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-1">
-                <Eye className="w-3.5 h-3.5" aria-hidden /> {pluralize(job.viewCount ?? 0, 'view')}
-              </span>
-              <span title={formatDate(job.createdAt)}>Posted {timeAgo(job.createdAt)}</span>
-              <Deadline value={job.deadline} />
+              {isDraft ? (
+                <span title={formatDate(job.updatedAt)}>Last edited {timeAgo(job.updatedAt)} · Only your hiring team can see it</span>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5" aria-hidden /> {pluralize(job.viewCount ?? 0, 'view')}
+                  </span>
+                  <span title={formatDate(job.createdAt)}>Posted {timeAgo(job.createdAt)}</span>
+                  {job.status === 'OPEN' && <Deadline value={job.deadline} />}
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between md:justify-end gap-2 md:flex-shrink-0">
-          <Link
-            href={`/jobs/${job.id}/applicants`}
-            className={buttonClasses('secondary', 'sm', 'text-primary-700')}
-          >
-            <Users className="w-3.5 h-3.5" aria-hidden />
-            {pluralize(applicants, 'applicant')}
-          </Link>
+        <div className="flex lg:justify-end lg:flex-shrink-0">
           <JobRowActions job={job} onDelete={onDelete} />
         </div>
       </div>
@@ -80,10 +98,31 @@ function JobRow({ job, onDelete }: { job: Job; onDelete: (job: Job) => void }) {
 }
 
 export default function MyJobsPage() {
+  // useSearchParams needs a Suspense boundary in the App Router.
+  return (
+    <Suspense fallback={null}>
+      <MyJobs />
+    </Suspense>
+  );
+}
+
+function MyJobs() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const user = useAuthStore((s) => s.user);
   const { data, isLoading, error, refetch, isRefetching } = useMyJobs();
   const deleteJob = useDeleteJob();
   const [deleteTarget, setDeleteTarget] = useState<Job | null>(null);
-  const [statusFilter, setStatusFilter] = useState<JobStatus | ''>('');
+  const statusFilter = parseStatus(searchParams.get('status'));
+
+  function setStatusFilter(next: JobStatus | '') {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next) params.set('status', next);
+    else params.delete('status');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   const jobs = data?.content ?? [];
   const filtered = statusFilter ? jobs.filter((j) => j.status === statusFilter) : jobs;
@@ -92,6 +131,7 @@ export default function MyJobsPage() {
   const stats = [
     { label: 'Total jobs', value: data?.totalElements ?? jobs.length },
     { label: 'Open', value: countFor('OPEN') },
+    { label: 'Drafts', value: countFor('DRAFT') },
     { label: 'Total applicants', value: jobs.reduce((sum, j) => sum + (j.applicationCount ?? 0), 0) },
   ];
 
@@ -114,7 +154,7 @@ export default function MyJobsPage() {
     <div>
       <PageHeader
         title="My jobs"
-        description="Manage your postings and review applicants."
+        description="Manage your team's postings, drafts and applicants."
         actions={
           <Link href="/jobs/create" className={buttonClasses('primary')}>
             <Plus className="w-4 h-4" aria-hidden /> Post a job
@@ -123,7 +163,7 @@ export default function MyJobsPage() {
       />
 
       {!error && (
-        <dl className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {stats.map((s) => (
             <Card key={s.label} className="px-3 py-3 sm:px-5 sm:py-4">
               <dt className="text-xs font-medium text-slate-500">{s.label}</dt>
@@ -149,7 +189,7 @@ export default function MyJobsPage() {
                 active ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
               )}
             >
-              {s ? JOB_STATUS_LABELS[s] : 'All'}
+              {s ? FILTER_LABELS[s] : 'All'}
               <span className={cn('text-xs tabular-nums', active ? 'text-primary-100' : 'text-slate-400')}>{countFor(s)}</span>
             </button>
           );
@@ -179,7 +219,11 @@ export default function MyJobsPage() {
             <EmptyState
               icon={SearchX}
               title="No jobs match this filter"
-              description={`You have no ${JOB_STATUS_LABELS[statusFilter].toLowerCase()} jobs right now.`}
+              description={
+                statusFilter === 'DRAFT'
+                  ? 'You have no drafts. Use “Save as draft” when posting a job to finish it later.'
+                  : `You have no ${JOB_STATUS_LABELS[statusFilter].toLowerCase()} jobs right now.`
+              }
               action={
                 <button type="button" onClick={() => setStatusFilter('')} className={buttonClasses('secondary', 'sm')}>
                   Show all jobs
@@ -203,7 +247,7 @@ export default function MyJobsPage() {
         <ul className="space-y-3">
           {filtered.map((job) => (
             <li key={job.id}>
-              <JobRow job={job} onDelete={setDeleteTarget} />
+              <JobRow job={job} currentUserId={user?.id} onDelete={setDeleteTarget} />
             </li>
           ))}
         </ul>

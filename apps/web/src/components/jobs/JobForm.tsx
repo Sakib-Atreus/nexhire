@@ -1,18 +1,22 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertCircle, Banknote, Briefcase, CheckCircle2, Circle, ClipboardList, FileText, FolderOpen, MapPin, Plus, Tags, Trash2 } from 'lucide-react';
+import { AlertCircle, Banknote, Briefcase, CheckCircle2, Circle, ClipboardList, FileText, FolderOpen, MapPin, Plus, Tags, Trash2, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Job, JobStatus } from '@/types';
 import type { JobPayload } from '@/hooks/useJobs';
 import { usePublicSettings } from '@/hooks/useSettings';
+import { useMyCompany } from '@/hooks/useCompanies';
+import { useAuthStore } from '@/store/authStore';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { FormField, Input, Select, Textarea } from '@/components/ui/Field';
+import { Skeleton } from '@/components/ui/States';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { SkillsInput } from '@/components/ui/SkillsInput';
 import {
@@ -31,6 +35,26 @@ const MAX_QUESTIONS = 5;
 const MAX_TAGS = 15;
 const MAX_SUGGESTIONS = 12;
 const JOB_STATUSES: JobStatus[] = ['OPEN', 'DRAFT', 'CLOSED', 'FILLED'];
+const MAX_OPENINGS = 500;
+
+/**
+ * What the recruiter clicked. Create: `publish` (OPEN) or `draft` (DRAFT).
+ * Edit: `save` (keeps the chosen status) or `publish` (save + OPEN, offered for drafts).
+ */
+export type JobFormAction = 'publish' | 'draft' | 'save';
+
+const openingsField = z.preprocess(
+  (v) => {
+    if (v === '' || v === null || v === undefined) return undefined;
+    const n = Number(v);
+    return Number.isNaN(n) ? v : n;
+  },
+  z
+    .number({ required_error: 'Enter how many people you want to hire', invalid_type_error: 'Enter a whole number, e.g. 1' })
+    .int('Enter a whole number')
+    .min(1, 'Hire at least 1 person')
+    .max(MAX_OPENINGS, `You can hire up to ${MAX_OPENINGS} people per posting`)
+);
 
 /** Empty input → undefined (never 0); anything else must be a non-negative whole amount. */
 const money = z.preprocess(
@@ -52,6 +76,8 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+const isHttpUrl = (v?: string | null) => /^https?:\/\/\S+$/i.test(v?.trim() ?? '');
+
 function makeSchema(mode: 'create' | 'edit') {
   return z
     .object({
@@ -70,6 +96,7 @@ function makeSchema(mode: 'create' | 'edit') {
         errorMap: () => ({ message: 'Choose an experience level' }),
       }),
       status: z.enum(['OPEN', 'DRAFT', 'CLOSED', 'FILLED']).optional(),
+      openings: openingsField,
       salaryCurrency: z.string().min(1, 'Choose a currency'),
       salaryMin: money,
       salaryMax: money,
@@ -104,12 +131,14 @@ function defaultsFrom(job?: Job): FormInput {
   return {
     title: job?.title ?? '',
     companyName: job?.companyName ?? '',
-    companyLogoUrl: job?.companyLogoUrl ?? '',
+    // Company jobs show the logo read-only; drop anything the URL check would reject so it can't block saving.
+    companyLogoUrl: job?.companyId && !isHttpUrl(job.companyLogoUrl) ? '' : job?.companyLogoUrl ?? '',
     location: job?.location ?? '',
     category: job?.category ?? '',
     jobType: job?.jobType ?? 'FULL_TIME',
     experienceLevel: job?.experienceLevel ?? 'MID',
     status: job?.status,
+    openings: job?.openings ?? 1,
     salaryCurrency: job?.salaryCurrency || 'USD',
     salaryMin: job?.salaryMin ?? '',
     salaryMax: job?.salaryMax ?? '',
@@ -122,7 +151,7 @@ function defaultsFrom(job?: Job): FormInput {
   };
 }
 
-function toPayload(v: FormOutput, mode: 'create' | 'edit'): JobPayload {
+function toPayload(v: FormOutput, mode: 'create' | 'edit', action: JobFormAction): JobPayload {
   const payload: JobPayload = {
     title: v.title,
     companyName: v.companyName,
@@ -130,6 +159,7 @@ function toPayload(v: FormOutput, mode: 'create' | 'edit'): JobPayload {
     location: v.location,
     // Blank clears the category on edit (backend stores blank as null).
     category: v.category,
+    openings: v.openings,
     jobType: v.jobType,
     experienceLevel: v.experienceLevel,
     salaryCurrency: v.salaryCurrency,
@@ -142,7 +172,8 @@ function toPayload(v: FormOutput, mode: 'create' | 'edit'): JobPayload {
     deadline: v.deadline || undefined,
     screeningQuestions: v.screeningQuestions.map((q) => q.value).filter(Boolean),
   };
-  if (mode === 'edit') payload.status = v.status;
+  if (mode === 'create') payload.status = action === 'draft' ? 'DRAFT' : 'OPEN';
+  else payload.status = action === 'publish' ? 'OPEN' : v.status;
   return payload;
 }
 
@@ -182,6 +213,8 @@ function PreviewCard({ v }: { v: FormInput }) {
   const salary = formatSalary(toNum(v.salaryMin), toNum(v.salaryMax), v.salaryCurrency || 'USD');
   const logo = /^https?:\/\/\S+$/i.test(v.companyLogoUrl?.trim() ?? '') ? v.companyLogoUrl.trim() : null;
   const tags = v.tags ?? [];
+  const openingsNum = Number(v.openings);
+  const openings = Number.isInteger(openingsNum) && openingsNum >= 1 && openingsNum <= MAX_OPENINGS ? openingsNum : null;
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start gap-3">
@@ -200,6 +233,9 @@ function PreviewCard({ v }: { v: FormInput }) {
           <span className="inline-flex items-center gap-1 min-w-0"><FolderOpen className="h-3.5 w-3.5 flex-shrink-0" aria-hidden /><span className="truncate">{v.category.trim()}</span></span>
         )}
         {salary && <span className="inline-flex items-center gap-1"><Banknote className="h-3.5 w-3.5" aria-hidden />{salary}</span>}
+        {openings && (
+          <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden />Hiring {openings}</span>
+        )}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Badge tone={EXPERIENCE_STYLES[v.experienceLevel]}>{EXPERIENCE_LABELS[v.experienceLevel]}</Badge>
@@ -213,12 +249,19 @@ function PreviewCard({ v }: { v: FormInput }) {
   );
 }
 
-/** Quality checklist; only the first two items are required to publish. */
+/** Quality checklist; only the first two items (and a valid openings count) are required to publish. */
 function Checklist({ v }: { v: FormInput }) {
   const items = [
     { label: 'Job title and company', done: (v.title?.trim().length ?? 0) >= 3 && !!v.companyName?.trim() },
     { label: 'Description (20+ characters)', done: (v.description?.trim().length ?? 0) >= 20 },
     { label: 'Location', done: !!v.location?.trim() },
+    {
+      label: 'Number of openings',
+      done: (() => {
+        const n = Number(v.openings);
+        return String(v.openings ?? '') !== '' && Number.isInteger(n) && n >= 1 && n <= MAX_OPENINGS;
+      })(),
+    },
     { label: 'Salary range', done: String(v.salaryMin ?? '') !== '' || String(v.salaryMax ?? '') !== '' },
     { label: 'Responsibilities', done: toListItems(v.responsibilities).length > 0 },
     { label: 'Requirements', done: toListItems(v.requirements).length > 0 },
@@ -258,10 +301,32 @@ function Checklist({ v }: { v: FormInput }) {
   );
 }
 
+/** Read-only "posting as" row shown instead of the company fields for company-team jobs. */
+function CompanyRow({ name, logoUrl, canEditCompany }: { name: string; logoUrl?: string | null; canEditCompany: boolean }) {
+  return (
+    <div className="sm:col-span-2">
+      <p className="text-sm font-medium text-slate-700">Company</p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4">
+        <CompanyLogo name={name} src={logoUrl} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-slate-900 break-words">{name}</p>
+          <p className="text-xs text-slate-500">Posting as {name}. The name and logo come from your company profile.</p>
+        </div>
+        {canEditCompany && (
+          <Link href="/company" className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline">
+            Edit company profile
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export interface JobFormProps {
   mode: 'create' | 'edit';
   job?: Job;
-  onSubmit: (payload: JobPayload) => void;
+  /** `action` tells the page which button was used (e.g. to pick the toast and destination). */
+  onSubmit: (payload: JobPayload, action: JobFormAction) => void;
   isSubmitting?: boolean;
   /** Message from the last failed submit (use getErrorMessage). */
   serverError?: string | null;
@@ -270,10 +335,17 @@ export interface JobFormProps {
 
 /** Shared create/edit form for job postings. */
 export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancelHref }: JobFormProps) {
+  const user = useAuthStore((s) => s.user);
+  const isRecruiter = user?.role === 'RECRUITER';
+  const myCompanyQuery = useMyCompany(isRecruiter);
+  const myCompany = myCompanyQuery.data?.company ?? null;
+  const [action, setAction] = useState<JobFormAction>(mode === 'create' ? 'publish' : 'save');
+
   const {
     register,
     control,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -306,7 +378,34 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
     .filter((s) => !selectedTags.some((t) => t.toLowerCase() === s.toLowerCase()))
     .slice(0, MAX_SUGGESTIONS);
 
-  const submit = handleSubmit((values) => onSubmit(toPayload(values, mode)));
+  // Company jobs (and every new job by a company-team recruiter) post as the company; the server enforces it too.
+  const lockedCompany: { name: string; logoUrl?: string | null; canEdit: boolean } | null =
+    mode === 'edit' && job?.companyId
+      ? { name: job.companyName, logoUrl: job.companyLogoUrl, canEdit: !!myCompany && myCompany.id === job.companyId }
+      : mode === 'create' && myCompany
+        ? { name: myCompany.name, logoUrl: myCompany.logoUrl, canEdit: true }
+        : null;
+  const companyLoading = mode === 'create' && isRecruiter && myCompanyQuery.isLoading;
+
+  // Keep the (hidden) company fields in sync so validation, preview and payload use the company's identity.
+  useEffect(() => {
+    if (mode === 'create' && myCompany) {
+      setValue('companyName', myCompany.name, { shouldValidate: true });
+      setValue('companyLogoUrl', isHttpUrl(myCompany.logoUrl) ? myCompany.logoUrl!.trim() : '');
+    }
+  }, [mode, myCompany, setValue]);
+
+  const isDraft = mode === 'edit' && job?.status === 'DRAFT';
+  const runAction = (next: JobFormAction) => {
+    setAction(next);
+    return handleSubmit((v) => onSubmit(toPayload(v, mode, next), next))();
+  };
+  // Enter / the form's default submit: publish when creating, save when editing.
+  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void runAction(mode === 'create' ? 'publish' : 'save');
+  };
+  const busy = (a: JobFormAction) => !!isSubmitting && action === a;
 
   return (
     <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
@@ -323,26 +422,46 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           {(id) => <Input id={id} {...register('title')} invalid={!!errors.title} placeholder="e.g. Senior Frontend Engineer" />}
         </FormField>
 
-        <FormField label="Company name" required error={errors.companyName?.message}>
-          {(id) => <Input id={id} {...register('companyName')} invalid={!!errors.companyName} placeholder="e.g. Acme Inc." autoComplete="organization" />}
-        </FormField>
+        {companyLoading ? (
+          <div className="sm:col-span-2" aria-busy="true" aria-label="Loading company">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="mt-2 h-16 w-full rounded-xl" />
+          </div>
+        ) : lockedCompany ? (
+          <CompanyRow name={lockedCompany.name} logoUrl={lockedCompany.logoUrl} canEditCompany={lockedCompany.canEdit} />
+        ) : (
+          <>
+          <FormField label="Company name" required error={errors.companyName?.message}>
+            {(id) => <Input id={id} {...register('companyName')} invalid={!!errors.companyName} placeholder="e.g. Acme Inc." autoComplete="organization" />}
+          </FormField>
 
-        <FormField label="Company logo URL" error={errors.companyLogoUrl?.message} hint="Optional. A square image works best.">
-          {(id) => (
-            <div className="flex items-center gap-3">
-              <CompanyLogo key={validLogo ?? 'none'} name={companyName || 'Company'} src={validLogo} size="sm" />
-              <Input
-                id={id}
-                type="url"
-                inputMode="url"
-                {...register('companyLogoUrl')}
-                invalid={!!errors.companyLogoUrl}
-                placeholder="https://…/logo.png"
-                className="min-w-0"
-              />
-            </div>
-          )}
-        </FormField>
+          <FormField label="Company logo URL" error={errors.companyLogoUrl?.message} hint="Optional. A square image works best.">
+            {(id) => (
+              <div className="flex items-center gap-3">
+                <CompanyLogo key={validLogo ?? 'none'} name={companyName || 'Company'} src={validLogo} size="sm" />
+                <Input
+                  id={id}
+                  type="url"
+                  inputMode="url"
+                  {...register('companyLogoUrl')}
+                  invalid={!!errors.companyLogoUrl}
+                  placeholder="https://…/logo.png"
+                  className="min-w-0"
+                />
+              </div>
+            )}
+          </FormField>
+            {isRecruiter && (
+              <p className="sm:col-span-2 -mt-2 text-xs text-slate-500">
+                Hiring with colleagues?{' '}
+                <Link href="/company" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
+                  Create a company profile to post as a team
+                </Link>
+                .
+              </p>
+            )}
+          </>
+        )}
 
         <FormField label="Location" error={errors.location?.message} hint="City and country, or “Remote”." className="sm:col-span-2">
           {(id) => <Input id={id} {...register('location')} invalid={!!errors.location} placeholder="e.g. Berlin, Germany" />}
@@ -368,13 +487,33 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           label="Category"
           error={errors.category?.message}
           hint="Optional. Helps candidates browse by field."
-          className="sm:col-span-2"
         >
           {(id) => (
-            <Select id={id} {...register('category')} invalid={!!errors.category} className="sm:max-w-xs">
+            <Select id={id} {...register('category')} invalid={!!errors.category}>
               <option value="">Select a category</option>
               {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
+          )}
+        </FormField>
+
+        <FormField
+          label="Openings"
+          required
+          error={errors.openings?.message}
+          hint="The job closes automatically once this many people are hired."
+        >
+          {(id) => (
+            <Input
+              id={id}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={MAX_OPENINGS}
+              step={1}
+              {...register('openings')}
+              invalid={!!errors.openings}
+              placeholder="1"
+            />
           )}
         </FormField>
 
@@ -382,7 +521,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           <FormField
             label="Status"
             error={errors.status?.message}
-            hint="Only open jobs accept new applications."
+            hint={isDraft ? 'Drafts are only visible to your hiring team. Use “Publish now” to go live.' : 'Only open jobs accept new applications.'}
             className="sm:col-span-2"
           >
             {(id) => (
@@ -566,17 +705,42 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           {Object.keys(errors).length > 0 && (
             <p className="mb-3 flex items-start gap-2 text-xs text-rose-600" role="alert">
               <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden />
-              Please fix the highlighted fields before {mode === 'create' ? 'publishing' : 'saving'}.
+              Please fix the highlighted fields before {action === 'save' ? 'saving' : action === 'draft' ? 'saving the draft' : 'publishing'}.
             </p>
           )}
           <div className="flex flex-col gap-2">
-            <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
-              {mode === 'create' ? (isSubmitting ? 'Publishing…' : 'Publish job') : isSubmitting ? 'Saving…' : 'Save changes'}
-            </Button>
-            <Link href={cancelHref} className={buttonClasses('secondary', 'lg', 'w-full')}>Cancel</Link>
+            {mode === 'create' ? (
+              <>
+                <Button type="submit" size="lg" loading={busy('publish')} disabled={isSubmitting} className="w-full">
+                  {busy('publish') ? 'Publishing…' : 'Publish job'}
+                </Button>
+                <Button variant="secondary" size="lg" loading={busy('draft')} disabled={isSubmitting} className="w-full" onClick={() => runAction('draft')}>
+                  {busy('draft') ? 'Saving draft…' : 'Save as draft'}
+                </Button>
+              </>
+            ) : isDraft ? (
+              <>
+                <Button size="lg" loading={busy('publish')} disabled={isSubmitting} className="w-full" onClick={() => runAction('publish')}>
+                  {busy('publish') ? 'Publishing…' : 'Publish now'}
+                </Button>
+                <Button type="submit" variant="secondary" size="lg" loading={busy('save')} disabled={isSubmitting} className="w-full">
+                  {busy('save') ? 'Saving…' : 'Save changes'}
+                </Button>
+              </>
+            ) : (
+              <Button type="submit" size="lg" loading={busy('save')} disabled={isSubmitting} className="w-full">
+                {busy('save') ? 'Saving…' : 'Save changes'}
+              </Button>
+            )}
+            <Link href={cancelHref} className={buttonClasses('ghost', 'lg', 'w-full')}>Cancel</Link>
           </div>
           {mode === 'create' && (
-            <p className="mt-3 text-center text-xs text-slate-400">The job goes live immediately. You can edit or close it anytime.</p>
+            <p className="mt-3 text-center text-xs text-slate-400">
+              Publishing makes the job live immediately. Drafts stay private to your hiring team until you publish them.
+            </p>
+          )}
+          {isDraft && (
+            <p className="mt-3 text-center text-xs text-slate-400">This job is a draft. Candidates can’t see it until you publish it.</p>
           )}
         </Card>
       </aside>

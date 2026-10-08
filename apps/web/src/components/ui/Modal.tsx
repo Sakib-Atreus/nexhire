@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from './Button';
@@ -50,10 +51,11 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  // Portal to <body> so a parent with transform/filter/backdrop-filter (e.g. a drawer) can't clip or offset it.
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
@@ -78,7 +80,8 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         {children && <div className="px-6 py-5 overflow-y-auto">{children}</div>}
         {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl flex flex-col-reverse sm:flex-row sm:justify-end gap-2">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -39,5 +39,11 @@ public record JobDTO(
     String category,
     boolean featured,
     boolean hidden,
-    boolean recruiterVerified
+    boolean recruiterVerified,
+    UUID companyId,
+    String companySlug,
+    boolean companyVerified,
+    int openings,
+    /** True when the signed-in viewer is on this job's hiring team (only set on the job detail endpoint). */
+    boolean canManage
 ) {}

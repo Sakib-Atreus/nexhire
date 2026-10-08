@@ -27,5 +27,6 @@ public record UpdateJobRequest(
     String tags,
     LocalDate deadline,
     List<String> screeningQuestions,
-    @Size(max = 50) String category
+    @Size(max = 50) String category,
+    @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(500) Integer openings
 ) {}

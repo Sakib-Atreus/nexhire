@@ -5,9 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import {
-  ArrowLeft, MapPin, Briefcase, Banknote, CalendarClock, Clock, Eye, UserRound,
-  Pencil, Users, Share2, Check, Bookmark, BookmarkCheck, CheckCircle2, FileSearch, Lock,
-  BadgeCheck, EyeOff, Flag, Tag,
+  ArrowLeft, MapPin, Briefcase, Banknote, CalendarClock, Clock, Eye, UserRound, Pencil, Users, Share2, Check, Bookmark, BookmarkCheck, CheckCircle2, FileSearch, Lock, BadgeCheck, EyeOff, Flag, Tag, BarChart3,
 } from 'lucide-react';
 import type { Application, Job } from '@/types';
 import { useJob, useSaveJob, useUnsaveJob } from '@/hooks/useJobs';
@@ -29,6 +27,7 @@ import { ApplyModal } from '@/components/jobs/ApplyModal';
 import { ReportJobModal } from '@/components/jobs/ReportJobModal';
 import { FeaturedBadge } from '@/components/admin/jobs/JobFlagBadges';
 import { JobModerationCard } from '@/components/admin/jobs/JobModerationCard';
+import { AboutCompanyCard } from '@/components/companies/AboutCompanyCard';
 
 // ---------- Helpers ----------
 
@@ -242,6 +241,11 @@ function ActionPanel({ job, role, isOwner, canManage, application, applicationLo
             )}
           </Link>
         )}
+        {canManage && (
+          <Link href={`/jobs/${job.id}/analytics`} className={buttonClasses('secondary', 'md', 'w-full')}>
+            <BarChart3 className="w-4 h-4" aria-hidden /> Analytics
+          </Link>
+        )}
 
         <div className="flex gap-2">
           {isCandidate && <SaveButton job={job} />}
@@ -341,7 +345,8 @@ export default function JobDetailPage() {
   const openApply = useCallback(() => setApplyOpen(true), []);
   const closeApply = useCallback(() => setApplyOpen(false), []);
 
-  const isOwner = !!user && !!job && user.id === job.recruiterId;
+  // "Owner" = on the hiring team: the poster or a recruiter at the same company (server-computed canManage).
+  const isOwner = !!user && !!job && (user.id === job.recruiterId || (user.role === 'RECRUITER' && !!job.canManage));
   const isAdmin = user?.role === 'ADMIN';
   const canManage = isOwner || isAdmin;
   const backHref = canManage ? '/jobs/my' : '/jobs';
@@ -418,9 +423,15 @@ export default function JobDetailPage() {
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 break-words">{job.title}</h1>
                 <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-slate-600">
-                  <span className="break-words">{job.companyName}</span>
-                  {job.recruiterVerified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                  {job.companySlug ? (
+                    <Link href={`/companies/${job.companySlug}`} className="break-words hover:text-primary-700 hover:underline">
+                      {job.companyName}
+                    </Link>
+                  ) : (
+                    <span className="break-words">{job.companyName}</span>
+                  )}
+                  {(job.companyVerified || job.recruiterVerified) && (
+                    <span title="Verified employer" className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                       <BadgeCheck className="w-3.5 h-3.5" aria-hidden /> Verified employer
                     </span>
                   )}
@@ -553,6 +564,8 @@ export default function JobDetailPage() {
             )}
           </Card>
 
+          <AboutCompanyCard job={job} className="lg:hidden" />
+
           {canReport && <ReportJobControl job={job} signedIn={!!user} />}
         </div>
 
@@ -567,6 +580,7 @@ export default function JobDetailPage() {
             applicationLoading={isCandidate && applicationLoading}
             onApply={openApply}
           />
+          <AboutCompanyCard job={job} />
           {isAdmin && <JobModerationCard job={job} />}
         </aside>
       </div>

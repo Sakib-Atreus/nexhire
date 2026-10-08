@@ -1,161 +1,115 @@
 'use client';
 
-import { useId, useState } from 'react';
-import { ChevronDown, ExternalLink, FileText, Mail, StickyNote } from 'lucide-react';
-import type { Application } from '@/types';
-import { useUpdateApplicationStatus } from '@/hooks/useApplications';
+import { MessageSquare, StickyNote } from 'lucide-react';
+import type { Application, ApplicationStatus } from '@/types';
 import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_STYLES } from '@/lib/constants';
-import { formatDate, getErrorMessage, timeAgo } from '@/lib/format';
-import { toast } from '@/store/toastStore';
+import { formatDate, timeAgo } from '@/lib/format';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
-import { Button, buttonClasses } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Textarea } from '@/components/ui/Field';
+import { StarDisplay } from '@/components/pipeline/StarRating';
+import { InterviewChip } from '@/components/pipeline/InterviewChip';
 import { cn } from '@/lib/cn';
 import { ApplicantStatusMenu } from './ApplicantStatusMenu';
 
-const LONG_COVER_LETTER = 280;
-
-function CoverLetter({ text }: { text: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const id = useId();
-  const isLong = text.length > LONG_COVER_LETTER || text.split('\n').length > 3;
+/** Note/message counters shown on cards and rows. */
+export function ActivityCounts({ app, className }: { app: Application; className?: string }) {
+  const notes = app.noteCount ?? 0;
+  const messages = app.messageCount ?? 0;
+  if (!notes && !messages) return null;
   return (
-    <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
-      <p className="text-xs font-medium text-slate-500 mb-1.5 flex items-center gap-1">
-        <FileText className="w-3.5 h-3.5" aria-hidden /> Cover letter
-      </p>
-      <p id={id} className={cn('text-sm text-slate-700 leading-relaxed whitespace-pre-line break-words', !expanded && isLong && 'line-clamp-3')}>
-        {text}
-      </p>
-      {isLong && (
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          aria-expanded={expanded}
-          aria-controls={id}
-          className="mt-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700"
-        >
-          {expanded ? 'Show less' : 'Show more'}
-        </button>
+    <span className={cn('inline-flex items-center gap-2.5 text-xs text-slate-500', className)}>
+      {notes > 0 && (
+        <span className="inline-flex items-center gap-1" title={`${notes} private note${notes === 1 ? '' : 's'}`}>
+          <StickyNote className="w-3.5 h-3.5" aria-hidden />
+          <span className="tabular-nums">{notes}</span>
+          <span className="sr-only">note{notes === 1 ? '' : 's'}</span>
+        </span>
       )}
-    </div>
+      {messages > 0 && (
+        <span className="inline-flex items-center gap-1" title={`${messages} message${messages === 1 ? '' : 's'}`}>
+          <MessageSquare className="w-3.5 h-3.5" aria-hidden />
+          <span className="tabular-nums">{messages}</span>
+          <span className="sr-only">message{messages === 1 ? '' : 's'}</span>
+        </span>
+      )}
+    </span>
   );
 }
 
-function Notes({ app }: { app: Application }) {
-  const update = useUpdateApplicationStatus();
-  const [open, setOpen] = useState(false);
-  const [notes, setNotes] = useState(app.notes ?? '');
-  const panelId = useId();
-
-  function save() {
-    update.mutate(
-      { id: app.id, status: app.status, notes },
-      {
-        onSuccess: () => {
-          toast.success('Notes saved');
-          setOpen(false);
-        },
-        onError: (err) => toast.error('Could not save notes', getErrorMessage(err)),
-      }
-    );
-  }
-
-  return (
-    <div className="mt-4 border-t border-slate-100 pt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls={panelId}
-        className="text-xs font-medium text-slate-500 hover:text-slate-700 inline-flex items-center gap-1"
-      >
-        <StickyNote className="w-3.5 h-3.5" aria-hidden />
-        {app.notes ? 'Internal notes' : 'Add internal notes'}
-        <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} aria-hidden />
-      </button>
-      {!open && app.notes && <p className="mt-1.5 text-xs text-slate-600 line-clamp-2 whitespace-pre-line">{app.notes}</p>}
-      {open && (
-        <div id={panelId} className="mt-2 space-y-2">
-          <Textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            aria-label={`Internal notes about ${app.candidateName}`}
-            placeholder="Only your team can see these notes."
-          />
-          <div className="flex gap-2">
-            <Button size="sm" onClick={save} loading={update.isPending}>Save notes</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setNotes(app.notes ?? ''); setOpen(false); }} disabled={update.isPending}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function ApplicantCard({ app, selected, onToggle }: {
+/** Compact applicant row for the list view. Clicking the row opens the applicant drawer. */
+export function ApplicantCard({ app, selected, onToggle, onOpen, onMove }: {
   app: Application;
   selected: boolean;
   onToggle: (id: string) => void;
+  onOpen: (app: Application) => void;
+  onMove: (app: Application, status: ApplicationStatus) => void;
 }) {
-  const selectable = app.status !== 'WITHDRAWN' && app.status !== 'REJECTED';
+  const selectable = app.status !== 'WITHDRAWN';
   return (
-    <Card className={cn('p-4 sm:p-5 transition-shadow', selected && 'border-primary-400 ring-2 ring-primary-100')}>
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={() => onToggle(app.id)}
-            disabled={!selectable}
-            aria-label={`Select ${app.candidateName}`}
-            title={selectable ? undefined : 'No further status changes are possible'}
-            className="mt-3 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex-shrink-0"
-          />
-          <Avatar name={app.candidateName} size="md" />
-          <div className="min-w-0">
-            <p className="font-semibold text-slate-900 break-words">{app.candidateName}</p>
-            <a
-              href={`mailto:${app.candidateEmail}`}
-              className="text-sm text-slate-500 hover:text-primary-600 inline-flex items-center gap-1 max-w-full"
-            >
-              <Mail className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-              <span className="truncate">{app.candidateEmail}</span>
-            </a>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Applied <time dateTime={app.appliedAt} title={formatDate(app.appliedAt)}>{timeAgo(app.appliedAt)}</time>
-            </p>
-          </div>
-        </div>
+    <div
+      onClick={() => onOpen(app)}
+      className={cn(
+        'group relative bg-white rounded-xl border border-slate-200 px-3 py-3 sm:px-4 cursor-pointer transition-colors hover:border-primary-300',
+        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-start md:items-center gap-x-3 gap-y-2',
+        'md:grid-cols-[auto_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_7rem_auto]',
+        selected && 'border-primary-400 ring-2 ring-primary-100',
+        app.status === 'WITHDRAWN' && 'bg-slate-50'
+      )}
+    >
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={() => onToggle(app.id)}
+        onClick={(e) => e.stopPropagation()}
+        disabled={!selectable}
+        aria-label={`Select ${app.candidateName}`}
+        title={selectable ? undefined : 'Withdrawn applications are read-only'}
+        className="mt-2.5 md:mt-0 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+      />
 
-        <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0 pl-7 sm:pl-0">
-          <Badge tone={APPLICATION_STATUS_STYLES[app.status]}>{APPLICATION_STATUS_LABELS[app.status]}</Badge>
-          <ApplicantStatusMenu app={app} />
+      <div className="flex items-start md:items-center gap-3 min-w-0">
+        <Avatar name={app.candidateName} src={app.candidateAvatarUrl} size="sm" />
+        <div className="min-w-0">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpen(app); }}
+            className="font-semibold text-sm text-slate-900 hover:text-primary-600 text-left break-words focus:outline-none focus-visible:underline"
+          >
+            {app.candidateName}
+          </button>
+          <p className="text-xs text-slate-500 truncate">{app.candidateHeadline || app.candidateEmail}</p>
+          {/* Mobile-only meta */}
+          <div className="md:hidden mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            <Badge tone={APPLICATION_STATUS_STYLES[app.status]}>{APPLICATION_STATUS_LABELS[app.status]}</Badge>
+            <StarDisplay rating={app.rating} />
+            <ActivityCounts app={app} />
+            <InterviewChip at={app.nextInterviewAt} response={app.nextInterviewResponse} />
+            <span className="text-xs text-slate-400">
+              <time dateTime={app.appliedAt} title={formatDate(app.appliedAt)}>{timeAgo(app.appliedAt)}</time>
+            </span>
+          </div>
         </div>
       </div>
 
-      {app.coverLetter?.trim() && <CoverLetter text={app.coverLetter.trim()} />}
+      <div className="hidden md:block min-w-0">
+        <Badge tone={APPLICATION_STATUS_STYLES[app.status]}>{APPLICATION_STATUS_LABELS[app.status]}</Badge>
+      </div>
 
-      {app.resumeUrl && (
-        <a
-          href={app.resumeUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={buttonClasses('secondary', 'sm', 'mt-3')}
-        >
-          <FileText className="w-3.5 h-3.5" aria-hidden />
-          View resume
-          <ExternalLink className="w-3 h-3 text-slate-400" aria-hidden />
-          <span className="sr-only">(opens in a new tab)</span>
-        </a>
-      )}
+      <div className="hidden md:flex flex-col items-start gap-1 min-w-0">
+        <div className="flex items-center gap-2.5">
+          <StarDisplay rating={app.rating} showEmpty />
+          <ActivityCounts app={app} />
+        </div>
+        <InterviewChip at={app.nextInterviewAt} response={app.nextInterviewResponse} />
+      </div>
 
-      <Notes app={app} />
-    </Card>
+      <span className="hidden md:block text-xs text-slate-500">
+        <time dateTime={app.appliedAt} title={formatDate(app.appliedAt)}>{timeAgo(app.appliedAt)}</time>
+      </span>
+
+      <div className="justify-self-end">
+        <ApplicantStatusMenu app={app} onMove={onMove} size="xs" />
+      </div>
+    </div>
   );
 }

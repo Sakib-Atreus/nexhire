@@ -64,7 +64,7 @@ public class JobController {
         @AuthenticationPrincipal User currentUser,
         Pageable pageable
     ) {
-        return ResponseEntity.ok(jobService.getByRecruiter(currentUser.getId(), pageable));
+        return ResponseEntity.ok(jobService.getByRecruiter(currentUser, pageable));
     }
 
     @GetMapping("/{id}")
@@ -106,6 +106,13 @@ public class JobController {
     ) {
         jobService.delete(id, currentUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/duplicate")
+    @PreAuthorize("hasRole('RECRUITER') or hasRole('ADMIN')")
+    @Operation(summary = "Copy a job as a new draft")
+    public ResponseEntity<JobDTO> duplicate(@PathVariable UUID id, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(jobService.duplicate(id, currentUser));
     }
 
     @PostMapping("/{id}/save")

@@ -1,24 +1,43 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@/types';
-import { useUpdateApplicationStatus } from '@/hooks/useApplications';
-import { ALLOWED_TRANSITIONS, APPLICATION_STATUS_BAR, APPLICATION_STATUS_LABELS } from '@/lib/constants';
-import { getErrorMessage } from '@/lib/format';
-import { toast } from '@/store/toastStore';
+import { APPLICATION_STATUS_BAR } from '@/lib/constants';
 import { buttonClasses } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/States';
+import { MOVE_TARGETS } from '@/components/pipeline/stages';
 import { cn } from '@/lib/cn';
 
-/** "Move to…" dropdown offering only the transitions allowed from the application's current status. */
-export function ApplicantStatusMenu({ app }: { app: Application }) {
-  const update = useUpdateApplicationStatus();
+const MENU_WIDTH = 200;
+const MENU_HEIGHT = MOVE_TARGETS.length * 36 + 12;
+
+/**
+ * "Move to…" menu: any pipeline stage or Rejected (the hiring team may move freely; Withdrawn is
+ * candidate-only, so withdrawn applications get no menu). The menu is position:fixed so it isn't
+ * clipped by scrolling board columns. The caller performs the move (and any confirmation).
+ */
+export function ApplicantStatusMenu({ app, onMove, size = 'sm', className }: {
+  app: Application;
+  onMove: (app: Application, status: ApplicationStatus) => void;
+  size?: 'xs' | 'sm';
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [style, setStyle] = useState<CSSProperties>({});
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const left = Math.max(8, Math.min(r.right - MENU_WIDTH, vw - MENU_WIDTH - 8));
+    const below = r.bottom + 6 + MENU_HEIGHT <= vh;
+    setStyle(below ? { left, top: r.bottom + 6, width: MENU_WIDTH } : { left, bottom: vh - r.top + 6, width: MENU_WIDTH });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -28,58 +47,72 @@ export function ApplicantStatusMenu({ app }: { app: Application }) {
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         setOpen(false);
         triggerRef.current?.focus();
       }
     };
+    const close = () => setOpen(false);
     document.addEventListener('mousedown', onPointer);
     document.addEventListener('touchstart', onPointer);
     document.addEventListener('keydown', onKey);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
     return () => {
       document.removeEventListener('mousedown', onPointer);
       document.removeEventListener('touchstart', onPointer);
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
     };
   }, [open]);
 
-  const transitions = ALLOWED_TRANSITIONS[app.status];
-  if (transitions.length === 0) return null;
+  if (app.status === 'WITHDRAWN') return null;
+  const targets = MOVE_TARGETS.filter((t) => t.status !== app.status);
 
   function choose(status: ApplicationStatus) {
     setOpen(false);
     triggerRef.current?.focus();
-    update.mutate(
-      { id: app.id, status },
-      {
-        onSuccess: () => toast.success(`${app.candidateName} moved to ${APPLICATION_STATUS_LABELS[status]}`),
-        onError: (err) => toast.error('Could not update status', getErrorMessage(err)),
-      }
-    );
+    onMove(app, status);
   }
 
   function onMenuKeyDown(e: React.KeyboardEvent) {
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    e.preventDefault();
     const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
     const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+    let next = -1;
+    if (e.key === 'ArrowDown') next = (i + 1) % items.length;
+    else if (e.key === 'ArrowUp') next = (i - 1 + items.length) % items.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    else if (e.key === 'Tab') { setOpen(false); return; }
+    if (next < 0) return;
+    e.preventDefault();
     items[next]?.focus();
   }
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div
+      className={cn('relative', className)}
+      ref={rootRef}
+      data-escape-local=""
+      // Keep clicks/drags on the menu from opening the drawer or starting a card drag.
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+    >
       <button
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        disabled={update.isPending}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label={`Change status for ${app.candidateName}`}
-        className={buttonClasses('secondary', 'sm')}
+        aria-label={`Move ${app.candidateName} to another stage`}
+        className={size === 'xs'
+          ? 'inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
+          : buttonClasses('secondary', 'sm')}
       >
-        {update.isPending ? <Spinner className="w-3.5 h-3.5 text-slate-500" /> : null}
         Move to
         <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} aria-hidden />
       </button>
@@ -89,23 +122,24 @@ export function ApplicantStatusMenu({ app }: { app: Application }) {
           ref={menuRef}
           id={menuId}
           role="menu"
-          aria-label="Move application to"
+          aria-label={`Move ${app.candidateName} to`}
           onKeyDown={onMenuKeyDown}
-          className="absolute right-0 top-full mt-1.5 w-48 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-20"
+          style={style}
+          className="fixed bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-[55]"
         >
-          {transitions.map((s) => (
+          {targets.map((t) => (
             <button
-              key={s}
+              key={t.status}
               type="button"
               role="menuitem"
-              onClick={() => choose(s)}
+              onClick={() => choose(t.status)}
               className={cn(
-                'w-full px-3.5 py-2 text-left text-sm flex items-center gap-2.5 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none',
-                s === 'REJECTED' ? 'text-rose-700' : 'text-slate-700'
+                'w-full h-9 px-3.5 text-left text-sm flex items-center gap-2.5 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none',
+                t.status === 'REJECTED' ? 'text-rose-700' : t.status === 'HIRED' ? 'text-emerald-700' : 'text-slate-700'
               )}
             >
-              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', APPLICATION_STATUS_BAR[s])} aria-hidden />
-              {APPLICATION_STATUS_LABELS[s]}
+              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', APPLICATION_STATUS_BAR[t.status])} aria-hidden />
+              {t.label}
             </button>
           ))}
         </div>

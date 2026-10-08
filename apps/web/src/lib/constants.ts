@@ -1,4 +1,4 @@
-import type { ApplicationStatus, AuditAction, ExperienceLevel, JobStatus, JobType, ReportReason, ReportStatus, Role } from '@/types';
+import type { ApplicationStatus, AuditAction, ExperienceLevel, InterviewResponse, InterviewStatus, InterviewType, JobStatus, JobType, ReportReason, ReportStatus, Role } from '@/types';
 
 // Human-readable labels and badge styles for every enum the API returns.
 // Never render a raw enum value (e.g. "FULL_TIME") in the UI — use these maps.
@@ -47,6 +47,7 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   SHORTLISTED: 'Shortlisted',
   INTERVIEWED: 'Interviewed',
   OFFERED: 'Offer extended',
+  HIRED: 'Hired',
   REJECTED: 'Not selected',
   WITHDRAWN: 'Withdrawn',
 };
@@ -56,25 +57,27 @@ export const APPLICATION_STATUS_STYLES: Record<ApplicationStatus, string> = {
   REVIEWING: 'bg-sky-50 text-sky-700 ring-sky-600/20',
   SHORTLISTED: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
   INTERVIEWED: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  OFFERED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  OFFERED: 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-600/20',
+  HIRED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   REJECTED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
   WITHDRAWN: 'bg-slate-50 text-slate-500 ring-slate-400/20',
 };
 
 /** Solid colors for charts / progress bars, same hue family as the badges. */
 export const APPLICATION_STATUS_BAR: Record<ApplicationStatus, string> = {
-  PENDING: 'bg-slate-400',
+  PENDING: 'bg-slate-500',
   REVIEWING: 'bg-sky-500',
   SHORTLISTED: 'bg-indigo-500',
   INTERVIEWED: 'bg-amber-500',
-  OFFERED: 'bg-emerald-500',
+  OFFERED: 'bg-fuchsia-500',
+  HIRED: 'bg-emerald-600',
   REJECTED: 'bg-rose-500',
   WITHDRAWN: 'bg-slate-300',
 };
 
 /** Pipeline order used for stats and filters. */
 export const APPLICATION_STATUS_ORDER: ApplicationStatus[] = [
-  'PENDING', 'REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED', 'REJECTED', 'WITHDRAWN',
+  'PENDING', 'REVIEWING', 'SHORTLISTED', 'INTERVIEWED', 'OFFERED', 'HIRED', 'REJECTED', 'WITHDRAWN',
 ];
 
 /** Status changes a recruiter may make from each state. */
@@ -83,7 +86,8 @@ export const ALLOWED_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]>
   REVIEWING: ['SHORTLISTED', 'INTERVIEWED', 'REJECTED'],
   SHORTLISTED: ['INTERVIEWED', 'OFFERED', 'REJECTED'],
   INTERVIEWED: ['OFFERED', 'REJECTED'],
-  OFFERED: ['REJECTED'],
+  OFFERED: ['HIRED', 'REJECTED'],
+  HIRED: [],
   REJECTED: [],
   WITHDRAWN: [],
 };
@@ -149,6 +153,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   REPORT_RESOLVED: 'Resolved report',
   REPORT_DISMISSED: 'Dismissed report',
   SETTINGS_UPDATED: 'Updated settings',
+  COMPANY_VERIFIED: 'Verified company',
+  COMPANY_UNVERIFIED: 'Removed company verification',
 };
 
 /** Tone per action family for audit badges: destructive red, positive green, neutral slate. */
@@ -168,4 +174,72 @@ export const AUDIT_ACTION_STYLES: Record<AuditAction, string> = {
   REPORT_RESOLVED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   REPORT_DISMISSED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
   SETTINGS_UPDATED: 'bg-violet-50 text-violet-700 ring-violet-600/20',
+  COMPANY_VERIFIED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  COMPANY_UNVERIFIED: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+};
+
+/**
+ * Hiring pipeline board columns, in order. Recruiters can drag applicants between any of these
+ * (and to REJECTED); WITHDRAWN applications are read-only.
+ */
+export const PIPELINE_STAGES: { status: ApplicationStatus; label: string }[] = [
+  { status: 'PENDING', label: 'Applied' },
+  { status: 'REVIEWING', label: 'Review' },
+  { status: 'SHORTLISTED', label: 'Shortlist' },
+  { status: 'INTERVIEWED', label: 'Interview' },
+  { status: 'OFFERED', label: 'Offer' },
+  { status: 'HIRED', label: 'Hired' },
+];
+
+export const COMPANY_SIZES = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001+'] as const;
+
+export const COMPANY_SIZE_LABELS: Record<(typeof COMPANY_SIZES)[number], string> = {
+  '1-10': '1–10 employees',
+  '11-50': '11–50 employees',
+  '51-200': '51–200 employees',
+  '201-500': '201–500 employees',
+  '501-1000': '501–1,000 employees',
+  '1001+': '1,000+ employees',
+};
+
+export const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+  VIDEO: 'Video call',
+  PHONE: 'Phone call',
+  ONSITE: 'On-site',
+};
+
+export const INTERVIEW_STATUS_LABELS: Record<InterviewStatus, string> = {
+  SCHEDULED: 'Scheduled',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+};
+
+export const INTERVIEW_STATUS_STYLES: Record<InterviewStatus, string> = {
+  SCHEDULED: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
+  COMPLETED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  CANCELLED: 'bg-slate-100 text-slate-500 ring-slate-500/20',
+};
+
+/** Placeholders recruiters can use in messages/templates (filled in by the server). */
+export const MESSAGE_PLACEHOLDERS = [
+  { token: '{{firstName}}', label: "Candidate's first name" },
+  { token: '{{candidateName}}', label: "Candidate's full name" },
+  { token: '{{jobTitle}}', label: 'Job title' },
+  { token: '{{companyName}}', label: 'Company name' },
+  { token: '{{recruiterName}}', label: 'Your name' },
+];
+
+/** Candidate's reply, shown for SCHEDULED interviews (recruiter wording; candidates see their own phrasing). */
+export const INTERVIEW_RESPONSE_LABELS: Record<InterviewResponse, string> = {
+  AWAITING: 'Awaiting response',
+  ACCEPTED: 'Confirmed',
+  NEW_TIME_REQUESTED: 'New time requested',
+  DECLINED: 'Declined',
+};
+
+export const INTERVIEW_RESPONSE_STYLES: Record<InterviewResponse, string> = {
+  AWAITING: 'bg-slate-100 text-slate-700 ring-slate-500/20',
+  ACCEPTED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  NEW_TIME_REQUESTED: 'bg-amber-50 text-amber-800 ring-amber-600/20',
+  DECLINED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
 };

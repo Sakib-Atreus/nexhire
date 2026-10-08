@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Briefcase, Flag, History, Settings, User as UserIcon } from 'lucide-react';
+import { Briefcase, Building2, Flag, History, Settings, User as UserIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/States';
@@ -14,6 +14,7 @@ export type AuditTargetType = NonNullable<AuditLogEntry['targetType']>;
 const TARGET_META: Record<AuditTargetType, { icon: LucideIcon; noun: string }> = {
   USER: { icon: UserIcon, noun: 'User' },
   JOB: { icon: Briefcase, noun: 'Job' },
+  COMPANY: { icon: Building2, noun: 'Company' },
   REPORT: { icon: Flag, noun: 'Report' },
   SETTINGS: { icon: Settings, noun: 'Site settings' },
 };
@@ -22,6 +23,7 @@ function targetHref(entry: AuditLogEntry): string | null {
   if (!entry.targetId) return null;
   if (entry.targetType === 'USER') return `/admin/users/${entry.targetId}`;
   if (entry.targetType === 'JOB') return `/jobs/${entry.targetId}`;
+  if (entry.targetType === 'COMPANY') return `/admin/companies?id=${entry.targetId}`;
   return null;
 }
 

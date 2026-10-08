@@ -46,6 +46,9 @@ public class Application {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    /** Private 1–5 rating from the hiring team; never shown to the candidate. */
+    private Integer rating;
+
     @CreationTimestamp
     @Column(name = "applied_at", nullable = false, updatable = false)
     private Instant appliedAt;

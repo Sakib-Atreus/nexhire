@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { useJob, useUpdateJob } from '@/hooks/useJobs';
+import { useMyCompany } from '@/hooks/useCompanies';
 import { useAuthStore } from '@/store/authStore';
 import { JobForm } from '@/components/jobs/JobForm';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -38,8 +39,9 @@ export default function EditJobPage() {
   const user = useAuthStore((s) => s.user);
   const { data: job, isLoading, error, refetch, isRefetching } = useJob(id);
   const updateJob = useUpdateJob(id);
+  const myCompany = useMyCompany(user?.role === 'RECRUITER');
 
-  if (isLoading || !user) return <FormSkeleton />;
+  if (isLoading || !user || (user.role === 'RECRUITER' && myCompany.isLoading)) return <FormSkeleton />;
 
   if (error || !job) {
     return (
@@ -49,14 +51,17 @@ export default function EditJobPage() {
     );
   }
 
-  const canEdit = user.role === 'ADMIN' || (user.role === 'RECRUITER' && user.id === job.recruiterId);
+  // The poster, any teammate on the job's company, or an admin (mirrors the server's rule).
+  const onJobTeam = !!job.companyId && myCompany.data?.company.id === job.companyId;
+  // job.canManage comes from the server (poster, company teammate or admin); onJobTeam covers a stale cache.
+  const canEdit = user.role === 'ADMIN' || !!job.canManage || (user.role === 'RECRUITER' && (user.id === job.recruiterId || onJobTeam));
   if (!canEdit) {
     return (
       <Card className="mx-auto max-w-2xl">
         <EmptyState
           icon={Lock}
           title="You can't edit this job"
-          description="Only the recruiter who posted this job or an administrator can make changes."
+          description="Only the job's hiring team or an administrator can make changes."
           action={<Link href={`/jobs/${job.id}`} className={buttonClasses('secondary')}>View job</Link>}
         />
       </Card>
@@ -68,7 +73,10 @@ export default function EditJobPage() {
       <Link href={`/jobs/${job.id}`} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-4">
         <ArrowLeft className="w-4 h-4" aria-hidden /> Back to job
       </Link>
-      <PageHeader title="Edit job" description={`${job.title} · ${job.companyName}`} />
+      <PageHeader
+        title={job.status === 'DRAFT' ? 'Edit draft' : 'Edit job'}
+        description={`${job.title} · ${job.companyName}`}
+      />
       <JobForm
         key={job.id}
         mode="edit"
@@ -76,10 +84,11 @@ export default function EditJobPage() {
         cancelHref={`/jobs/${job.id}`}
         isSubmitting={updateJob.isPending}
         serverError={updateJob.error ? getErrorMessage(updateJob.error, 'We could not save your changes. Please try again.') : null}
-        onSubmit={(payload) =>
+        onSubmit={(payload, action) =>
           updateJob.mutate(payload, {
-            onSuccess: () => {
-              toast.success('Changes saved');
+            onSuccess: (saved) => {
+              if (action === 'publish') toast.success('Job published', `“${saved.title}” is now live.`);
+              else toast.success(saved.status === 'DRAFT' ? 'Draft saved' : 'Changes saved');
               router.push(`/jobs/${job.id}`);
             },
           })

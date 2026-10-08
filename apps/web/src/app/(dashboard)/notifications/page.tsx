@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import { Archive, Bell, Briefcase, Check, CheckCheck, Info, RefreshCw, Settings, UserPlus } from 'lucide-react';
+import { Archive, Bell, Briefcase, CalendarCheck, CalendarClock, Check, CheckCheck, Info, MessageSquare, RefreshCw, Settings, UserPlus } from 'lucide-react';
 import { useMarkAllRead, useMarkRead, useNotifications } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/store/authStore';
 import { Button, buttonClasses } from '@/components/ui/Button';
@@ -22,6 +22,10 @@ const TYPE_ICONS: Record<NotificationType, { icon: LucideIcon; tone: string }> =
   JOB_POSTED: { icon: Briefcase, tone: 'bg-emerald-50 text-emerald-600' },
   JOB_CLOSED: { icon: Archive, tone: 'bg-slate-100 text-slate-600' },
   GENERAL: { icon: Info, tone: 'bg-slate-100 text-slate-600' },
+  INTERVIEW_SCHEDULED: { icon: CalendarClock, tone: 'bg-indigo-50 text-indigo-600' },
+  INTERVIEW_UPDATED: { icon: CalendarClock, tone: 'bg-amber-50 text-amber-600' },
+  MESSAGE_RECEIVED: { icon: MessageSquare, tone: 'bg-sky-50 text-sky-600' },
+  INTERVIEW_RESPONSE: { icon: CalendarCheck, tone: 'bg-emerald-50 text-emerald-600' },
 };
 
 /**
@@ -29,11 +33,16 @@ const TYPE_ICONS: Record<NotificationType, { icon: LucideIcon; tone: string }> =
  * - APPLICATION_RECEIVED → recruiter, referenceId = application id (no job id), so open "My jobs".
  * - APPLICATION_STATUS_CHANGED → candidate, referenceId = application id → their applications list.
  * - JOB_* with referenceType JOB → the job page.
+ * - INTERVIEW_* / MESSAGE_RECEIVED → referenceId = application id: candidates open that application.
  */
 function targetFor(n: Notification, role?: Role): { href: string; label: string } | null {
   if (n.referenceType === 'JOB' && n.referenceId) return { href: `/jobs/${n.referenceId}`, label: 'View job' };
   if (n.referenceType === 'APPLICATION' || n.type === 'APPLICATION_RECEIVED' || n.type === 'APPLICATION_STATUS_CHANGED') {
-    if (role === 'CANDIDATE') return { href: '/applications', label: 'View applications' };
+    if (role === 'CANDIDATE') {
+      return n.referenceId
+        ? { href: `/applications?application=${n.referenceId}`, label: 'View application' }
+        : { href: '/applications', label: 'View applications' };
+    }
     if (role === 'RECRUITER' || role === 'ADMIN') return { href: '/jobs/my', label: 'Review applicants' };
   }
   return null;
@@ -41,7 +50,7 @@ function targetFor(n: Notification, role?: Role): { href: string; label: string 
 
 /** The API embeds raw status enums in messages ("…is now SHORTLISTED"); show the friendly label. */
 function humanize(message: string) {
-  return message.replace(/\b(PENDING|REVIEWING|SHORTLISTED|INTERVIEWED|OFFERED|REJECTED|WITHDRAWN)\b/g, (s) =>
+  return message.replace(/\b(PENDING|REVIEWING|SHORTLISTED|INTERVIEWED|OFFERED|HIRED|REJECTED|WITHDRAWN)\b/g, (s) =>
     APPLICATION_STATUS_LABELS[s as ApplicationStatus].toLowerCase()
   );
 }
