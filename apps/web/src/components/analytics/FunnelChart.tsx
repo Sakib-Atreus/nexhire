@@ -44,7 +44,7 @@ export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
               key={s.label}
               className={cn(
                 'grid grid-cols-[6.5rem_minmax(0,1fr)] sm:grid-cols-[9rem_minmax(0,1fr)] items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 transition-colors',
-                active === i && 'bg-slate-50',
+                active === i && 'bg-muted',
               )}
               onMouseEnter={() => setActive(i)}
               title={
@@ -54,21 +54,21 @@ export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
               }
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">{s.label}</p>
-                <p className="text-xs text-slate-500 tabular-nums">
+                <p className="text-sm font-medium text-fg-secondary truncate">{s.label}</p>
+                <p className="text-xs text-fg-muted tabular-nums">
                   {i === 0 ? 'Starting point' : rate === null ? '—' : `${formatPercent(rate)} of previous`}
                 </p>
               </div>
               <div className="flex items-center gap-2 min-w-0">
                 <div className="relative h-6 flex-1 min-w-0">
                   {/* Baseline on the left; bars grow right with a rounded data-end. */}
-                  <div className="absolute inset-y-0 left-0 border-l border-slate-300" />
+                  <div className="absolute inset-y-0 left-0 border-l border-line-strong" />
                   <div
                     className={cn('absolute inset-y-0 left-0 rounded-r transition-colors', active === i ? 'bg-primary-700' : 'bg-primary-500')}
                     style={{ width: s.count > 0 ? `max(${pct}%, 3px)` : 0 }}
                   />
                 </div>
-                <span className="w-12 flex-shrink-0 text-right text-sm font-semibold text-slate-900 tabular-nums">{fmt(s.count)}</span>
+                <span className="w-12 flex-shrink-0 text-right text-sm font-semibold text-fg tabular-nums">{fmt(s.count)}</span>
               </div>
             </li>
           );
@@ -76,7 +76,7 @@ export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
       </ol>
 
       {overall !== null && first && last && (
-        <figcaption className="mt-4 text-xs text-slate-500">
+        <figcaption className="mt-4 text-xs text-fg-muted">
           {formatPercent(overall)} of {first.label.toLowerCase()} reached {last.label.toLowerCase()}.
         </figcaption>
       )}

@@ -104,9 +104,9 @@ function PhotoPicker({ user }: { user: User }) {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative">
-        <Avatar name={user.fullName} src={preview ?? user.avatarUrl} size="xl" className="ring-4 ring-white shadow-md" />
+        <Avatar name={user.fullName} src={preview ?? user.avatarUrl} size="xl" className="ring-4 ring-surface shadow-md" />
         {busy && (
-          <span className="absolute inset-0 rounded-full bg-white/60 flex items-center justify-center text-xs font-medium text-slate-700">
+          <span className="absolute inset-0 rounded-full bg-surface/60 flex items-center justify-center text-xs font-medium text-fg-secondary">
             Uploading…
           </span>
         )}
@@ -115,7 +115,7 @@ function PhotoPicker({ user }: { user: User }) {
         {!busy && <Camera className="w-3.5 h-3.5" aria-hidden />}
         {user.avatarUrl ? 'Change photo' : 'Add photo'}
       </Button>
-      <p className="mt-1.5 text-xs text-slate-500">JPG, PNG or WebP, up to 10 MB</p>
+      <p className="mt-1.5 text-xs text-fg-muted">JPG, PNG or WebP, up to 10 MB</p>
       <input ref={inputRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-hidden onChange={onChange} />
     </div>
   );
@@ -198,18 +198,18 @@ export default function ProfilePage() {
           <div className="space-y-6">
             <Card className="p-6">
               <PhotoPicker user={user} />
-              <div className="mt-5 pt-5 border-t border-slate-100 text-center">
-                <p className="font-semibold text-slate-900">{user.fullName}</p>
-                <p className="text-sm text-slate-500 break-all">{user.email}</p>
-                {user.headline && <p className="mt-1 text-sm text-slate-700">{user.headline}</p>}
+              <div className="mt-5 pt-5 border-t border-line-subtle text-center">
+                <p className="font-semibold text-fg">{user.fullName}</p>
+                <p className="text-sm text-fg-muted break-all">{user.email}</p>
+                {user.headline && <p className="mt-1 text-sm text-fg-secondary">{user.headline}</p>}
               </div>
-              <dl className="mt-5 pt-5 border-t border-slate-100 space-y-2.5 text-sm">
+              <dl className="mt-5 pt-5 border-t border-line-subtle space-y-2.5 text-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-slate-500">Account type</dt>
+                  <dt className="text-fg-muted">Account type</dt>
                   <dd><Badge tone={ROLE_STYLES[user.role]}>{ROLE_LABELS[user.role]}</Badge></dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-slate-500">Email</dt>
+                  <dt className="text-fg-muted">Email</dt>
                   <dd>
                     {user.emailVerified ? (
                       <Badge tone="bg-emerald-50 text-emerald-700 ring-emerald-600/20">Verified</Badge>
@@ -219,8 +219,8 @@ export default function ProfilePage() {
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-slate-500">Member since</dt>
-                  <dd className="font-medium text-slate-700">{formatMonthYear(user.createdAt)}</dd>
+                  <dt className="text-fg-muted">Member since</dt>
+                  <dd className="font-medium text-fg-secondary">{formatMonthYear(user.createdAt)}</dd>
                 </div>
               </dl>
             </Card>
@@ -228,11 +228,11 @@ export default function ProfilePage() {
             {isCandidate && (
               <Card className="p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold text-slate-900">Profile strength</h2>
+                  <h2 className="text-sm font-semibold text-fg">Profile strength</h2>
                   <span className="text-sm font-semibold text-primary-700 tabular-nums">{completeness.percent}%</span>
                 </div>
                 <div
-                  className="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden"
+                  className="mt-3 h-2 rounded-full bg-subtle overflow-hidden"
                   role="progressbar"
                   aria-label="Profile completeness"
                   aria-valuenow={completeness.percent}
@@ -243,10 +243,10 @@ export default function ProfilePage() {
                 </div>
                 <ul className="mt-4 space-y-2 text-sm">
                   {completeness.items.map((item) => (
-                    <li key={item.key} className={item.done ? 'flex items-center gap-2 text-slate-500' : 'flex items-center gap-2 text-slate-800'}>
+                    <li key={item.key} className={item.done ? 'flex items-center gap-2 text-fg-muted' : 'flex items-center gap-2 text-fg-soft'}>
                       {item.done
                         ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" aria-hidden />
-                        : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0" aria-hidden />}
+                        : <Circle className="w-4 h-4 text-fg-faint flex-shrink-0" aria-hidden />}
                       {item.label}
                       <span className="sr-only">{item.done ? '— complete' : '— missing'}</span>
                     </li>
@@ -259,8 +259,8 @@ export default function ProfilePage() {
               <Card className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p id={openToWorkLabelId} className="text-sm font-semibold text-slate-900">Open to work</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Show recruiters that you&apos;re actively looking.</p>
+                    <p id={openToWorkLabelId} className="text-sm font-semibold text-fg">Open to work</p>
+                    <p className="text-xs text-fg-muted mt-0.5">Show recruiters that you&apos;re actively looking.</p>
                   </div>
                   <Toggle
                     checked={values.openToWork}
@@ -268,7 +268,7 @@ export default function ProfilePage() {
                     labelledBy={openToWorkLabelId}
                   />
                 </div>
-                <p className="mt-3 text-xs text-slate-500">Saved with the rest of your profile.</p>
+                <p className="mt-3 text-xs text-fg-muted">Saved with the rest of your profile.</p>
               </Card>
             )}
           </div>
@@ -341,12 +341,12 @@ export default function ProfilePage() {
                 />
                 <div className="p-5">
                   {fields.length === 0 ? (
-                    <p className="text-sm text-slate-500">No links yet.</p>
+                    <p className="text-sm text-fg-muted">No links yet.</p>
                   ) : (
                     <ul className="space-y-2.5">
                       {fields.map((field, index) => (
                         <li key={field.id} className="flex items-center gap-2">
-                          <LinkIcon className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden />
+                          <LinkIcon className="w-4 h-4 text-fg-subtle flex-shrink-0" aria-hidden />
                           <Input
                             type="url"
                             aria-label={`Portfolio link ${index + 1}`}
@@ -361,7 +361,7 @@ export default function ProfilePage() {
                             type="button"
                             onClick={() => remove(index)}
                             aria-label={`Remove portfolio link ${index + 1}`}
-                            className="flex-shrink-0 p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                            className="flex-shrink-0 p-2 rounded-lg text-fg-subtle hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                           >
                             <Trash2 className="w-4 h-4" aria-hidden />
                           </button>
@@ -375,7 +375,7 @@ export default function ProfilePage() {
             )}
 
             <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
-              {isDirty && <p className="text-sm text-slate-500 sm:mr-auto">You have unsaved changes.</p>}
+              {isDirty && <p className="text-sm text-fg-muted sm:mr-auto">You have unsaved changes.</p>}
               <Button variant="secondary" onClick={() => reset(toForm(user))} disabled={!isDirty || isPending}>
                 Discard
               </Button>

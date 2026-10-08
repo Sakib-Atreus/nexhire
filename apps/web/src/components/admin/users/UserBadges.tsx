@@ -23,7 +23,7 @@ export function VerifiedBadge({ verified }: { verified?: boolean }) {
       Verified
     </Badge>
   ) : (
-    <Badge tone="bg-slate-50 text-slate-500 ring-slate-400/20">Not verified</Badge>
+    <Badge tone="bg-muted text-fg-muted ring-slate-400/20">Not verified</Badge>
   );
 }
 

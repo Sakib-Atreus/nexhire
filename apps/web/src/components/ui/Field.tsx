@@ -3,10 +3,10 @@ import { cn } from '@/lib/cn';
 
 export const controlClasses = (invalid?: boolean) =>
   cn(
-    'block w-full rounded-lg border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition',
-    'placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500',
-    'disabled:bg-slate-50 disabled:text-slate-500',
-    invalid ? 'border-rose-400 focus:ring-rose-500/30 focus:border-rose-500' : 'border-slate-300'
+    'block w-full rounded-lg border bg-surface px-3.5 text-sm text-fg shadow-sm transition',
+    'placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500',
+    'disabled:bg-muted disabled:text-fg-muted',
+    invalid ? 'border-rose-400 focus:ring-rose-500/30 focus:border-rose-500' : 'border-line-strong'
   );
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(
@@ -42,7 +42,7 @@ export function FormField({ label, children, error, hint, required, className }:
   const id = useId();
   return (
     <div className={cn('space-y-1.5', className)}>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="block text-sm font-medium text-fg-secondary">
         {label}
         {required && <span className="text-rose-500 ml-0.5" aria-hidden>*</span>}
       </label>
@@ -50,7 +50,7 @@ export function FormField({ label, children, error, hint, required, className }:
       {error ? (
         <p className="text-xs text-rose-600" role="alert">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-xs text-fg-muted">{hint}</p>
       ) : null}
     </div>
   );

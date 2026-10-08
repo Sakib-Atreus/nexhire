@@ -42,7 +42,7 @@ export default function CreateJobPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-4">
+      <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-primary-600 mb-4">
         <ArrowLeft className="w-4 h-4" aria-hidden /> My jobs
       </Link>
       <PageHeader title="Post a job" description="Fill in the details below. Fields marked * are required." />

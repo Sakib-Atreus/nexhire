@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import { formatDateTime } from './stages';
 
 const RESPONSE_CHIP: Record<InterviewResponse, { icon: LucideIcon; tone: string; suffix: string }> = {
-  AWAITING: { icon: CalendarClock, tone: 'bg-slate-100 text-slate-700 ring-slate-500/20', suffix: 'awaiting' },
+  AWAITING: { icon: CalendarClock, tone: 'bg-subtle text-fg-secondary ring-slate-500/20', suffix: 'awaiting' },
   ACCEPTED: { icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', suffix: 'confirmed' },
   NEW_TIME_REQUESTED: { icon: RefreshCw, tone: 'bg-amber-50 text-amber-800 ring-amber-600/20', suffix: 'new time requested' },
   DECLINED: { icon: CalendarX2, tone: 'bg-rose-50 text-rose-700 ring-rose-600/20', suffix: 'declined' },

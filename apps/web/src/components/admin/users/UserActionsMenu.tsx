@@ -101,9 +101,9 @@ export function UserActionsMenu({ user, isSelf, busy, onAction }: {
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         aria-label={`Actions for ${user.fullName}`}
-        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:bg-subtle hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
-        {busy ? <Spinner className="w-4 h-4 text-slate-500" /> : <MoreHorizontal className="w-4 h-4" aria-hidden />}
+        {busy ? <Spinner className="w-4 h-4 text-fg-muted" /> : <MoreHorizontal className="w-4 h-4" aria-hidden />}
       </button>
 
       {open && (
@@ -113,18 +113,18 @@ export function UserActionsMenu({ user, isSelf, busy, onAction }: {
           role="menu"
           aria-label={`Actions for ${user.fullName}`}
           onKeyDown={onMenuKeyDown}
-          className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-30"
+          className="absolute right-0 top-full mt-1.5 w-56 bg-surface rounded-xl border border-line shadow-lg py-1 z-30"
         >
           <Link
             href={`/admin/users/${user.id}`}
             role="menuitem"
             onClick={() => setOpen(false)}
-            className={cn(itemClass, 'text-slate-700 hover:bg-slate-50 focus:bg-slate-50')}
+            className={cn(itemClass, 'text-fg-secondary hover:bg-muted focus:bg-muted')}
           >
-            <Eye className="w-4 h-4 text-slate-400" aria-hidden />
+            <Eye className="w-4 h-4 text-fg-subtle" aria-hidden />
             View details
           </Link>
-          <div className="my-1 border-t border-slate-100" role="separator" />
+          <div className="my-1 border-t border-line-subtle" role="separator" />
           {items.map((item) => (
             <button
               key={item.key}
@@ -137,18 +137,18 @@ export function UserActionsMenu({ user, isSelf, busy, onAction }: {
               className={cn(
                 itemClass,
                 item.disabled
-                  ? 'text-slate-400 cursor-not-allowed'
+                  ? 'text-fg-subtle cursor-not-allowed'
                   : item.danger
                     ? 'text-rose-700 hover:bg-rose-50 focus:bg-rose-50'
-                    : 'text-slate-700 hover:bg-slate-50 focus:bg-slate-50'
+                    : 'text-fg-secondary hover:bg-muted focus:bg-muted'
               )}
             >
-              <item.icon className={cn('w-4 h-4', item.disabled ? 'text-slate-300' : item.danger ? 'text-rose-500' : 'text-slate-400')} aria-hidden />
+              <item.icon className={cn('w-4 h-4', item.disabled ? 'text-fg-faint' : item.danger ? 'text-rose-500' : 'text-fg-subtle')} aria-hidden />
               {item.label}
             </button>
           ))}
           {isSelf && (
-            <p className="px-3.5 pt-1.5 pb-1 text-xs text-slate-500 border-t border-slate-100 mt-1">
+            <p className="px-3.5 pt-1.5 pb-1 text-xs text-fg-muted border-t border-line-subtle mt-1">
               This is you. Ask another administrator to change your role, suspend or delete your account.
             </p>
           )}

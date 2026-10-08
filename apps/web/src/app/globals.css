@@ -2,12 +2,239 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme colors. Values are "R G B" so Tailwind can apply opacity (e.g. bg-surface/95).
+ * Light values match the original design; `.dark` on <html> switches to the dark palette.
+ * Use the semantic utilities (bg-surface, text-fg, border-line…) instead of white/slate.
+ * Colored tints (bg-emerald-50, text-rose-700, border-amber-200…) switch automatically
+ * via the --bg-…, --tx-… and --bd-… variables wired up in tailwind.config.ts.
+ */
 @layer base {
   :root {
-    --background: 255 255 255;
-    --foreground: 15 23 42;
+  /* Neutral semantic colors (light = the original slate/white values). */
+  --surface: 255 255 255;        /* cards, panels, inputs (was white) */
+  --canvas: 248 250 252;         /* app page background (slate-50) */
+  --muted: 248 250 252;          /* subtle fills inside surfaces (slate-50) */
+  --subtle: 241 245 249;         /* stronger fills, chips (slate-100) */
+  --emphasis: 226 232 240;       /* skeletons, tracks (slate-200) */
+  --fg: 15 23 42;                /* primary text (slate-900) */
+  --fg-soft: 30 41 59;           /* slate-800 */
+  --fg-secondary: 51 65 85;      /* slate-700 */
+  --fg-tertiary: 71 85 105;      /* slate-600 */
+  --fg-muted: 100 116 139;       /* secondary text (slate-500) */
+  --fg-subtle: 148 163 184;      /* hints, placeholders, icons (slate-400) */
+  --fg-faint: 203 213 225;       /* disabled, decorative (slate-300) */
+  --line-subtle: 241 245 249;    /* dividers (slate-100) */
+  --line: 226 232 240;           /* borders (slate-200) */
+  --line-strong: 203 213 225;    /* input borders (slate-300) */
+
+  /* Colored tints: backgrounds 50–200, text 600–900, borders 100–300. */
+  --bg-primary-50: 238 242 255;
+  --bg-primary-100: 224 231 255;
+  --bg-primary-200: 199 210 254;
+  --tx-primary-600: 79 70 229;
+  --tx-primary-700: 67 56 202;
+  --tx-primary-800: 55 48 163;
+  --tx-primary-900: 49 46 129;
+  --bd-primary-100: 224 231 255;
+  --bd-primary-200: 199 210 254;
+  --bd-primary-300: 165 180 252;
+  --bg-rose-50: 255 241 242;
+  --bg-rose-100: 255 228 230;
+  --bg-rose-200: 254 205 211;
+  --tx-rose-600: 225 29 72;
+  --tx-rose-700: 190 18 60;
+  --tx-rose-800: 159 18 57;
+  --tx-rose-900: 136 19 55;
+  --bd-rose-100: 255 228 230;
+  --bd-rose-200: 254 205 211;
+  --bd-rose-300: 253 164 175;
+  --bg-amber-50: 255 251 235;
+  --bg-amber-100: 254 243 199;
+  --bg-amber-200: 253 230 138;
+  --tx-amber-600: 217 119 6;
+  --tx-amber-700: 180 83 9;
+  --tx-amber-800: 146 64 14;
+  --tx-amber-900: 120 53 15;
+  --bd-amber-100: 254 243 199;
+  --bd-amber-200: 253 230 138;
+  --bd-amber-300: 252 211 77;
+  --bg-emerald-50: 236 253 245;
+  --bg-emerald-100: 209 250 229;
+  --bg-emerald-200: 167 243 208;
+  --tx-emerald-600: 5 150 105;
+  --tx-emerald-700: 4 120 87;
+  --tx-emerald-800: 6 95 70;
+  --tx-emerald-900: 6 78 59;
+  --bd-emerald-100: 209 250 229;
+  --bd-emerald-200: 167 243 208;
+  --bd-emerald-300: 110 231 183;
+  --bg-sky-50: 240 249 255;
+  --bg-sky-100: 224 242 254;
+  --bg-sky-200: 186 230 253;
+  --tx-sky-600: 2 132 199;
+  --tx-sky-700: 3 105 161;
+  --tx-sky-800: 7 89 133;
+  --tx-sky-900: 12 74 110;
+  --bd-sky-100: 224 242 254;
+  --bd-sky-200: 186 230 253;
+  --bd-sky-300: 125 211 252;
+  --bg-indigo-50: 238 242 255;
+  --bg-indigo-100: 224 231 255;
+  --bg-indigo-200: 199 210 254;
+  --tx-indigo-600: 79 70 229;
+  --tx-indigo-700: 67 56 202;
+  --tx-indigo-800: 55 48 163;
+  --tx-indigo-900: 49 46 129;
+  --bd-indigo-100: 224 231 255;
+  --bd-indigo-200: 199 210 254;
+  --bd-indigo-300: 165 180 252;
+  --bg-violet-50: 245 243 255;
+  --bg-violet-100: 237 233 254;
+  --bg-violet-200: 221 214 254;
+  --tx-violet-600: 124 58 237;
+  --tx-violet-700: 109 40 217;
+  --tx-violet-800: 91 33 182;
+  --tx-violet-900: 76 29 149;
+  --bd-violet-100: 237 233 254;
+  --bd-violet-200: 221 214 254;
+  --bd-violet-300: 196 181 253;
+  --bg-teal-50: 240 253 250;
+  --bg-teal-100: 204 251 241;
+  --bg-teal-200: 153 246 228;
+  --tx-teal-600: 13 148 136;
+  --tx-teal-700: 15 118 110;
+  --tx-teal-800: 17 94 89;
+  --tx-teal-900: 19 78 74;
+  --bd-teal-100: 204 251 241;
+  --bd-teal-200: 153 246 228;
+  --bd-teal-300: 94 234 212;
+  --bg-fuchsia-50: 253 244 255;
+  --bg-fuchsia-100: 250 232 255;
+  --bg-fuchsia-200: 245 208 254;
+  --tx-fuchsia-600: 192 38 211;
+  --tx-fuchsia-700: 162 28 175;
+  --tx-fuchsia-800: 134 25 143;
+  --tx-fuchsia-900: 112 26 117;
+  --bd-fuchsia-100: 250 232 255;
+  --bd-fuchsia-200: 245 208 254;
+  --bd-fuchsia-300: 240 171 252;
+
+    color-scheme: light;
   }
+
+  .dark {
+  --surface: 15 23 42;           /* slate-900 */
+  --canvas: 2 6 23;              /* slate-950 */
+  --muted: 24 33 52;
+  --subtle: 30 41 59;            /* slate-800 */
+  --emphasis: 51 65 85;          /* slate-700 */
+  --fg: 241 245 249;             /* slate-100 */
+  --fg-soft: 226 232 240;
+  --fg-secondary: 203 213 225;
+  --fg-tertiary: 176 189 205;
+  --fg-muted: 148 163 184;
+  --fg-subtle: 100 116 139;
+  --fg-faint: 71 85 105;
+  --line-subtle: 30 41 59;
+  --line: 45 58 78;
+  --line-strong: 71 85 105;
+
+  --bg-primary-50: 25 32 66;
+  --bg-primary-100: 32 39 82;
+  --bg-primary-200: 40 47 102;
+  --tx-primary-600: 129 140 248;
+  --tx-primary-700: 165 180 252;
+  --tx-primary-800: 199 210 254;
+  --tx-primary-900: 224 231 255;
+  --bd-primary-100: 32 39 82;
+  --bd-primary-200: 42 48 106;
+  --bd-primary-300: 53 59 132;
+  --bg-rose-50: 42 28 48;
+  --bg-rose-100: 61 31 52;
+  --bg-rose-200: 84 35 58;
+  --tx-rose-600: 251 113 133;
+  --tx-rose-700: 253 164 175;
+  --tx-rose-800: 254 205 211;
+  --tx-rose-900: 255 228 230;
+  --bd-rose-100: 61 31 52;
+  --bd-rose-200: 88 36 59;
+  --bd-rose-300: 118 41 65;
+  --bg-amber-50: 43 39 38;
+  --bg-amber-100: 61 50 36;
+  --bg-amber-200: 84 64 33;
+  --tx-amber-600: 251 191 36;
+  --tx-amber-700: 252 211 77;
+  --tx-amber-800: 253 230 138;
+  --tx-amber-900: 254 243 199;
+  --bd-amber-100: 61 50 36;
+  --bd-amber-200: 89 66 32;
+  --bd-amber-300: 119 84 28;
+  --bg-emerald-50: 15 42 52;
+  --bg-emerald-100: 15 55 59;
+  --bg-emerald-200: 15 72 68;
+  --tx-emerald-600: 52 211 153;
+  --tx-emerald-700: 110 231 183;
+  --tx-emerald-800: 167 243 208;
+  --tx-emerald-900: 209 250 229;
+  --bd-emerald-100: 15 55 59;
+  --bd-emerald-200: 15 75 70;
+  --bd-emerald-300: 15 96 81;
+  --bg-sky-50: 15 40 65;
+  --bg-sky-100: 15 51 80;
+  --bg-sky-200: 15 66 99;
+  --tx-sky-600: 56 189 248;
+  --tx-sky-700: 125 211 252;
+  --tx-sky-800: 186 230 253;
+  --tx-sky-900: 224 242 254;
+  --bd-sky-100: 15 51 80;
+  --bd-sky-200: 15 68 103;
+  --bd-sky-300: 15 87 128;
+  --bg-indigo-50: 25 32 66;
+  --bg-indigo-100: 32 39 82;
+  --bg-indigo-200: 40 47 102;
+  --tx-indigo-600: 129 140 248;
+  --tx-indigo-700: 165 180 252;
+  --tx-indigo-800: 199 210 254;
+  --tx-indigo-900: 224 231 255;
+  --bd-indigo-100: 32 39 82;
+  --bd-indigo-200: 42 48 106;
+  --bd-indigo-300: 53 59 132;
+  --bg-violet-50: 30 31 66;
+  --bg-violet-100: 40 37 83;
+  --bg-violet-200: 52 44 103;
+  --tx-violet-600: 167 139 250;
+  --tx-violet-700: 196 181 253;
+  --tx-violet-800: 221 214 254;
+  --tx-violet-900: 237 233 254;
+  --bd-violet-100: 40 37 83;
+  --bd-violet-200: 55 45 107;
+  --bd-violet-300: 71 54 134;
+  --bg-teal-50: 16 42 57;
+  --bg-teal-100: 16 55 67;
+  --bg-teal-200: 17 71 79;
+  --tx-teal-600: 45 212 191;
+  --tx-teal-700: 94 234 212;
+  --tx-teal-800: 153 246 228;
+  --tx-teal-900: 204 251 241;
+  --bd-teal-100: 16 55 67;
+  --bd-teal-200: 17 75 82;
+  --bd-teal-300: 17 95 98;
+  --bg-fuchsia-50: 39 29 66;
+  --bg-fuchsia-100: 55 32 81;
+  --bg-fuchsia-200: 76 37 101;
+  --tx-fuchsia-600: 232 121 249;
+  --tx-fuchsia-700: 240 171 252;
+  --tx-fuchsia-800: 245 208 254;
+  --tx-fuchsia-900: 250 232 255;
+  --bd-fuchsia-100: 55 32 81;
+  --bd-fuchsia-200: 80 38 105;
+  --bd-fuchsia-300: 106 44 131;
+
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-white text-slate-900 antialiased;
+    @apply bg-surface text-fg antialiased;
   }
 }

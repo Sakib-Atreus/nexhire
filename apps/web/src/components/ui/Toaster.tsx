@@ -20,14 +20,14 @@ export function Toaster() {
           <div
             key={t.id}
             role={t.tone === 'error' ? 'alert' : 'status'}
-            className="pointer-events-auto w-full max-w-sm rounded-xl bg-white shadow-lg ring-1 ring-slate-200 p-4 flex gap-3 animate-toast-in"
+            className="pointer-events-auto w-full max-w-sm rounded-xl bg-surface shadow-lg ring-1 ring-line p-4 flex gap-3 animate-toast-in"
           >
             <Icon className={cn('w-5 h-5 flex-shrink-0 mt-0.5', ICON_COLORS[t.tone])} aria-hidden />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900">{t.title}</p>
-              {t.description && <p className="mt-0.5 text-sm text-slate-500">{t.description}</p>}
+              <p className="text-sm font-semibold text-fg">{t.title}</p>
+              {t.description && <p className="mt-0.5 text-sm text-fg-muted">{t.description}</p>}
             </div>
-            <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss notification" className="p-1 -m-1 h-fit rounded text-slate-400 hover:text-slate-600">
+            <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss notification" className="p-1 -m-1 h-fit rounded text-fg-subtle hover:text-fg-tertiary">
               <X className="w-4 h-4" />
             </button>
           </div>

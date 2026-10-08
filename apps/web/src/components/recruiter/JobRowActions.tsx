@@ -14,11 +14,11 @@ import { Spinner } from '@/components/ui/States';
 import { cn } from '@/lib/cn';
 
 const iconBtn =
-  'inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors ' +
-  'hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50';
+  'inline-flex items-center justify-center w-9 h-9 rounded-lg border border-line bg-surface text-fg-muted transition-colors ' +
+  'hover:bg-muted hover:text-fg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50';
 
 const menuItem =
-  'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none disabled:opacity-50';
+  'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-fg-secondary hover:bg-muted focus:bg-muted focus:outline-none disabled:opacity-50';
 
 /**
  * Per-row actions for a hiring-team job: applicants, publish/close/reopen, analytics, edit,
@@ -112,7 +112,7 @@ export function JobRowActions({ job, onDelete }: { job: Job; onDelete: (job: Job
           aria-label={canClose ? `Close ${job.title}` : `${openLabel} ${job.title}`}
         >
           {update.isPending ? (
-            <Spinner className={cn('w-3.5 h-3.5', isDraft ? 'text-white' : 'text-slate-500')} />
+            <Spinner className={cn('w-3.5 h-3.5', isDraft ? 'text-white' : 'text-fg-muted')} />
           ) : canClose ? (
             <Lock className="w-3.5 h-3.5" aria-hidden />
           ) : isDraft ? (
@@ -144,7 +144,7 @@ export function JobRowActions({ job, onDelete }: { job: Job; onDelete: (job: Job
           onClick={() => setMenuOpen((o) => !o)}
           disabled={duplicate.isPending}
         >
-          {duplicate.isPending ? <Spinner className="w-4 h-4 text-slate-500" /> : <MoreHorizontal className="w-4 h-4" aria-hidden />}
+          {duplicate.isPending ? <Spinner className="w-4 h-4 text-fg-muted" /> : <MoreHorizontal className="w-4 h-4" aria-hidden />}
         </button>
         {menuOpen && (
           <div
@@ -153,15 +153,15 @@ export function JobRowActions({ job, onDelete }: { job: Job; onDelete: (job: Job
             role="menu"
             aria-label={`Actions for ${job.title}`}
             onKeyDown={onMenuKeyDown}
-            className="absolute right-0 top-full z-20 mt-1.5 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+            className="absolute right-0 top-full z-20 mt-1.5 w-48 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg"
           >
             <Link href={`/jobs/${job.id}`} role="menuitem" className={menuItem} onClick={() => setMenuOpen(false)}>
-              <Eye className="w-4 h-4 text-slate-400" aria-hidden /> View job
+              <Eye className="w-4 h-4 text-fg-subtle" aria-hidden /> View job
             </Link>
             <button type="button" role="menuitem" className={menuItem} onClick={duplicateJob}>
-              <Copy className="w-4 h-4 text-slate-400" aria-hidden /> Duplicate
+              <Copy className="w-4 h-4 text-fg-subtle" aria-hidden /> Duplicate
             </button>
-            <div className="my-1 border-t border-slate-100" role="separator" />
+            <div className="my-1 border-t border-line-subtle" role="separator" />
             <button
               type="button"
               role="menuitem"

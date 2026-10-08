@@ -215,7 +215,7 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
         {hasConflicts && <ConflictWarning conflicts={conflicts} />}
 
         <fieldset>
-          <legend className="block text-sm font-medium text-slate-700 mb-1.5">Interview type</legend>
+          <legend className="block text-sm font-medium text-fg-secondary mb-1.5">Interview type</legend>
           <div className="grid grid-cols-3 gap-2">
             {TYPES.map(({ value, icon: Icon }) => (
               <label
@@ -223,7 +223,7 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
                 className={cn(
                   'flex flex-col sm:flex-row items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-sm cursor-pointer transition-colors',
                   'focus-within:ring-2 focus-within:ring-primary-500/40',
-                  form.type === value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  form.type === value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-line-strong text-fg-tertiary hover:bg-muted'
                 )}
               >
                 <input type="radio" name={`${formId}-type`} value={value} checked={form.type === value} onChange={() => set('type', value)} className="sr-only" />
@@ -252,8 +252,8 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
           )}
         </FormField>
 
-        <div className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-slate-400" aria-hidden />
+        <div className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-xs text-fg-tertiary">
+          <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-fg-subtle" aria-hidden />
           <p>
             {firstName} will be asked to confirm this time or suggest another.
             {interview && ` Changing the time asks ${firstName} to confirm again.`}

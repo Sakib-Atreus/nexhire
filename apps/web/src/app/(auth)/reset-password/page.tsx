@@ -46,8 +46,8 @@ function ResetPasswordForm() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
           <KeyRound className="h-6 w-6 text-amber-600" aria-hidden />
         </div>
-        <h2 className="text-sm font-semibold text-slate-900">This reset link is incomplete</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-sm font-semibold text-fg">This reset link is incomplete</h2>
+        <p className="mt-1 text-sm text-fg-muted">
           Open the link from your email again, or request a new one.
         </p>
         <Link href="/forgot-password" className={buttonClasses('primary', 'lg', 'mt-6 w-full')}>
@@ -63,8 +63,8 @@ function ResetPasswordForm() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
           <CheckCircle2 className="h-6 w-6 text-emerald-600" aria-hidden />
         </div>
-        <h2 className="text-sm font-semibold text-slate-900">Password updated</h2>
-        <p className="mt-1 text-sm text-slate-500">Taking you to sign in…</p>
+        <h2 className="text-sm font-semibold text-fg">Password updated</h2>
+        <p className="mt-1 text-sm text-fg-muted">Taking you to sign in…</p>
         <Link href="/login" className={buttonClasses('secondary', 'md', 'mt-6')}>
           Sign in now
         </Link>

@@ -99,7 +99,7 @@ function CardBody({ app, onMove, onOpen, handle }: {
   onOpen?: (app: Application) => void;
   handle?: React.ReactNode;
 }) {
-  const nameClass = 'block max-w-full font-semibold text-sm text-slate-900 truncate text-left group-hover:text-primary-700';
+  const nameClass = 'block max-w-full font-semibold text-sm text-fg truncate text-left group-hover:text-primary-700';
   return (
     <>
       <div className="flex items-start gap-2.5">
@@ -116,7 +116,7 @@ function CardBody({ app, onMove, onOpen, handle }: {
           ) : (
             <p className={nameClass}>{app.candidateName}</p>
           )}
-          {app.candidateHeadline && <p className="text-xs text-slate-500 line-clamp-2 break-words">{app.candidateHeadline}</p>}
+          {app.candidateHeadline && <p className="text-xs text-fg-muted line-clamp-2 break-words">{app.candidateHeadline}</p>}
         </div>
         {handle}
       </div>
@@ -127,8 +127,8 @@ function CardBody({ app, onMove, onOpen, handle }: {
           <ActivityCounts app={app} className="ml-auto" />
         </div>
       ) : null}
-      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-        <span className="text-[11px] text-slate-400 truncate">
+      <div className="mt-2 pt-2 border-t border-line-subtle flex items-center justify-between gap-2">
+        <span className="text-[11px] text-fg-subtle truncate">
           Applied <time dateTime={app.appliedAt} title={formatDate(app.appliedAt)}>{timeAgo(app.appliedAt)}</time>
         </span>
         {onMove && <ApplicantStatusMenu app={app} onMove={onMove} size="xs" />}
@@ -152,7 +152,7 @@ function BoardCard({ app, onOpen, onMove, suppressClick }: {
         {...listeners}
         onClick={() => { if (!suppressClick()) onOpen(app); }}
         className={cn(
-          'group bg-white rounded-lg border border-slate-200 p-3 shadow-sm cursor-pointer select-none touch-manipulation',
+          'group bg-surface rounded-lg border border-line p-3 shadow-sm cursor-pointer select-none touch-manipulation',
           'hover:border-primary-300 hover:shadow transition-[border-color,box-shadow]',
           isDragging && 'opacity-40 border-dashed'
         )}
@@ -168,7 +168,7 @@ function BoardCard({ app, onOpen, onMove, suppressClick }: {
               {...attributes}
               aria-label={`Drag ${app.candidateName} to another stage`}
               onClick={(e) => { e.stopPropagation(); onOpen(app); }}
-              className="-mr-1 -mt-0.5 p-1 rounded text-slate-300 hover:text-slate-500 cursor-grab focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="-mr-1 -mt-0.5 p-1 rounded text-fg-faint hover:text-fg-muted cursor-grab focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               <GripVertical className="w-4 h-4" aria-hidden />
             </button>
@@ -197,15 +197,15 @@ function Column({ status, label, apps, onOpen, onMove, suppressClick, highlight 
       ref={setNodeRef}
       aria-labelledby={headingId}
       className={cn(
-        'flex flex-col flex-1 basis-0 min-w-[15rem] rounded-xl bg-slate-100/70 border border-transparent transition-colors',
+        'flex flex-col flex-1 basis-0 min-w-[15rem] rounded-xl bg-subtle/70 border border-transparent transition-colors',
         isOver && 'bg-primary-50 border-primary-300',
         highlight && !isOver && 'bg-emerald-50/60'
       )}
     >
       <header className="flex items-center gap-2 px-3 pt-3 pb-2">
         <span className={cn('w-2 h-2 rounded-full', APPLICATION_STATUS_BAR[status])} aria-hidden />
-        <h2 id={headingId} className="text-sm font-semibold text-slate-800">{label}</h2>
-        <span className="ml-auto text-xs font-medium text-slate-500 bg-white rounded-full px-2 py-0.5 tabular-nums ring-1 ring-slate-200">
+        <h2 id={headingId} className="text-sm font-semibold text-fg-soft">{label}</h2>
+        <span className="ml-auto text-xs font-medium text-fg-muted bg-surface rounded-full px-2 py-0.5 tabular-nums ring-1 ring-line">
           {apps.length}
           <span className="sr-only"> applicant{apps.length === 1 ? '' : 's'}</span>
         </span>
@@ -215,7 +215,7 @@ function Column({ status, label, apps, onOpen, onMove, suppressClick, highlight 
           <BoardCard key={a.id} app={a} onOpen={onOpen} onMove={onMove} suppressClick={suppressClick} />
         ))}
         {apps.length === 0 && (
-          <li className="h-24 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center text-xs text-slate-400">
+          <li className="h-24 rounded-lg border-2 border-dashed border-line flex items-center justify-center text-xs text-fg-subtle">
             Drop applicants here
           </li>
         )}
@@ -245,14 +245,14 @@ function RejectedColumn({ apps, expanded, onToggle, onOpen, onMove, suppressClic
       >
         <header className="flex items-center gap-2 px-3 pt-3 pb-2">
           <span className={cn('w-2 h-2 rounded-full', APPLICATION_STATUS_BAR.REJECTED)} aria-hidden />
-          <h2 className="text-sm font-semibold text-slate-800">Rejected</h2>
-          <span className="text-xs font-medium text-slate-500 bg-white rounded-full px-2 py-0.5 tabular-nums ring-1 ring-slate-200">{apps.length}</span>
+          <h2 className="text-sm font-semibold text-fg-soft">Rejected</h2>
+          <span className="text-xs font-medium text-fg-muted bg-surface rounded-full px-2 py-0.5 tabular-nums ring-1 ring-line">{apps.length}</span>
           <button
             type="button"
             onClick={onToggle}
             aria-expanded
             aria-label="Collapse rejected column"
-            className="ml-auto p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            className="ml-auto p-1 rounded text-fg-subtle hover:text-fg-secondary hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
             <ChevronRight className="w-4 h-4" aria-hidden />
           </button>
@@ -286,7 +286,7 @@ function RejectedColumn({ apps, expanded, onToggle, onOpen, onMove, suppressClic
         className="w-full h-full min-h-[12rem] flex flex-col items-center gap-3 py-3 rounded-xl text-rose-700 hover:bg-rose-100/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
         <ChevronLeft className="w-4 h-4" aria-hidden />
-        <span className="text-xs font-semibold tabular-nums bg-white rounded-full px-1.5 py-0.5 ring-1 ring-rose-200">{apps.length}</span>
+        <span className="text-xs font-semibold tabular-nums bg-surface rounded-full px-1.5 py-0.5 ring-1 ring-rose-200">{apps.length}</span>
         <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl] rotate-180">Rejected</span>
         <span className="sr-only">Show rejected applicants</span>
       </button>
@@ -299,18 +299,18 @@ function WithdrawnSection({ apps, onOpen }: { apps: Application[]; onOpen: (app:
   const [open, setOpen] = useState(false);
   if (apps.length === 0) return null;
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 bg-white">
+    <div className="mt-4 rounded-xl border border-line bg-surface">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-fg-tertiary hover:bg-muted rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
-        <UserMinus className="w-4 h-4 text-slate-400" aria-hidden />
+        <UserMinus className="w-4 h-4 text-fg-subtle" aria-hidden />
         <span className="font-medium">Withdrawn</span>
-        <span className="text-xs tabular-nums text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">{apps.length}</span>
-        <span className="text-xs text-slate-400 hidden sm:inline">· Withdrawn by the candidate, read-only</span>
-        <ChevronRight className={cn('w-4 h-4 ml-auto text-slate-400 transition-transform', open && 'rotate-90')} aria-hidden />
+        <span className="text-xs tabular-nums text-fg-muted bg-subtle rounded-full px-2 py-0.5">{apps.length}</span>
+        <span className="text-xs text-fg-subtle hidden sm:inline">· Withdrawn by the candidate, read-only</span>
+        <ChevronRight className={cn('w-4 h-4 ml-auto text-fg-subtle transition-transform', open && 'rotate-90')} aria-hidden />
       </button>
       {open && (
         <ul className="grid gap-2 px-3 pb-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -319,12 +319,12 @@ function WithdrawnSection({ apps, onOpen }: { apps: Application[]; onOpen: (app:
               <button
                 type="button"
                 onClick={() => onOpen(a)}
-                className="w-full flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-left hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                className="w-full flex items-center gap-2.5 rounded-lg border border-line bg-muted p-2.5 text-left hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               >
                 <Avatar name={a.candidateName} src={a.candidateAvatarUrl} size="xs" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-medium text-slate-700 truncate">{a.candidateName}</span>
-                  <span className="block text-[11px] text-slate-400">Applied {timeAgo(a.appliedAt)}</span>
+                  <span className="block text-sm font-medium text-fg-secondary truncate">{a.candidateName}</span>
+                  <span className="block text-[11px] text-fg-subtle">Applied {timeAgo(a.appliedAt)}</span>
                 </span>
               </button>
             </li>
@@ -435,7 +435,7 @@ export function PipelineBoard({ apps, withdrawn, onOpen, onMove }: {
         </div>
         <DragOverlay dropAnimation={null}>
           {active ? (
-            <div className="w-[15rem] bg-white rounded-lg border border-primary-300 p-3 shadow-xl rotate-1 cursor-grabbing">
+            <div className="w-[15rem] bg-surface rounded-lg border border-primary-300 p-3 shadow-xl rotate-1 cursor-grabbing">
               <CardBody app={active} />
             </div>
           ) : null}

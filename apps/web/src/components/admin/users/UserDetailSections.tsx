@@ -37,10 +37,10 @@ export function UserHeaderCard({ user, isSelf, busy, onAction }: {
         <Avatar name={user.fullName} src={user.avatarUrl} size="xl" className="self-start" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 break-words min-w-0">{user.fullName}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-fg break-words min-w-0">{user.fullName}</h1>
             {isSelf && <SelfBadge />}
           </div>
-          {user.headline && <p className="mt-0.5 text-sm text-slate-600">{user.headline}</p>}
+          {user.headline && <p className="mt-0.5 text-sm text-fg-tertiary">{user.headline}</p>}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <RoleBadge role={user.role} />
             {user.role === 'RECRUITER' && <VerifiedBadge verified={user.verified} />}
@@ -49,9 +49,9 @@ export function UserHeaderCard({ user, isSelf, busy, onAction }: {
               <Badge tone="bg-emerald-50 text-emerald-700 ring-emerald-600/20">Open to work</Badge>
             )}
           </div>
-          <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm text-slate-600 sm:grid-cols-2">
+          <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm text-fg-tertiary sm:grid-cols-2">
             <div className="flex items-center gap-2 min-w-0">
-              <dt className="flex-shrink-0"><Mail className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden /><span className="sr-only">Email</span></dt>
+              <dt className="flex-shrink-0"><Mail className="w-4 h-4 text-fg-subtle flex-shrink-0" aria-hidden /><span className="sr-only">Email</span></dt>
               <dd className="min-w-0 truncate">
                 <a href={`mailto:${user.email}`} className="hover:text-primary-700">{user.email}</a>
                 {!user.emailVerified && <span className="ml-1.5 text-xs text-amber-700">(email not confirmed)</span>}
@@ -59,19 +59,19 @@ export function UserHeaderCard({ user, isSelf, busy, onAction }: {
             </div>
             {user.phone && (
               <div className="flex items-center gap-2 min-w-0">
-                <dt className="flex-shrink-0"><Phone className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden /><span className="sr-only">Phone</span></dt>
+                <dt className="flex-shrink-0"><Phone className="w-4 h-4 text-fg-subtle flex-shrink-0" aria-hidden /><span className="sr-only">Phone</span></dt>
                 <dd className="truncate"><a href={`tel:${user.phone}`} className="hover:text-primary-700">{user.phone}</a></dd>
               </div>
             )}
             <div className="flex items-center gap-2">
-              <dt className="flex-shrink-0"><CalendarDays className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden /><span className="sr-only">Member since</span></dt>
+              <dt className="flex-shrink-0"><CalendarDays className="w-4 h-4 text-fg-subtle flex-shrink-0" aria-hidden /><span className="sr-only">Member since</span></dt>
               <dd>Member since {formatMonthYear(user.createdAt)}</dd>
             </div>
           </dl>
         </div>
       </div>
 
-      <div className="mt-5 pt-5 border-t border-slate-100">
+      <div className="mt-5 pt-5 border-t border-line-subtle">
         <div className="flex flex-wrap gap-2">
           {user.role === 'RECRUITER' && (
             user.verified ? (
@@ -108,7 +108,7 @@ export function UserHeaderCard({ user, isSelf, busy, onAction }: {
           </Button>
         </div>
         {isSelf && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-fg-muted">
             This is you. Another administrator has to change your role, suspend or delete your account.
           </p>
         )}
@@ -124,8 +124,8 @@ function StatTile({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
         <Icon className="w-5 h-5" aria-hidden />
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-bold text-slate-900 tabular-nums leading-tight">{value.toLocaleString('en-US')}</p>
-        <p className="text-xs text-slate-500">{label}</p>
+        <p className="text-2xl font-bold text-fg tabular-nums leading-tight">{value.toLocaleString('en-US')}</p>
+        <p className="text-xs text-fg-muted">{label}</p>
       </div>
     </Card>
   );
@@ -159,14 +159,14 @@ export function RecentJobs({ userId, jobs, total }: { userId: string; jobs: Job[
       {jobs.length === 0 ? (
         <EmptyState icon={Briefcase} title="No jobs posted yet" className="py-10" />
       ) : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-line-subtle">
           {jobs.map((job) => (
             <li key={job.id} className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="min-w-0 flex-1">
-                <Link href={`/jobs/${job.id}`} className="text-sm font-medium text-slate-900 hover:text-primary-700 break-words">
+                <Link href={`/jobs/${job.id}`} className="text-sm font-medium text-fg hover:text-primary-700 break-words">
                   {job.title}
                 </Link>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-fg-muted mt-0.5">
                   {job.companyName} · Posted {formatDate(job.createdAt)}
                   {typeof job.applicationCount === 'number' && <> · {pluralize(job.applicationCount, 'applicant')}</>}
                 </p>
@@ -202,14 +202,14 @@ export function RecentApplications({ applications, total }: { applications: Appl
       {applications.length === 0 ? (
         <EmptyState icon={FileText} title="No applications yet" className="py-10" />
       ) : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-line-subtle">
           {applications.map((app) => (
             <li key={app.id} className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="min-w-0 flex-1">
-                <Link href={`/jobs/${app.jobId}`} className="text-sm font-medium text-slate-900 hover:text-primary-700 break-words">
+                <Link href={`/jobs/${app.jobId}`} className="text-sm font-medium text-fg hover:text-primary-700 break-words">
                   {app.jobTitle}
                 </Link>
-                <p className="text-xs text-slate-500 mt-0.5">{app.companyName} · Applied {formatDate(app.appliedAt)}</p>
+                <p className="text-xs text-fg-muted mt-0.5">{app.companyName} · Applied {formatDate(app.appliedAt)}</p>
               </div>
               <Badge tone={APPLICATION_STATUS_STYLES[app.status]} className="self-start sm:self-auto">
                 {APPLICATION_STATUS_LABELS[app.status]}
@@ -233,13 +233,13 @@ export function ProfileSection({ user }: { user: User }) {
       <div className="px-5 py-4 space-y-4">
         {user.bio && (
           <div>
-            <h3 className="text-xs font-medium text-slate-500 mb-1">Bio</h3>
-            <p className="text-sm text-slate-700 whitespace-pre-line break-words">{user.bio}</p>
+            <h3 className="text-xs font-medium text-fg-muted mb-1">Bio</h3>
+            <p className="text-sm text-fg-secondary whitespace-pre-line break-words">{user.bio}</p>
           </div>
         )}
         {skills.length > 0 && (
           <div>
-            <h3 className="text-xs font-medium text-slate-500 mb-1.5">Skills</h3>
+            <h3 className="text-xs font-medium text-fg-muted mb-1.5">Skills</h3>
             <ul className="flex flex-wrap gap-1.5">
               {skills.map((s) => (
                 <li key={s}><Badge>{s}</Badge></li>
@@ -249,7 +249,7 @@ export function ProfileSection({ user }: { user: User }) {
         )}
         {links.length > 0 && (
           <div>
-            <h3 className="text-xs font-medium text-slate-500 mb-1">Links</h3>
+            <h3 className="text-xs font-medium text-fg-muted mb-1">Links</h3>
             <ul className="space-y-1">
               {links.map((l) => (
                 <li key={l} className="text-sm truncate">
@@ -282,16 +282,16 @@ export function AdminHistory({ userId, history }: { userId: string; history: Aud
         <ol className="px-5 py-4">
           {history.map((entry, i) => (
             <li key={entry.id} className="relative pl-6 pb-5 last:pb-0">
-              {i < history.length - 1 && <span className="absolute left-[5px] top-3 bottom-0 w-px bg-slate-200" aria-hidden />}
-              <span className="absolute left-0 top-1.5 w-[11px] h-[11px] rounded-full border-2 border-white bg-slate-300 ring-1 ring-slate-200" aria-hidden />
+              {i < history.length - 1 && <span className="absolute left-[5px] top-3 bottom-0 w-px bg-emphasis" aria-hidden />}
+              <span className="absolute left-0 top-1.5 w-[11px] h-[11px] rounded-full border-2 border-surface bg-slate-300 ring-1 ring-line" aria-hidden />
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <Badge tone={AUDIT_ACTION_STYLES[entry.action]}>{AUDIT_ACTION_LABELS[entry.action]}</Badge>
-                <time dateTime={entry.createdAt} title={formatDate(entry.createdAt)} className="text-xs text-slate-500">
+                <time dateTime={entry.createdAt} title={formatDate(entry.createdAt)} className="text-xs text-fg-muted">
                   {timeAgo(entry.createdAt)}
                 </time>
               </div>
-              {entry.details && <p className="mt-1 text-sm text-slate-700 break-words">{entry.details}</p>}
-              <p className="mt-0.5 text-xs text-slate-500">
+              {entry.details && <p className="mt-1 text-sm text-fg-secondary break-words">{entry.details}</p>}
+              <p className="mt-0.5 text-xs text-fg-muted">
                 by {entry.actorName || entry.actorEmail || 'a deleted administrator'}
               </p>
             </li>

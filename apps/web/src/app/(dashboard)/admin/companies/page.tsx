@@ -62,10 +62,10 @@ function CompanyName({ company }: { company: Company }) {
     <div className="flex items-center gap-3 min-w-0">
       <CompanyLogo name={company.name} src={company.logoUrl} size="sm" />
       <div className="min-w-0">
-        <Link href={`/companies/${company.slug}`} className="block truncate font-medium text-slate-900 hover:text-primary-700 hover:underline">
+        <Link href={`/companies/${company.slug}`} className="block truncate font-medium text-fg hover:text-primary-700 hover:underline">
           {company.name}
         </Link>
-        {company.website && <p className="truncate text-xs text-slate-500">{company.website.replace(/^https?:\/\/(www\.)?/, '')}</p>}
+        {company.website && <p className="truncate text-xs text-fg-muted">{company.website.replace(/^https?:\/\/(www\.)?/, '')}</p>}
       </div>
     </div>
   );
@@ -73,7 +73,7 @@ function CompanyName({ company }: { company: Company }) {
 
 function ListSkeleton() {
   return (
-    <div className="divide-y divide-slate-100" aria-busy="true" aria-label="Loading companies">
+    <div className="divide-y divide-line-subtle" aria-busy="true" aria-label="Loading companies">
       {Array.from({ length: 6 }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-4 py-4">
           <Skeleton className="w-10 h-10 rounded-xl" />
@@ -173,12 +173,12 @@ function AdminCompaniesView() {
       />
 
       <Card>
-        <div className="p-4 border-b border-slate-100 space-y-3">
+        <div className="p-4 border-b border-line-subtle space-y-3">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
             <FormField label="Search">
               {(id) => (
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" aria-hidden />
                   <Input
                     id={id}
                     type="search"
@@ -206,7 +206,7 @@ function AdminCompaniesView() {
             </FormField>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2rem]">
-            <p className="text-sm text-slate-500" aria-live="polite">
+            <p className="text-sm text-fg-muted" aria-live="polite">
               {data ? pluralize(data.totalElements, filtering ? 'matching company' : 'company', filtering ? 'matching companies' : 'companies') : ' '}
             </p>
             {filtering && (
@@ -233,7 +233,7 @@ function AdminCompaniesView() {
             {/* Desktop table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+                <thead className="bg-muted text-left text-xs font-medium uppercase tracking-wide text-fg-muted">
                   <tr>
                     <th scope="col" className="px-4 py-3">Company</th>
                     <th scope="col" className="px-4 py-3">Industry</th>
@@ -245,16 +245,16 @@ function AdminCompaniesView() {
                     <th scope="col" className="px-4 py-3 text-right"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line-subtle">
                   {data.content.map((c) => (
                     <tr key={c.id} data-company-id={c.id} className={cn('align-middle', rowTone(c))} aria-current={c.id === highlightId ? 'true' : undefined}>
                       <td className="px-4 py-3 max-w-[18rem]"><CompanyName company={c} /></td>
-                      <td className="px-4 py-3 text-slate-600">{c.industry || <span className="text-slate-400">—</span>}</td>
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{companySizeLabel(c.size) ?? <span className="text-slate-400">—</span>}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-slate-700">{c.members}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-slate-700">{c.openJobs}</td>
+                      <td className="px-4 py-3 text-fg-tertiary">{c.industry || <span className="text-fg-subtle">—</span>}</td>
+                      <td className="px-4 py-3 text-fg-tertiary whitespace-nowrap">{companySizeLabel(c.size) ?? <span className="text-fg-subtle">—</span>}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-fg-secondary">{c.members}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-fg-secondary">{c.openJobs}</td>
                       <td className="px-4 py-3"><StatusBadge verified={c.verified} /></td>
-                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(c.createdAt)}</td>
+                      <td className="px-4 py-3 text-fg-muted whitespace-nowrap">{formatDate(c.createdAt)}</td>
                       <td className="px-4 py-3 text-right">
                         <VerifyButton company={c} busy={busyId === c.id} onClick={() => setPending(c)} />
                       </td>
@@ -265,7 +265,7 @@ function AdminCompaniesView() {
             </div>
 
             {/* Mobile / tablet cards */}
-            <ul className="lg:hidden divide-y divide-slate-100">
+            <ul className="lg:hidden divide-y divide-line-subtle">
               {data.content.map((c) => (
                 <li key={c.id} data-company-id={c.id} className={cn('px-4 py-4 space-y-3', rowTone(c))}>
                   <div className="flex items-start justify-between gap-3">
@@ -273,10 +273,10 @@ function AdminCompaniesView() {
                     <StatusBadge verified={c.verified} />
                   </div>
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                    <div><dt className="text-slate-500">Industry</dt><dd className="text-slate-800 break-words">{c.industry || '—'}</dd></div>
-                    <div><dt className="text-slate-500">Size</dt><dd className="text-slate-800">{companySizeLabel(c.size) ?? '—'}</dd></div>
-                    <div><dt className="text-slate-500">Members · open jobs</dt><dd className="text-slate-800">{c.members} · {c.openJobs}</dd></div>
-                    <div><dt className="text-slate-500">Created</dt><dd className="text-slate-800">{formatDate(c.createdAt)}</dd></div>
+                    <div><dt className="text-fg-muted">Industry</dt><dd className="text-fg-soft break-words">{c.industry || '—'}</dd></div>
+                    <div><dt className="text-fg-muted">Size</dt><dd className="text-fg-soft">{companySizeLabel(c.size) ?? '—'}</dd></div>
+                    <div><dt className="text-fg-muted">Members · open jobs</dt><dd className="text-fg-soft">{c.members} · {c.openJobs}</dd></div>
+                    <div><dt className="text-fg-muted">Created</dt><dd className="text-fg-soft">{formatDate(c.createdAt)}</dd></div>
                   </dl>
                   <VerifyButton company={c} busy={busyId === c.id} onClick={() => setPending(c)} className="w-full sm:w-auto" />
                 </li>

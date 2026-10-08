@@ -14,11 +14,11 @@ export function EmptyState({ icon: Icon, title, description, action, className }
 }) {
   return (
     <div className={cn('flex flex-col items-center text-center px-6 py-14', className)}>
-      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-        <Icon className="w-6 h-6 text-slate-400" aria-hidden />
+      <div className="w-12 h-12 rounded-full bg-subtle flex items-center justify-center mb-4">
+        <Icon className="w-6 h-6 text-fg-subtle" aria-hidden />
       </div>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {description && <p className="mt-1 text-sm text-slate-500 max-w-sm">{description}</p>}
+      <h3 className="text-sm font-semibold text-fg">{title}</h3>
+      {description && <p className="mt-1 text-sm text-fg-muted max-w-sm">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -37,8 +37,8 @@ export function ErrorState({ title = 'Something went wrong', error, onRetry, ret
       <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
         <AlertTriangle className="w-6 h-6 text-rose-500" aria-hidden />
       </div>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm text-slate-500 max-w-sm">
+      <h3 className="text-sm font-semibold text-fg">{title}</h3>
+      <p className="mt-1 text-sm text-fg-muted max-w-sm">
         {getErrorMessage(error, 'We could not load this content. Please try again in a moment.')}
       </p>
       {onRetry && (
@@ -52,7 +52,7 @@ export function ErrorState({ title = 'Something went wrong', error, onRetry, ret
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-md bg-slate-200/70', className)} aria-hidden />;
+  return <div className={cn('animate-pulse rounded-md bg-emphasis/70', className)} aria-hidden />;
 }
 
 export function Spinner({ className }: { className?: string }) {

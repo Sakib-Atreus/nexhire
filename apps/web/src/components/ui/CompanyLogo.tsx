@@ -26,10 +26,10 @@ export function CompanyLogo({ name, src, size = 'md', className }: {
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const base = cn('rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-slate-200', SIZES[size], className);
+  const base = cn('rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-line', SIZES[size], className);
   if (src && !failed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={`${name} logo`} className={cn(base, 'object-cover bg-white')} onError={() => setFailed(true)} />;
+    return <img src={src} alt={`${name} logo`} className={cn(base, 'object-cover bg-surface')} onError={() => setFailed(true)} />;
   }
   return (
     <span className={cn(base, 'font-bold', tint(name))} aria-hidden>

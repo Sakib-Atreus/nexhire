@@ -70,7 +70,7 @@ function RoleDialog({ user, loading, onClose, onSubmit }: {
             </Select>
           )}
         </FormField>
-        <p className={changed && role === 'ADMIN' ? 'text-sm text-rose-700' : 'text-sm text-slate-600'} aria-live="polite">
+        <p className={changed && role === 'ADMIN' ? 'text-sm text-rose-700' : 'text-sm text-fg-tertiary'} aria-live="polite">
           {roleConsequence(user, role)}
         </p>
       </form>

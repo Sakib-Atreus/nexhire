@@ -68,8 +68,8 @@ function CreateCompanyView({ email }: { email?: string }) {
                 <Users className="w-5 h-5" aria-hidden />
               </span>
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">How teams work</h2>
-                <ul className="mt-2 space-y-1.5 text-sm text-slate-600 list-disc pl-4">
+                <h2 className="text-sm font-semibold text-fg">How teams work</h2>
+                <ul className="mt-2 space-y-1.5 text-sm text-fg-tertiary list-disc pl-4">
                   <li>Recruiters on the same team share jobs and applicants.</li>
                   <li>Jobs are always posted under your company&apos;s name and logo.</li>
                   <li>The person who creates the company becomes its owner and can add or remove teammates.</li>
@@ -79,15 +79,15 @@ function CreateCompanyView({ email }: { email?: string }) {
           </Card>
           <Card className="p-5">
             <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-subtle text-fg-muted">
                 <Info className="w-5 h-5" aria-hidden />
               </span>
               <div className="min-w-0">
-                <h2 className="text-sm font-semibold text-slate-900">Already have a company on NexHire?</h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <h2 className="text-sm font-semibold text-fg">Already have a company on NexHire?</h2>
+                <p className="mt-1 text-sm text-fg-tertiary">
                   Don&apos;t create a duplicate. Ask its owner to add you using your email:
                 </p>
-                {email && <p className="mt-2 rounded-md bg-slate-50 px-2.5 py-1.5 text-sm font-medium text-slate-900 break-all ring-1 ring-inset ring-slate-200">{email}</p>}
+                {email && <p className="mt-2 rounded-md bg-muted px-2.5 py-1.5 text-sm font-medium text-fg break-all ring-1 ring-inset ring-line">{email}</p>}
               </div>
             </div>
           </Card>
@@ -127,9 +127,9 @@ function ManageCompanyView({ data, currentUserId }: { data: MyCompany; currentUs
             action={company.verified ? <VerifiedBadge /> : undefined}
           />
           {!company.verified && (
-            <div className="mx-5 mt-5 flex items-start gap-2.5 rounded-lg bg-slate-50 px-3.5 py-3 text-sm text-slate-600 ring-1 ring-inset ring-slate-200 sm:mx-6">
-              <ShieldCheck className="mt-0.5 w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden />
-              <p><span className="font-medium text-slate-900">Not verified yet</span> — an administrator verifies companies. Verified companies get a badge on their jobs and appear first in the directory.</p>
+            <div className="mx-5 mt-5 flex items-start gap-2.5 rounded-lg bg-muted px-3.5 py-3 text-sm text-fg-tertiary ring-1 ring-inset ring-line sm:mx-6">
+              <ShieldCheck className="mt-0.5 w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
+              <p><span className="font-medium text-fg">Not verified yet</span> — an administrator verifies companies. Verified companies get a badge on their jobs and appear first in the directory.</p>
             </div>
           )}
           <div className="p-5 sm:p-6">

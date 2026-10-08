@@ -33,13 +33,13 @@ export function ApplicationProgress({ status, className }: { status: Application
                       ? 'bg-primary-500'
                       : active
                         ? stage === 'OFFERED' ? 'bg-teal-500' : 'bg-primary-500'
-                        : 'bg-slate-200'
+                        : 'bg-emphasis'
                 )}
               />
               <p
                 className={cn(
                   'mt-1.5 hidden sm:flex items-center gap-1 text-[11px] font-medium truncate',
-                  active ? 'text-slate-900' : done ? 'text-slate-500' : 'text-slate-400'
+                  active ? 'text-fg' : done ? 'text-fg-muted' : 'text-fg-subtle'
                 )}
               >
                 {(done || (active && hired)) && (
@@ -51,8 +51,8 @@ export function ApplicationProgress({ status, className }: { status: Application
           );
         })}
       </ol>
-      <p className="mt-1.5 text-xs text-slate-500 sm:hidden">
-        Step {current + 1} of {STAGES.length} · <span className="font-medium text-slate-700">{APPLICATION_STATUS_LABELS[status]}</span>
+      <p className="mt-1.5 text-xs text-fg-muted sm:hidden">
+        Step {current + 1} of {STAGES.length} · <span className="font-medium text-fg-secondary">{APPLICATION_STATUS_LABELS[status]}</span>
       </p>
     </div>
   );

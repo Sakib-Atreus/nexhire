@@ -118,7 +118,7 @@ export function JobModerationActions({ job, compact, withStatus, withDelete, cla
         )}
       </div>
 
-      {!compact && blocked && <p className="mt-1.5 text-xs text-slate-500" aria-hidden>{blocked}</p>}
+      {!compact && blocked && <p className="mt-1.5 text-xs text-fg-muted" aria-hidden>{blocked}</p>}
 
       <HideJobDialog
         open={hideOpen}

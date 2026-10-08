@@ -25,7 +25,7 @@ export function RoleBreakdown({ counts }: { counts: Record<Role, number> }) {
 
   return (
     <div>
-      <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full bg-slate-100" role="img" aria-label={total > 0 ? label : 'No users yet'}>
+      <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full bg-subtle" role="img" aria-label={total > 0 ? label : 'No users yet'}>
         {roles.filter((r) => counts[r] > 0).map((r) => (
           <div key={r} className={cn('h-full first:rounded-l-full last:rounded-r-full', ROLE_BAR[r])} style={{ width: `${pct(counts[r])}%`, minWidth: 4 }} />
         ))}
@@ -35,12 +35,12 @@ export function RoleBreakdown({ counts }: { counts: Record<Role, number> }) {
           <li key={r}>
             <Link
               href={`/admin/users?role=${r}`}
-              className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-2 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-2 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               <span className={cn('w-2.5 h-2.5 rounded-sm flex-shrink-0', ROLE_BAR[r])} aria-hidden />
-              <span className="min-w-0 flex-1 text-sm text-slate-600 truncate" title={ROLE_LABELS[r]}>{ROLE_PLURALS[r]}</span>
-              <span className="tabular-nums text-sm font-semibold text-slate-900">{counts[r].toLocaleString('en-US')}</span>
-              <span className="tabular-nums text-xs text-slate-400 w-9 text-right">{Math.round(pct(counts[r]))}%</span>
+              <span className="min-w-0 flex-1 text-sm text-fg-tertiary truncate" title={ROLE_LABELS[r]}>{ROLE_PLURALS[r]}</span>
+              <span className="tabular-nums text-sm font-semibold text-fg">{counts[r].toLocaleString('en-US')}</span>
+              <span className="tabular-nums text-xs text-fg-subtle w-9 text-right">{Math.round(pct(counts[r]))}%</span>
             </Link>
           </li>
         ))}

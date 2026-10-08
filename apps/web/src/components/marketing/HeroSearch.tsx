@@ -19,20 +19,20 @@ export function HeroSearch() {
     <form
       role="search"
       onSubmit={onSubmit}
-      className="flex flex-col sm:flex-row gap-2 rounded-xl bg-white p-2 shadow-xl shadow-primary-950/20 max-w-xl"
+      className="flex flex-col sm:flex-row gap-2 rounded-xl bg-surface p-2 shadow-xl shadow-primary-950/20 max-w-xl"
     >
       <label htmlFor="hero-search" className="sr-only">
         Search jobs by title, skill or keyword
       </label>
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" aria-hidden />
         <input
           id="hero-search"
           type="search"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="Job title, skill or keyword"
-          className="h-11 w-full rounded-lg border-0 bg-transparent pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+          className="h-11 w-full rounded-lg border-0 bg-transparent pl-9 pr-3 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary-500/40"
         />
       </div>
       <button

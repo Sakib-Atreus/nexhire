@@ -105,12 +105,12 @@ function AdminUsersView() {
       />
 
       <Card>
-        <div className="p-4 border-b border-slate-100 space-y-3">
+        <div className="p-4 border-b border-line-subtle space-y-3">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
             <FormField label="Search" className="sm:col-span-2 lg:col-span-1">
               {(id) => (
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" aria-hidden />
                   <Input
                     id={id}
                     type="search"
@@ -156,12 +156,12 @@ function AdminUsersView() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2rem]">
-            <p className="text-sm text-slate-500" aria-live="polite">
+            <p className="text-sm text-fg-muted" aria-live="polite">
               {data ? (
                 <>
                   {pluralize(data.totalElements, filtering ? 'matching user' : 'user')}
                   {verifiedWithoutRecruiter && (
-                    <span className="block sm:inline sm:ml-2 text-xs text-slate-400">
+                    <span className="block sm:inline sm:ml-2 text-xs text-fg-subtle">
                       Showing recruiters only — verification applies to recruiters.
                     </span>
                   )}

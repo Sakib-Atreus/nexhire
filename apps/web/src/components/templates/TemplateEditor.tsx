@@ -63,10 +63,10 @@ export function TemplateEditor({
         }}
         noValidate
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-line-subtle">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-slate-900">{isNew ? 'New template' : 'Edit template'}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-sm font-semibold text-fg">{isNew ? 'New template' : 'Edit template'}</h2>
+            <p className="text-xs text-fg-muted mt-0.5">
               {dirty ? 'Unsaved changes' : isNew ? 'Not saved yet' : 'All changes saved'}
             </p>
           </div>
@@ -91,7 +91,7 @@ export function TemplateEditor({
         <div className="grid grid-cols-1 xl:grid-cols-2">
           <div className="p-5 space-y-5 min-w-0">
             <div className="space-y-1.5">
-              <label htmlFor={nameId} className="block text-sm font-medium text-slate-700">
+              <label htmlFor={nameId} className="block text-sm font-medium text-fg-secondary">
                 Name<span className="text-rose-500 ml-0.5" aria-hidden>*</span>
               </label>
               <Input
@@ -107,12 +107,12 @@ export function TemplateEditor({
               {errors.name ? (
                 <p id={`${nameId}-err`} className="text-xs text-rose-600" role="alert">{errors.name}</p>
               ) : (
-                <p className="text-xs text-slate-500">Only you see the name. {name.length}/{TEMPLATE_NAME_MAX}</p>
+                <p className="text-xs text-fg-muted">Only you see the name. {name.length}/{TEMPLATE_NAME_MAX}</p>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor={bodyId} className="block text-sm font-medium text-slate-700">
+              <label htmlFor={bodyId} className="block text-sm font-medium text-fg-secondary">
                 Message<span className="text-rose-500 ml-0.5" aria-hidden>*</span>
               </label>
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Insert placeholder at cursor">
@@ -147,26 +147,26 @@ export function TemplateEditor({
                 {errors.body ? (
                   <span className="text-rose-600" role="alert">{errors.body}</span>
                 ) : (
-                  <span className="text-slate-500">Placeholders are filled in for each candidate when you send.</span>
+                  <span className="text-fg-muted">Placeholders are filled in for each candidate when you send.</span>
                 )}
-                <span className={cn('tabular-nums', remaining < 200 ? 'text-amber-600' : 'text-slate-400')}>
+                <span className={cn('tabular-nums', remaining < 200 ? 'text-amber-600' : 'text-fg-subtle')}>
                   {body.length.toLocaleString('en-US')}/{TEMPLATE_BODY_MAX.toLocaleString('en-US')}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="p-5 border-t xl:border-t-0 xl:border-l border-slate-100 bg-slate-50/50 min-w-0">
-            <h3 className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-              <Eye className="w-4 h-4 text-slate-400" aria-hidden /> Preview
+          <div className="p-5 border-t xl:border-t-0 xl:border-l border-line-subtle bg-muted/50 min-w-0">
+            <h3 className="flex items-center gap-1.5 text-sm font-medium text-fg-secondary">
+              <Eye className="w-4 h-4 text-fg-subtle" aria-hidden /> Preview
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">With sample values, as a candidate would see it.</p>
-            <div className="mt-3 rounded-2xl rounded-tl-sm bg-white p-4 ring-1 ring-inset ring-slate-200 shadow-sm" aria-live="polite">
-              <p className="text-xs font-semibold text-slate-700">{previewValues.recruiterName}</p>
+            <p className="text-xs text-fg-muted mt-0.5">With sample values, as a candidate would see it.</p>
+            <div className="mt-3 rounded-2xl rounded-tl-sm bg-surface p-4 ring-1 ring-inset ring-line shadow-sm" aria-live="polite">
+              <p className="text-xs font-semibold text-fg-secondary">{previewValues.recruiterName}</p>
               {preview.trim() ? (
-                <p className="mt-1 text-sm leading-relaxed text-slate-700 whitespace-pre-line break-words">{preview}</p>
+                <p className="mt-1 text-sm leading-relaxed text-fg-secondary whitespace-pre-line break-words">{preview}</p>
               ) : (
-                <p className="mt-1 text-sm text-slate-400 italic">Start typing to see a preview.</p>
+                <p className="mt-1 text-sm text-fg-subtle italic">Start typing to see a preview.</p>
               )}
             </div>
           </div>

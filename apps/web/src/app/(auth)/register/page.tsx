@@ -49,7 +49,7 @@ function RegisterForm() {
   return (
     <form onSubmit={handleSubmit((data) => registerUser(data))} className="space-y-5" noValidate>
       <fieldset>
-        <legend className="block text-sm font-medium text-slate-700 mb-2">How will you use NexHire?</legend>
+        <legend className="block text-sm font-medium text-fg-secondary mb-2">How will you use NexHire?</legend>
         <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
           {ROLE_OPTIONS.map(({ value, label, description, Icon }) => {
             const selected = role === value;
@@ -61,7 +61,7 @@ function RegisterForm() {
                   'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500 has-[:focus-visible]:ring-offset-2',
                   selected
                     ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500'
-                    : 'border-slate-300 bg-white hover:bg-slate-50'
+                    : 'border-line-strong bg-surface hover:bg-muted'
                 )}
               >
                 <input
@@ -72,11 +72,11 @@ function RegisterForm() {
                   onChange={() => setValue('role', value, { shouldValidate: true })}
                   className="sr-only"
                 />
-                <Icon className={cn('w-5 h-5', selected ? 'text-primary-600' : 'text-slate-400')} aria-hidden />
-                <span className={cn('text-sm font-semibold', selected ? 'text-primary-900' : 'text-slate-900')}>
+                <Icon className={cn('w-5 h-5', selected ? 'text-primary-600' : 'text-fg-subtle')} aria-hidden />
+                <span className={cn('text-sm font-semibold', selected ? 'text-primary-900' : 'text-fg')}>
                   {label}
                 </span>
-                <span className="text-xs text-slate-500">{description}</span>
+                <span className="text-xs text-fg-muted">{description}</span>
               </label>
             );
           })}

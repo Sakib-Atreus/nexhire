@@ -12,7 +12,7 @@ import { SkillsSettingsCard } from '@/components/admin/settings/SkillsSettingsCa
 function CardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
     <Card>
-      <div className="px-5 py-4 border-b border-slate-100 space-y-2">
+      <div className="px-5 py-4 border-b border-line-subtle space-y-2">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-3 w-64 max-w-full" />
       </div>

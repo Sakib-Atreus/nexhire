@@ -50,9 +50,9 @@ function AddMemberForm() {
   };
 
   return (
-    <form onSubmit={submit} noValidate className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-xl">
-      <label htmlFor="add-member-email" className="block text-sm font-medium text-slate-700">Add a teammate</label>
-      <p className="mt-0.5 text-xs text-slate-500">They need an existing recruiter account that isn&apos;t part of another company.</p>
+    <form onSubmit={submit} noValidate className="px-5 py-4 border-t border-line-subtle bg-muted/60 rounded-b-xl">
+      <label htmlFor="add-member-email" className="block text-sm font-medium text-fg-secondary">Add a teammate</label>
+      <p className="mt-0.5 text-xs text-fg-muted">They need an existing recruiter account that isn&apos;t part of another company.</p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <Input
           id="add-member-email"
@@ -116,7 +116,7 @@ export function TeamCard({ data, currentUserId }: { data: MyCompany; currentUser
         title="Team"
         description={`${pluralize(members.length, 'recruiter')} · everyone shares jobs and applicants`}
       />
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-line-subtle">
         {sorted.map((m) => {
           const isMe = m.id === currentUserId;
           return (
@@ -125,9 +125,9 @@ export function TeamCard({ data, currentUserId }: { data: MyCompany; currentUser
                 <Avatar name={m.fullName} src={m.avatarUrl} size="sm" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="text-sm font-medium text-slate-900 break-words">
+                    <p className="text-sm font-medium text-fg break-words">
                       {m.fullName}
-                      {isMe && <span className="font-normal text-slate-500"> (you)</span>}
+                      {isMe && <span className="font-normal text-fg-muted"> (you)</span>}
                     </p>
                     {m.owner && (
                       <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">
@@ -135,8 +135,8 @@ export function TeamCard({ data, currentUserId }: { data: MyCompany; currentUser
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 break-all">{m.email}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Joined {formatDate(m.joinedAt)}</p>
+                  <p className="text-xs text-fg-muted break-all">{m.email}</p>
+                  <p className="mt-0.5 text-xs text-fg-subtle">Joined {formatDate(m.joinedAt)}</p>
                   {isOwner && !m.owner && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Button size="sm" variant="secondary" onClick={() => setPending({ kind: 'transfer', member: m })} disabled={busy}>
@@ -164,8 +164,8 @@ export function TeamCard({ data, currentUserId }: { data: MyCompany; currentUser
       {isOwner ? (
         <AddMemberForm />
       ) : (
-        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">Only the owner can add or remove teammates.</p>
+        <div className="px-5 py-4 border-t border-line-subtle bg-muted/60 rounded-b-xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-fg-muted">Only the owner can add or remove teammates.</p>
           <Button size="sm" variant="secondary" onClick={() => setPending({ kind: 'leave' })} disabled={busy}>
             <LogOut className="w-3.5 h-3.5" aria-hidden /> Leave company
           </Button>

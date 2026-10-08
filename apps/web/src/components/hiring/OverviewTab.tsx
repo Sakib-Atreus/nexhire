@@ -28,7 +28,7 @@ export function parseCoverLetter(text?: string | null): { letter: string; qa: { 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">{title}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">{title}</h3>
       {children}
     </section>
   );
@@ -39,20 +39,20 @@ export function OverviewTab({ app }: { app: Application }) {
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-lg bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500 flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" aria-hidden /> Applied</dt>
-          <dd className="text-sm font-medium text-slate-900 mt-0.5">
-            {formatDate(app.appliedAt)} <span className="text-slate-400 font-normal">· {timeAgo(app.appliedAt)}</span>
+        <div className="rounded-lg bg-muted p-3">
+          <dt className="text-xs text-fg-muted flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" aria-hidden /> Applied</dt>
+          <dd className="text-sm font-medium text-fg mt-0.5">
+            {formatDate(app.appliedAt)} <span className="text-fg-subtle font-normal">· {timeAgo(app.appliedAt)}</span>
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500 flex items-center gap-1.5"><CalendarClock className="w-3.5 h-3.5" aria-hidden /> Next interview</dt>
-          <dd className="text-sm font-medium text-slate-900 mt-0.5">
-            {app.nextInterviewAt ? formatLongDateTime(app.nextInterviewAt) : <span className="text-slate-400 font-normal">None scheduled</span>}
+        <div className="rounded-lg bg-muted p-3">
+          <dt className="text-xs text-fg-muted flex items-center gap-1.5"><CalendarClock className="w-3.5 h-3.5" aria-hidden /> Next interview</dt>
+          <dd className="text-sm font-medium text-fg mt-0.5">
+            {app.nextInterviewAt ? formatLongDateTime(app.nextInterviewAt) : <span className="text-fg-subtle font-normal">None scheduled</span>}
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 p-3 sm:col-span-2 min-w-0">
-          <dt className="text-xs text-slate-500 flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" aria-hidden /> Email</dt>
+        <div className="rounded-lg bg-muted p-3 sm:col-span-2 min-w-0">
+          <dt className="text-xs text-fg-muted flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" aria-hidden /> Email</dt>
           <dd className="text-sm font-medium mt-0.5 truncate">
             <a href={`mailto:${app.candidateEmail}`} className="text-primary-600 hover:underline">{app.candidateEmail}</a>
           </dd>
@@ -61,9 +61,9 @@ export function OverviewTab({ app }: { app: Application }) {
 
       <Section title="Cover letter">
         {letter ? (
-          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line break-words">{letter}</p>
+          <p className="text-sm text-fg-secondary leading-relaxed whitespace-pre-line break-words">{letter}</p>
         ) : (
-          <p className="text-sm text-slate-400 flex items-center gap-1.5"><FileText className="w-4 h-4" aria-hidden /> No cover letter provided.</p>
+          <p className="text-sm text-fg-subtle flex items-center gap-1.5"><FileText className="w-4 h-4" aria-hidden /> No cover letter provided.</p>
         )}
       </Section>
 
@@ -71,10 +71,10 @@ export function OverviewTab({ app }: { app: Application }) {
         <Section title="Screening questions">
           <ol className="space-y-3">
             {qa.map((item, i) => (
-              <li key={i} className="rounded-lg border border-slate-200 p-3">
-                <p className="text-sm font-medium text-slate-900 break-words">{item.q}</p>
-                <p className="mt-1 text-sm text-slate-600 whitespace-pre-line break-words">
-                  {item.a || <span className="text-slate-400 italic">No answer</span>}
+              <li key={i} className="rounded-lg border border-line p-3">
+                <p className="text-sm font-medium text-fg break-words">{item.q}</p>
+                <p className="mt-1 text-sm text-fg-tertiary whitespace-pre-line break-words">
+                  {item.a || <span className="text-fg-subtle italic">No answer</span>}
                 </p>
               </li>
             ))}

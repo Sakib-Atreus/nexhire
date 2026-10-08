@@ -22,8 +22,8 @@ function StatusBlock({ icon, title, description, children }: {
   return (
     <div className="text-center" role="status" aria-live="polite">
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">{icon}</div>
-      <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-      {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+      <h2 className="text-sm font-semibold text-fg">{title}</h2>
+      {description && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
       {children && <div className="mt-6 space-y-3">{children}</div>}
     </div>
   );

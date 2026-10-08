@@ -28,7 +28,7 @@ const COLUMNS = [
 
 export function SiteFooter() {
   return (
-    <footer className="bg-slate-900 text-slate-400">
+    <footer className="bg-slate-900 text-fg-subtle">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
@@ -55,7 +55,7 @@ export function SiteFooter() {
             </nav>
           ))}
         </div>
-        <div className="mt-10 pt-6 border-t border-slate-800 text-xs text-slate-500">
+        <div className="mt-10 pt-6 border-t border-slate-800 text-xs text-fg-muted">
           © {new Date().getFullYear()} NexHire. All rights reserved.
         </div>
       </div>

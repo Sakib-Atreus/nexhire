@@ -60,8 +60,8 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
           {i.candidateName} asked for another time
         </p>
         {i.responseNote && (
-          <p className="text-sm text-slate-700 whitespace-pre-line break-words">
-            <MessageSquareText className="mr-1 inline w-3.5 h-3.5 align-[-2px] text-slate-400" aria-hidden />
+          <p className="text-sm text-fg-secondary whitespace-pre-line break-words">
+            <MessageSquareText className="mr-1 inline w-3.5 h-3.5 align-[-2px] text-fg-subtle" aria-hidden />
             {i.responseNote}
           </p>
         )}
@@ -86,7 +86,7 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
           </div>
         )}
         {clash && (
-          <div role="status" className="rounded-lg border border-amber-300 bg-white px-3 py-2.5">
+          <div role="status" className="rounded-lg border border-amber-300 bg-surface px-3 py-2.5">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-800">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" aria-hidden />
               {clash.conflicts.length === 1 ? 'You already have an interview then' : `You already have ${clash.conflicts.length} interviews then`}
@@ -108,7 +108,7 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
             </div>
           </div>
         )}
-        <p className="text-xs text-slate-500">Picking one of their times confirms it — no need for them to reply again.</p>
+        <p className="text-xs text-fg-muted">Picking one of their times confirms it — no need for them to reply again.</p>
       </div>
     );
   }
@@ -146,10 +146,10 @@ export function InterviewRow({ interview: i, viewer, onAction }: {
       <div className="flex flex-col gap-4 md:flex-row md:items-start">
         {/* Time */}
         <div className="flex items-baseline gap-2 md:block md:w-28 md:flex-shrink-0">
-          <p className="text-base font-semibold text-slate-900 tabular-nums">
+          <p className="text-base font-semibold text-fg tabular-nums">
             <time dateTime={i.scheduledAt}>{formatTime(i.scheduledAt)}</time>
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-fg-muted">
             {formatDuration(i.durationMinutes)}
             <span className="sr-only">, {formatWeekdayDate(i.scheduledAt)}</span>
           </p>
@@ -160,7 +160,7 @@ export function InterviewRow({ interview: i, viewer, onAction }: {
           <InterviewTypeIcon type={i.type} />
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <h3 className="text-sm font-semibold text-slate-900 break-words">
+              <h3 className="text-sm font-semibold text-fg break-words">
                 {recruiter ? i.candidateName : i.jobTitle}
               </h3>
               {scheduled && recruiter ? (
@@ -177,14 +177,14 @@ export function InterviewRow({ interview: i, viewer, onAction }: {
                 <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">Started</Badge>
               )}
             </div>
-            <p className="text-sm text-slate-600 break-words">
+            <p className="text-sm text-fg-tertiary break-words">
               {recruiter ? <>{i.jobTitle} · {i.companyName}</> : i.companyName}
-              <span className="text-slate-400"> · </span>
+              <span className="text-fg-subtle"> · </span>
               {INTERVIEW_TYPE_LABELS[i.type]}
             </p>
             <InterviewLocation interview={i} />
             {i.message && (
-              <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 whitespace-pre-line break-words ring-1 ring-inset ring-slate-200">
+              <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-sm text-fg-tertiary whitespace-pre-line break-words ring-1 ring-inset ring-line">
                 {i.message}
               </p>
             )}

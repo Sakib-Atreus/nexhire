@@ -22,12 +22,12 @@ function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badg
       className={cn(
         'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-        active ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+        active ? 'bg-primary-50 text-primary-700' : 'text-fg-tertiary hover:bg-muted hover:text-fg'
       )}
     >
       {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-primary-600" aria-hidden />}
       <Icon
-        className={cn('w-4 h-4 flex-shrink-0', active ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600')}
+        className={cn('w-4 h-4 flex-shrink-0', active ? 'text-primary-600' : 'text-fg-subtle group-hover:text-fg-tertiary')}
         aria-hidden
       />
       <span className="flex-1 truncate">{item.label}</span>
@@ -50,8 +50,8 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
   const nav = guest || !user ? PUBLIC_NAV : SIDEBAR_NAV[user.role];
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">
-      <div className="h-16 flex items-center px-5 border-b border-slate-100">
+    <aside className="hidden lg:flex flex-col w-64 h-screen bg-surface border-r border-line fixed top-0 left-0 z-30">
+      <div className="h-16 flex items-center px-5 border-b border-line-subtle">
         <BrandMark href="/" />
       </div>
 
@@ -67,19 +67,19 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
       </nav>
 
       {guest || !user ? (
-        <div className="p-4 border-t border-slate-100 space-y-3">
-          <p className="text-xs text-slate-500">Sign in to apply, save jobs and track your applications.</p>
+        <div className="p-4 border-t border-line-subtle space-y-3">
+          <p className="text-xs text-fg-muted">Sign in to apply, save jobs and track your applications.</p>
           <Link href="/login" className={buttonClasses('primary', 'md', 'w-full')}>Sign in</Link>
           <Link href="/register" className={buttonClasses('secondary', 'md', 'w-full')}>Create account</Link>
         </div>
       ) : (
-        <div className="p-3 border-t border-slate-100">
+        <div className="p-3 border-t border-line-subtle">
           <div className="flex items-center gap-3 px-2 py-2">
             <Link href="/profile" className="flex items-center gap-3 flex-1 min-w-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
               <Avatar name={user.fullName} src={user.avatarUrl} size="sm" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-slate-800 truncate">{user.fullName}</span>
-                <span className="block text-xs text-slate-500 truncate">{ROLE_LABELS[user.role]}</span>
+                <span className="block text-sm font-semibold text-fg-soft truncate">{user.fullName}</span>
+                <span className="block text-xs text-fg-muted truncate">{ROLE_LABELS[user.role]}</span>
               </span>
             </Link>
             <button
@@ -87,7 +87,7 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
               onClick={logout}
               aria-label="Sign out"
               title="Sign out"
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="p-2 rounded-lg text-fg-subtle hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               <LogOut className="w-4 h-4" aria-hidden />
             </button>

@@ -46,11 +46,11 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
             <MailCheck className="h-6 w-6 text-emerald-600" aria-hidden />
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed" role="status">
-            If an account exists for <span className="font-medium text-slate-900 break-all">{sentTo}</span>,
+          <p className="text-sm text-fg-tertiary leading-relaxed" role="status">
+            If an account exists for <span className="font-medium text-fg break-all">{sentTo}</span>,
             we&apos;ve sent a link to reset your password.
           </p>
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-fg-muted">
             Didn&apos;t get it? Check your spam folder, or{' '}
             <button
               type="button"

@@ -35,6 +35,7 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 - **Real-time notifications** — Server-Sent Events push updates instantly; RabbitMQ delivers them, with a direct fallback so nothing is lost if the broker is down
 - **JWT authentication** — access + refresh tokens, email verification and password reset
 - **File storage** — resumes and avatars in S3-compatible storage (MinIO locally, Backblaze B2 in production)
+- **Light and dark mode** — Light / Dark / System theme from the user menu (and a toggle on the home and sign-in pages); remembered per browser, applied before the page paints so there's no flash
 - **Swagger UI** — interactive API docs at `/api/swagger-ui.html`
 
 ---
@@ -273,6 +274,20 @@ JAVA_HOME=$(/usr/libexec/java_home -v 21) ./mvnw clean package -DskipTests
 # Generate Maven wrapper (first time)
 JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn wrapper:wrapper
 ```
+
+### Theming (frontend)
+
+Colors come from semantic tokens defined as CSS variables in `apps/web/src/app/globals.css` (light values in `:root`, dark values in `.dark`) and exposed in `tailwind.config.ts`. Use them instead of white/slate classes so new UI supports both themes automatically:
+
+| Use | Class |
+|---|---|
+| Cards, panels, inputs | `bg-surface` |
+| Page background | `bg-canvas` |
+| Subtle fills / stronger fills / skeletons | `bg-muted` / `bg-subtle` / `bg-emphasis` |
+| Text: primary → faint | `text-fg`, `text-fg-soft`, `text-fg-secondary`, `text-fg-tertiary`, `text-fg-muted`, `text-fg-subtle`, `text-fg-faint` |
+| Borders and dividers | `border-line-subtle`, `border-line`, `border-line-strong` |
+
+Colored tints (e.g. `bg-emerald-50`, `text-rose-700`, `border-amber-200`, `ring-primary-200`) switch to dark variants automatically; solid shades such as `bg-primary-600` stay the same. Status/role badge styles live in `apps/web/src/lib/constants.ts`.
 
 ### Frontend (inside apps/web/)
 

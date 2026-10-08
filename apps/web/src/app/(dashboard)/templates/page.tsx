@@ -25,7 +25,7 @@ const EMPTY: Draft = { name: '', body: '' };
 
 function ListSkeleton() {
   return (
-    <div className="divide-y divide-slate-100" aria-hidden>
+    <div className="divide-y divide-line-subtle" aria-hidden>
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="px-4 py-3.5 space-y-2">
           <Skeleton className="h-4 w-2/3" />
@@ -219,14 +219,14 @@ export default function TemplatesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[20rem_minmax(0,1fr)] items-start">
           <Card className="overflow-hidden lg:sticky lg:top-6">
-            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100">
-              <h2 className="text-sm font-semibold text-slate-900">Your templates</h2>
-              <span className="text-xs text-slate-500 tabular-nums">{list.length}/{TEMPLATE_LIMIT}</span>
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-line-subtle">
+              <h2 className="text-sm font-semibold text-fg">Your templates</h2>
+              <span className="text-xs text-fg-muted tabular-nums">{list.length}/{TEMPLATE_LIMIT}</span>
             </div>
             {templates.isLoading ? (
               <ListSkeleton />
             ) : (
-              <ul className="divide-y divide-slate-100 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto">
+              <ul className="divide-y divide-line-subtle lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto">
                 {selection.kind === 'new' && (
                   <li>
                     <div className="px-4 py-3 bg-primary-50/70 border-l-2 border-primary-600" aria-current="true">
@@ -244,15 +244,15 @@ export default function TemplatesPage() {
                         onClick={() => select({ kind: 'existing', id: t.id })}
                         aria-current={active ? 'true' : undefined}
                         className={cn(
-                          'w-full text-left px-4 py-3 border-l-2 focus:outline-none focus-visible:bg-slate-50',
-                          active ? 'bg-primary-50/70 border-primary-600' : 'border-transparent hover:bg-slate-50'
+                          'w-full text-left px-4 py-3 border-l-2 focus:outline-none focus-visible:bg-muted',
+                          active ? 'bg-primary-50/70 border-primary-600' : 'border-transparent hover:bg-muted'
                         )}
                       >
-                        <span className={cn('block text-sm font-medium truncate', active ? 'text-primary-800' : 'text-slate-900')}>
+                        <span className={cn('block text-sm font-medium truncate', active ? 'text-primary-800' : 'text-fg')}>
                           {active && dirty ? `${draft.name.trim() || 'Untitled'} •` : t.name}
                         </span>
-                        <span className="block text-xs text-slate-500 line-clamp-2 break-words mt-0.5">{t.body}</span>
-                        <span className="block text-[11px] text-slate-400 mt-1">Updated {timeAgo(t.updatedAt)}</span>
+                        <span className="block text-xs text-fg-muted line-clamp-2 break-words mt-0.5">{t.body}</span>
+                        <span className="block text-[11px] text-fg-subtle mt-1">Updated {timeAgo(t.updatedAt)}</span>
                       </button>
                     </li>
                   );

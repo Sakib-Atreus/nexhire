@@ -29,7 +29,7 @@ function NotificationStream() {
 
 function FullPageSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50" role="status">
+    <div className="min-h-screen flex items-center justify-center bg-canvas" role="status">
       <Spinner className="w-8 h-8" />
       <span className="sr-only">Loading…</span>
     </div>
@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const guest = !isAuthenticated;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       {!guest && <NotificationStream />}
       <Sidebar guest={guest} />
       <div className="lg:pl-64">

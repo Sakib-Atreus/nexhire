@@ -28,14 +28,14 @@ export function PipelineBars({ counts, hideEmpty = false }: { counts: StatusCoun
         return (
           <li key={status}>
             <div className="flex items-center justify-between gap-3 text-sm mb-1.5">
-              <span className="text-slate-600 truncate">{APPLICATION_STATUS_LABELS[status]}</span>
+              <span className="text-fg-tertiary truncate">{APPLICATION_STATUS_LABELS[status]}</span>
               <span className="flex-shrink-0 tabular-nums">
-                <span className="font-semibold text-slate-900">{value.toLocaleString('en-US')}</span>
-                <span className="text-xs text-slate-400 ml-1.5">{pct}%</span>
+                <span className="font-semibold text-fg">{value.toLocaleString('en-US')}</span>
+                <span className="text-xs text-fg-subtle ml-1.5">{pct}%</span>
               </span>
             </div>
             <div
-              className="h-2 bg-slate-100 rounded-full overflow-hidden"
+              className="h-2 bg-subtle rounded-full overflow-hidden"
               role="img"
               aria-label={`${APPLICATION_STATUS_LABELS[status]}: ${value} (${pct}%)`}
             >

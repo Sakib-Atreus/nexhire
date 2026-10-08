@@ -36,7 +36,7 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
 
 export const JOB_STATUS_STYLES: Record<JobStatus, string> = {
   OPEN: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  DRAFT: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+  DRAFT: 'bg-subtle text-fg-tertiary ring-slate-500/20',
   CLOSED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
   FILLED: 'bg-violet-50 text-violet-700 ring-violet-600/20',
 };
@@ -53,14 +53,14 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
 };
 
 export const APPLICATION_STATUS_STYLES: Record<ApplicationStatus, string> = {
-  PENDING: 'bg-slate-100 text-slate-700 ring-slate-500/20',
+  PENDING: 'bg-subtle text-fg-secondary ring-slate-500/20',
   REVIEWING: 'bg-sky-50 text-sky-700 ring-sky-600/20',
   SHORTLISTED: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
   INTERVIEWED: 'bg-amber-50 text-amber-700 ring-amber-600/20',
   OFFERED: 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-600/20',
   HIRED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   REJECTED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
-  WITHDRAWN: 'bg-slate-50 text-slate-500 ring-slate-400/20',
+  WITHDRAWN: 'bg-muted text-fg-muted ring-slate-400/20',
 };
 
 /** Solid colors for charts / progress bars, same hue family as the badges. */
@@ -134,7 +134,7 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
 export const REPORT_STATUS_STYLES: Record<ReportStatus, string> = {
   OPEN: 'bg-amber-50 text-amber-700 ring-amber-600/20',
   RESOLVED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  DISMISSED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+  DISMISSED: 'bg-subtle text-fg-tertiary ring-slate-500/20',
 };
 
 export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
@@ -164,7 +164,7 @@ export const AUDIT_ACTION_STYLES: Record<AuditAction, string> = {
   JOB_DELETED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
   JOB_HIDDEN: 'bg-amber-50 text-amber-700 ring-amber-600/20',
   USER_UNVERIFIED: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  JOB_UNFEATURED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+  JOB_UNFEATURED: 'bg-subtle text-fg-tertiary ring-slate-500/20',
   USER_RESTORED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   USER_VERIFIED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   JOB_UNHIDDEN: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
@@ -172,7 +172,7 @@ export const AUDIT_ACTION_STYLES: Record<AuditAction, string> = {
   USER_ROLE_CHANGED: 'bg-sky-50 text-sky-700 ring-sky-600/20',
   JOB_STATUS_CHANGED: 'bg-sky-50 text-sky-700 ring-sky-600/20',
   REPORT_RESOLVED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  REPORT_DISMISSED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+  REPORT_DISMISSED: 'bg-subtle text-fg-tertiary ring-slate-500/20',
   SETTINGS_UPDATED: 'bg-violet-50 text-violet-700 ring-violet-600/20',
   COMPANY_VERIFIED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   COMPANY_UNVERIFIED: 'bg-amber-50 text-amber-700 ring-amber-600/20',
@@ -217,7 +217,7 @@ export const INTERVIEW_STATUS_LABELS: Record<InterviewStatus, string> = {
 export const INTERVIEW_STATUS_STYLES: Record<InterviewStatus, string> = {
   SCHEDULED: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
   COMPLETED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  CANCELLED: 'bg-slate-100 text-slate-500 ring-slate-500/20',
+  CANCELLED: 'bg-subtle text-fg-muted ring-slate-500/20',
 };
 
 /** Placeholders recruiters can use in messages/templates (filled in by the server). */
@@ -238,7 +238,7 @@ export const INTERVIEW_RESPONSE_LABELS: Record<InterviewResponse, string> = {
 };
 
 export const INTERVIEW_RESPONSE_STYLES: Record<InterviewResponse, string> = {
-  AWAITING: 'bg-slate-100 text-slate-700 ring-slate-500/20',
+  AWAITING: 'bg-subtle text-fg-secondary ring-slate-500/20',
   ACCEPTED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   NEW_TIME_REQUESTED: 'bg-amber-50 text-amber-800 ring-amber-600/20',
   DECLINED: 'bg-rose-50 text-rose-700 ring-rose-600/20',

@@ -40,7 +40,7 @@ export function NotesTab({ applicationId, candidateName }: { applicationId: stri
 
   return (
     <div className="space-y-5">
-      <p className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+      <p className="flex items-center gap-1.5 text-xs text-fg-muted bg-muted rounded-lg px-3 py-2">
         <Lock className="w-3.5 h-3.5" aria-hidden /> Only your hiring team can see notes.
       </p>
 
@@ -56,7 +56,7 @@ export function NotesTab({ applicationId, candidateName }: { applicationId: stri
           maxLength={5000}
         />
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-slate-400 hidden sm:inline">⌘/Ctrl + Enter to save</span>
+          <span className="text-xs text-fg-subtle hidden sm:inline">⌘/Ctrl + Enter to save</span>
           <Button type="submit" size="sm" loading={add.isPending} disabled={!body.trim()} className="ml-auto">Add note</Button>
         </div>
       </form>
@@ -72,14 +72,14 @@ export function NotesTab({ applicationId, candidateName }: { applicationId: stri
           {notes.data.map((n) => {
             const canDelete = !!user && (n.authorId === user.id || user.role === 'ADMIN');
             return (
-              <li key={n.id} className="rounded-lg border border-slate-200 p-3">
+              <li key={n.id} className="rounded-lg border border-line p-3">
                 <div className="flex items-center gap-2">
                   <Avatar name={n.authorName ?? 'Former member'} size="xs" />
-                  <span className="text-sm font-medium text-slate-800 truncate">
+                  <span className="text-sm font-medium text-fg-soft truncate">
                     {n.authorName ?? 'Former member'}
-                    {n.authorId === user?.id && <span className="text-slate-400 font-normal"> (you)</span>}
+                    {n.authorId === user?.id && <span className="text-fg-subtle font-normal"> (you)</span>}
                   </span>
-                  <time dateTime={n.createdAt} title={formatDate(n.createdAt)} className="text-xs text-slate-400 whitespace-nowrap">
+                  <time dateTime={n.createdAt} title={formatDate(n.createdAt)} className="text-xs text-fg-subtle whitespace-nowrap">
                     {timeAgo(n.createdAt)}
                   </time>
                   {canDelete && (
@@ -87,13 +87,13 @@ export function NotesTab({ applicationId, candidateName }: { applicationId: stri
                       type="button"
                       onClick={() => setToDelete(n)}
                       aria-label="Delete note"
-                      className="ml-auto p-1.5 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                      className="ml-auto p-1.5 rounded text-fg-subtle hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                     >
                       <Trash2 className="w-3.5 h-3.5" aria-hidden />
                     </button>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-slate-700 whitespace-pre-line break-words">{n.body}</p>
+                <p className="mt-2 text-sm text-fg-secondary whitespace-pre-line break-words">{n.body}</p>
               </li>
             );
           })}

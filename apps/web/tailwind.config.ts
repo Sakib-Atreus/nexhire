@@ -1,6 +1,15 @@
 import type { Config } from 'tailwindcss';
 
+const v = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
+// Colored families whose light tints get dark-mode variants (see globals.css).
+const TINT_FAMILIES = ['primary', 'rose', 'amber', 'emerald', 'sky', 'indigo', 'violet', 'teal', 'fuchsia'];
+const tint = (prefix: string, shades: number[]) =>
+  Object.fromEntries(TINT_FAMILIES.map((f) => [f, Object.fromEntries(shades.map((s) => [s, v(`${prefix}-${f}-${s}`)]))]));
+
 const config: Config = {
+  // `dark` class on <html>, set before paint by the script in app/layout.tsx.
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -12,6 +21,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        surface: v('surface'),
+        canvas: v('canvas'),
+        muted: v('muted'),
+        subtle: v('subtle'),
+        emphasis: v('emphasis'),
+        fg: {
+          DEFAULT: v('fg'),
+          soft: v('fg-soft'),
+          secondary: v('fg-secondary'),
+          tertiary: v('fg-tertiary'),
+          muted: v('fg-muted'),
+          subtle: v('fg-subtle'),
+          faint: v('fg-faint'),
+        },
+        line: {
+          DEFAULT: v('line'),
+          subtle: v('line-subtle'),
+          strong: v('line-strong'),
+        },
         primary: {
           50: '#eef2ff',
           100: '#e0e7ff',
@@ -26,6 +54,12 @@ const config: Config = {
           950: '#1e1b4b',
         },
       },
+      // Per-property overrides so only tints flip in dark mode; solid shades (e.g. bg-emerald-600 buttons) don't.
+      backgroundColor: tint('bg', [50, 100, 200]),
+      textColor: tint('tx', [600, 700, 800, 900]),
+      borderColor: tint('bd', [100, 200, 300]),
+      ringColor: tint('bd', [100, 200, 300]),
+      gradientColorStops: tint('bg', [50, 100, 200]),
       boxShadow: {
         card: '0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06)',
       },

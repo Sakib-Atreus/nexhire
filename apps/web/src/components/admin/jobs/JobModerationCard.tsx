@@ -13,7 +13,7 @@ export function JobModerationCard({ job, className }: { job: Job; className?: st
     <Card className={className}>
       <section aria-labelledby="moderation-heading" className="p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 id="moderation-heading" className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+          <h2 id="moderation-heading" className="flex items-center gap-1.5 text-sm font-semibold text-fg">
             <ShieldCheck className="w-4 h-4 text-primary-600" aria-hidden /> Moderation
           </h2>
           <Link
@@ -23,7 +23,7 @@ export function JobModerationCard({ job, className }: { job: Job; className?: st
             Open in admin
           </Link>
         </div>
-        <p className="mt-1 text-xs text-slate-500">{state}</p>
+        <p className="mt-1 text-xs text-fg-muted">{state}</p>
         <JobModerationActions job={job} className="mt-3" />
       </section>
     </Card>

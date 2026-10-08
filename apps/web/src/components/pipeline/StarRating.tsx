@@ -16,7 +16,7 @@ export function StarDisplay({ rating, showEmpty = false, className }: { rating?:
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
-          className={cn('w-3 h-3', n <= value ? 'fill-amber-400 text-amber-400' : 'text-slate-300')}
+          className={cn('w-3 h-3', n <= value ? 'fill-amber-400 text-amber-400' : 'text-fg-faint')}
           aria-hidden
         />
       ))}
@@ -91,10 +91,10 @@ export function StarRatingInput({ applicationId, rating, candidateName }: { appl
           onClick={() => commit(value === n ? null : n)}
           className="p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
-          <Star className={cn('w-5 h-5 transition-colors', n <= shown ? 'fill-amber-400 text-amber-400' : 'text-slate-300')} aria-hidden />
+          <Star className={cn('w-5 h-5 transition-colors', n <= shown ? 'fill-amber-400 text-amber-400' : 'text-fg-faint')} aria-hidden />
         </button>
       ))}
-      <span className="ml-2 text-xs text-slate-500 tabular-nums" aria-live="polite">
+      <span className="ml-2 text-xs text-fg-muted tabular-nums" aria-live="polite">
         {value ? `${value}/5` : 'Not rated'}
       </span>
     </div>

@@ -82,7 +82,7 @@ export function MessagesTab({ applicationId, candidateName, draft, onDraftUsed }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 min-h-[10rem]" aria-live="polite">
+      <div className="rounded-xl bg-muted border border-line-subtle p-3 min-h-[10rem]" aria-live="polite">
         {messages.isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-12 w-2/3" />
@@ -99,12 +99,12 @@ export function MessagesTab({ applicationId, candidateName, draft, onDraftUsed }
                 <div
                   className={cn(
                     'rounded-2xl px-3.5 py-2 text-sm whitespace-pre-line break-words',
-                    m.fromCandidate ? 'bg-white ring-1 ring-slate-200 text-slate-800 rounded-bl-sm' : 'bg-primary-600 text-white rounded-br-sm'
+                    m.fromCandidate ? 'bg-surface ring-1 ring-line text-fg-soft rounded-bl-sm' : 'bg-primary-600 text-white rounded-br-sm'
                   )}
                 >
                   {m.body}
                 </div>
-                <span className="mt-1 text-[11px] text-slate-400">
+                <span className="mt-1 text-[11px] text-fg-subtle">
                   {m.fromCandidate ? candidateName : m.senderName ?? 'Hiring team'} ·{' '}
                   <time dateTime={m.createdAt} title={formatDate(m.createdAt)}>{timeAgo(m.createdAt)}</time>
                 </span>
@@ -163,7 +163,7 @@ export function MessagesTab({ applicationId, candidateName, draft, onDraftUsed }
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">Placeholders are filled in when sent.</p>
+          <p className="text-xs text-fg-muted">Placeholders are filled in when sent.</p>
           <Button type="submit" size="sm" loading={send.isPending} disabled={!body.trim()}>
             {!send.isPending && <Send className="w-3.5 h-3.5" aria-hidden />}
             Send

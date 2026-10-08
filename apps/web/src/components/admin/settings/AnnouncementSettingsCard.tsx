@@ -118,8 +118,8 @@ export function AnnouncementSettingsCard({ saved }: { saved?: Announcement | nul
 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p id={toggleLabelId} className="text-sm font-medium text-slate-700">Show banner</p>
-            <p className="text-xs text-slate-500 mt-0.5">Visitors can dismiss it for their current session.</p>
+            <p id={toggleLabelId} className="text-sm font-medium text-fg-secondary">Show banner</p>
+            <p className="text-xs text-fg-muted mt-0.5">Visitors can dismiss it for their current session.</p>
           </div>
           <Toggle checked={draft.enabled} onChange={(v) => set('enabled', v)} labelledBy={toggleLabelId} />
         </div>
@@ -141,7 +141,7 @@ export function AnnouncementSettingsCard({ saved }: { saved?: Announcement | nul
                 placeholder="e.g. Scheduled maintenance on Saturday 02:00–03:00 UTC."
               />
               {messageError && (
-                <p className={cn('text-right text-xs', length > MAX_MESSAGE ? 'text-rose-600' : 'text-slate-400')}>
+                <p className={cn('text-right text-xs', length > MAX_MESSAGE ? 'text-rose-600' : 'text-fg-subtle')}>
                   {length}/{MAX_MESSAGE}
                 </p>
               )}
@@ -150,7 +150,7 @@ export function AnnouncementSettingsCard({ saved }: { saved?: Announcement | nul
         </FormField>
 
         <fieldset>
-          <legend className="text-sm font-medium text-slate-700">Tone</legend>
+          <legend className="text-sm font-medium text-fg-secondary">Tone</legend>
           <div className="mt-2 grid grid-cols-3 gap-2 sm:max-w-sm">
             {TONE_OPTIONS.map((t) => (
               <label
@@ -160,7 +160,7 @@ export function AnnouncementSettingsCard({ saved }: { saved?: Announcement | nul
                   'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500',
                   draft.tone === t.value
                     ? 'border-primary-500 bg-primary-50 text-primary-800 font-medium'
-                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                    : 'border-line-strong bg-surface text-fg-secondary hover:bg-muted'
                 )}
               >
                 <input
@@ -206,15 +206,15 @@ export function AnnouncementSettingsCard({ saved }: { saved?: Announcement | nul
 
         <div>
           <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Preview</p>
-            {!draft.enabled && <p className="text-xs text-slate-400">Turned off: visitors won&apos;t see this.</p>}
+            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Preview</p>
+            {!draft.enabled && <p className="text-xs text-fg-subtle">Turned off: visitors won&apos;t see this.</p>}
           </div>
           {draft.message.trim() ? (
             <div className={cn(!draft.enabled && 'opacity-60')}>
               <AnnouncementBanner preview={{ ...draft, linkUrl: errors.linkUrl ? '' : draft.linkUrl.trim() }} />
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-400">
+            <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-fg-subtle">
               Type a message to see the banner preview.
             </p>
           )}

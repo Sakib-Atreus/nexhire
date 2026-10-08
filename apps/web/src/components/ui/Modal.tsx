@@ -64,21 +64,21 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative w-full bg-white shadow-2xl rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col focus:outline-none',
+          'relative w-full bg-surface shadow-2xl rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col focus:outline-none',
           size === 'sm' ? 'sm:max-w-md' : size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-lg'
         )}
       >
-        <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-slate-100">
+        <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-line-subtle">
           <div>
-            <h2 id={titleId} className="text-base font-semibold text-slate-900">{title}</h2>
-            {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+            <h2 id={titleId} className="text-base font-semibold text-fg">{title}</h2>
+            {description && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="-mr-2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="-mr-2 p-1.5 rounded-lg text-fg-subtle hover:text-fg-tertiary hover:bg-subtle">
             <X className="w-4 h-4" />
           </button>
         </div>
         {children && <div className="px-6 py-5 overflow-y-auto">{children}</div>}
-        {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl flex flex-col-reverse sm:flex-row sm:justify-end gap-2">{footer}</div>}
+        {footer && <div className="px-6 py-4 border-t border-line-subtle bg-muted/60 rounded-b-2xl flex flex-col-reverse sm:flex-row sm:justify-end gap-2">{footer}</div>}
       </div>
     </div>,
     document.body

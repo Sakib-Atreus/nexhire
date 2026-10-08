@@ -8,7 +8,7 @@ export function BrandMark({ href, className, size = 'md' }: { href: string; clas
       <span className={cn('bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0', size === 'sm' ? 'w-7 h-7' : 'w-8 h-8')}>
         <Briefcase className={cn('text-white', size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4')} aria-hidden />
       </span>
-      <span className={cn('font-bold text-slate-900 tracking-tight', size === 'sm' ? 'text-base' : 'text-xl')}>NexHire</span>
+      <span className={cn('font-bold text-fg tracking-tight', size === 'sm' ? 'text-base' : 'text-xl')}>NexHire</span>
     </Link>
   );
 }

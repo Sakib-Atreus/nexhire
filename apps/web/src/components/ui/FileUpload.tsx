@@ -71,8 +71,8 @@ export function FileUpload({
   return (
     <div className="space-y-2">
       {currentUrl && !isSuccess && (
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <FileText className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center gap-2 text-sm text-fg-tertiary">
+          <FileText className="w-4 h-4 text-fg-subtle" />
           <a
             href={currentUrl}
             target="_blank"
@@ -81,7 +81,7 @@ export function FileUpload({
           >
             Current file
           </a>
-          <span className="text-slate-400">·</span>
+          <span className="text-fg-subtle">·</span>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -101,19 +101,19 @@ export function FileUpload({
           'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-8 cursor-pointer transition-colors',
           dragging
             ? 'border-primary-400 bg-primary-50'
-            : 'border-slate-200 hover:border-primary-300 hover:bg-slate-50',
+            : 'border-line hover:border-primary-300 hover:bg-muted',
           isPending ? 'cursor-not-allowed opacity-70' : '',
         ].join(' ')}
       >
         {isPending ? (
           <>
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-            <p className="text-sm text-slate-500">Uploading {uploadedName}…</p>
+            <p className="text-sm text-fg-muted">Uploading {uploadedName}…</p>
           </>
         ) : isSuccess ? (
           <>
             <CheckCircle className="w-8 h-8 text-green-500" />
-            <p className="text-sm font-medium text-slate-700">{uploadedName}</p>
+            <p className="text-sm font-medium text-fg-secondary">{uploadedName}</p>
             <button
               type="button"
               onClick={(e) => {
@@ -129,10 +129,10 @@ export function FileUpload({
           </>
         ) : (
           <>
-            <UploadCloud className="w-8 h-8 text-slate-400" />
-            <p className="text-sm font-medium text-slate-700">{label}</p>
-            {hint && <p className="text-xs text-slate-400">{hint}</p>}
-            <p className="text-xs text-slate-400">Drag & drop or click to browse</p>
+            <UploadCloud className="w-8 h-8 text-fg-subtle" />
+            <p className="text-sm font-medium text-fg-secondary">{label}</p>
+            {hint && <p className="text-xs text-fg-subtle">{hint}</p>}
+            <p className="text-xs text-fg-subtle">Drag & drop or click to browse</p>
           </>
         )}
       </div>

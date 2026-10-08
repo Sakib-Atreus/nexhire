@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 /** Small pill. Pass a style from lib/constants (e.g. JOB_STATUS_STYLES[status]) as `tone`. */
-export function Badge({ children, tone = 'bg-slate-100 text-slate-700 ring-slate-500/20', className }: {
+export function Badge({ children, tone = 'bg-subtle text-fg-secondary ring-slate-500/20', className }: {
   children: ReactNode;
   tone?: string;
   className?: string;

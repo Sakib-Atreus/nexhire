@@ -66,10 +66,10 @@ function ViewAll({ href, label = 'View all' }: { href: string; label?: string })
 
 function NextStep({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <Card className="p-5 border-primary-100 bg-gradient-to-br from-primary-50/80 to-white">
+    <Card className="p-5 border-primary-100 bg-gradient-to-br from-primary-50/80 to-surface">
       <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">Next step</p>
-      <h2 className="mt-1 text-base font-semibold text-slate-900">{title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{description}</p>
+      <h2 className="mt-1 text-base font-semibold text-fg">{title}</h2>
+      <p className="mt-1 text-sm text-fg-tertiary">{description}</p>
       <div className="mt-4 flex flex-wrap gap-2">{children}</div>
     </Card>
   );
@@ -116,14 +116,14 @@ function CandidateDashboard() {
               action={<Link href="/jobs" className={buttonClasses('primary', 'sm')}>Browse jobs</Link>}
             />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {list.slice(0, 5).map((app) => (
-                <li key={app.id} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70">
+                <li key={app.id} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-muted/70">
                   <div className="min-w-0">
-                    <Link href={`/jobs/${app.jobId}`} className="block text-sm font-medium text-slate-900 hover:text-primary-600 truncate">
+                    <Link href={`/jobs/${app.jobId}`} className="block text-sm font-medium text-fg hover:text-primary-600 truncate">
                       {app.jobTitle}
                     </Link>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    <p className="text-xs text-fg-muted mt-0.5 truncate">
                       {app.companyName} · Applied {timeAgo(app.appliedAt)}
                     </p>
                   </div>
@@ -149,8 +149,8 @@ function CandidateDashboard() {
                 </div>
                 <ul className="mt-3 grid grid-cols-2 gap-1.5 text-xs">
                   {completeness.items.map((item) => (
-                    <li key={item.key} className={item.done ? 'flex items-center gap-1.5 text-slate-500' : 'flex items-center gap-1.5 text-slate-700'}>
-                      {item.done ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" aria-hidden /> : <Circle className="w-3.5 h-3.5 text-slate-300" aria-hidden />}
+                    <li key={item.key} className={item.done ? 'flex items-center gap-1.5 text-fg-muted' : 'flex items-center gap-1.5 text-fg-secondary'}>
+                      {item.done ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" aria-hidden /> : <Circle className="w-3.5 h-3.5 text-fg-faint" aria-hidden />}
                       {item.label}
                       <span className="sr-only">{item.done ? '(done)' : '(missing)'}</span>
                     </li>
@@ -226,16 +226,16 @@ function RecruiterDashboard() {
               action={noJobs ? <Link href="/jobs/create" className={buttonClasses('primary', 'sm')}>Post a job</Link> : undefined}
             />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {recentList.map((app) => (
                 <li key={app.id}>
                   <Link
                     href={`/jobs/${app.jobId}/applicants`}
-                    className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 focus:outline-none focus-visible:bg-slate-50"
+                    className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-muted/70 focus:outline-none focus-visible:bg-muted"
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium text-slate-900 truncate">{app.candidateName}</span>
-                      <span className="block text-xs text-slate-500 mt-0.5 truncate">
+                      <span className="block text-sm font-medium text-fg truncate">{app.candidateName}</span>
+                      <span className="block text-xs text-fg-muted mt-0.5 truncate">
                         {app.jobTitle} · {timeAgo(app.appliedAt)}
                       </span>
                     </span>
@@ -278,15 +278,15 @@ function RecruiterDashboard() {
             ) : jobs.isError ? (
               <ErrorState title="Couldn't load your jobs" error={jobs.error} onRetry={() => jobs.refetch()} retrying={jobs.isRefetching} />
             ) : jobList.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-slate-500 text-center">You haven&apos;t posted any jobs yet.</p>
+              <p className="px-5 py-6 text-sm text-fg-muted text-center">You haven&apos;t posted any jobs yet.</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-line-subtle">
                 {jobList.map((job) => (
                   <li key={job.id}>
-                    <Link href={`/jobs/${job.id}/applicants`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50/70 focus:outline-none focus-visible:bg-slate-50">
+                    <Link href={`/jobs/${job.id}/applicants`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/70 focus:outline-none focus-visible:bg-muted">
                       <span className="min-w-0">
-                        <span className="block text-sm font-medium text-slate-900 truncate">{job.title}</span>
-                        <span className="block text-xs text-slate-500 mt-0.5">
+                        <span className="block text-sm font-medium text-fg truncate">{job.title}</span>
+                        <span className="block text-xs text-fg-muted mt-0.5">
                           {pluralize(job.applicationCount ?? 0, 'applicant')}
                         </span>
                       </span>
@@ -308,7 +308,7 @@ function RecruiterDashboard() {
           ) : stats.isError ? (
             <ErrorState title="Couldn't load pipeline" error={stats.error} onRetry={() => stats.refetch()} retrying={stats.isRefetching} />
           ) : !stats.data || stats.data.total === 0 ? (
-            <p className="text-sm text-slate-500">No applications yet. Stages will fill in as candidates apply.</p>
+            <p className="text-sm text-fg-muted">No applications yet. Stages will fill in as candidates apply.</p>
           ) : (
             <PipelineBars counts={statsToCounts(stats.data)} />
           )}
@@ -351,10 +351,10 @@ export default function DashboardPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-fg">
             {greeting}, {user.firstName}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">{SUBTITLES[user.role]}</p>
+          <p className="mt-1 text-sm text-fg-muted">{SUBTITLES[user.role]}</p>
         </div>
         {user.role === 'RECRUITER' && (
           <Link href="/jobs/create" className={buttonClasses('primary', 'md', 'self-start sm:self-auto')}>

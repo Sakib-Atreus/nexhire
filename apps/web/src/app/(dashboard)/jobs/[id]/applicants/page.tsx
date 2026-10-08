@@ -57,7 +57,7 @@ function PageSkeleton({ view }: { view?: View | null }) {
       ) : (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex-1 min-w-[15rem] rounded-xl bg-slate-100/70 p-2 space-y-2">
+            <div key={i} className="flex-1 min-w-[15rem] rounded-xl bg-subtle/70 p-2 space-y-2">
               <Skeleton className="h-5 w-1/2 m-1" />
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
@@ -244,7 +244,7 @@ export default function ApplicantsPage() {
 
   return (
     <div className={cn('min-w-0', showBulkBar && 'pb-24')}>
-      <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-4">
+      <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-primary-600 mb-4">
         <ArrowLeft className="w-4 h-4" aria-hidden /> My jobs
       </Link>
 
@@ -278,13 +278,13 @@ export default function ApplicantsPage() {
                   <CompanyLogo name={job.companyName} src={job.companyLogoUrl} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-lg sm:text-xl font-bold text-slate-900 break-words">{job.title}</h1>
+                      <h1 className="text-lg sm:text-xl font-bold text-fg break-words">{job.title}</h1>
                       <Badge tone={JOB_STATUS_STYLES[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
                     </div>
-                    <p className="text-sm text-slate-500 mt-0.5 break-words">{[job.companyName, job.location].filter(Boolean).join(' · ')}</p>
+                    <p className="text-sm text-fg-muted mt-0.5 break-words">{[job.companyName, job.location].filter(Boolean).join(' · ')}</p>
                     <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                      <span className="font-semibold text-slate-800">{pluralize(apps.length, 'applicant')}</span>
-                      <span className="inline-flex items-center gap-1.5 text-slate-600">
+                      <span className="font-semibold text-fg-soft">{pluralize(apps.length, 'applicant')}</span>
+                      <span className="inline-flex items-center gap-1.5 text-fg-tertiary">
                         <span className={cn('w-2 h-2 rounded-full', APPLICATION_STATUS_BAR.HIRED)} aria-hidden />
                         {hiredCount} of {pluralize(openings, 'opening')} hired
                       </span>
@@ -332,7 +332,7 @@ export default function ApplicantsPage() {
             <>
               {/* Toolbar */}
               <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
-                <div role="group" aria-label="View" className="inline-flex self-start rounded-lg border border-slate-300 bg-white p-0.5 shadow-sm">
+                <div role="group" aria-label="View" className="inline-flex self-start rounded-lg border border-line-strong bg-surface p-0.5 shadow-sm">
                   {([['board', 'Board', Columns3], ['list', 'List', List]] as const).map(([v, label, Icon]) => (
                     <button
                       key={v}
@@ -341,7 +341,7 @@ export default function ApplicantsPage() {
                       onClick={() => setView(v)}
                       className={cn(
                         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                        view === v ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+                        view === v ? 'bg-primary-600 text-white' : 'text-fg-tertiary hover:bg-muted'
                       )}
                     >
                       <Icon className="w-4 h-4" aria-hidden /> {label}
@@ -349,7 +349,7 @@ export default function ApplicantsPage() {
                   ))}
                 </div>
                 <div className="relative flex-1 min-w-0">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" aria-hidden />
                   <Input
                     type="search"
                     value={search}
@@ -360,7 +360,7 @@ export default function ApplicantsPage() {
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <label htmlFor="rating-filter" className="text-sm text-slate-600 whitespace-nowrap">Rating</label>
+                  <label htmlFor="rating-filter" className="text-sm text-fg-tertiary whitespace-nowrap">Rating</label>
                   <Select
                     id="rating-filter"
                     value={minRating}
@@ -388,14 +388,14 @@ export default function ApplicantsPage() {
               ) : (
                 <>
                   <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <label className="inline-flex items-center gap-2 cursor-pointer select-none px-3 h-9 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
+                    <label className="inline-flex items-center gap-2 cursor-pointer select-none px-3 h-9 bg-surface border border-line-strong rounded-lg text-sm text-fg-secondary hover:bg-muted">
                       <input
                         type="checkbox"
                         checked={allVisibleSelected}
                         ref={(el) => { if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected; }}
                         onChange={toggleAll}
                         disabled={selectableVisible.length === 0}
-                        className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                        className="w-4 h-4 rounded border-line-strong text-primary-600 focus:ring-primary-500"
                       />
                       <span className="font-medium">Select all</span>
                     </label>
@@ -412,11 +412,11 @@ export default function ApplicantsPage() {
                               onClick={() => setStatusFilter(s)}
                               className={cn(
                                 'flex-shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-medium border transition-colors',
-                                active ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                active ? 'bg-primary-600 text-white border-primary-600' : 'bg-surface text-fg-tertiary border-line hover:bg-muted'
                               )}
                             >
                               {s ? stageLabel(s) : 'All'}
-                              <span className={cn('text-xs tabular-nums', active ? 'text-primary-100' : 'text-slate-400')}>
+                              <span className={cn('text-xs tabular-nums', active ? 'text-primary-100' : 'text-fg-subtle')}>
                                 {s ? statusCounts[s] : filtered.length}
                               </span>
                             </button>
@@ -430,7 +430,7 @@ export default function ApplicantsPage() {
                     </Card>
                   ) : (
                     <>
-                      <div className="hidden md:grid grid-cols-[auto_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_7rem_auto] gap-x-3 px-4 pb-2 text-xs font-medium uppercase tracking-wide text-slate-400" aria-hidden>
+                      <div className="hidden md:grid grid-cols-[auto_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_7rem_auto] gap-x-3 px-4 pb-2 text-xs font-medium uppercase tracking-wide text-fg-subtle" aria-hidden>
                         <span className="w-4" />
                         <span>Candidate</span>
                         <span>Stage</span>
@@ -489,7 +489,7 @@ export default function ApplicantsPage() {
               aria-label="Clear selection"
               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50"
             >
-              <X className="w-4 h-4 text-slate-300" aria-hidden />
+              <X className="w-4 h-4 text-fg-faint" aria-hidden />
             </button>
           </div>
         </div>

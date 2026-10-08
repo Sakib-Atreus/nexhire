@@ -125,9 +125,9 @@ function SaveButton({ job, compact }: { job: Job; compact?: boolean }) {
 function ApplicationStatusNote({ application }: { application: Application }) {
   const withdrawn = application.status === 'WITHDRAWN';
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <CheckCircle2 className={cn('w-4 h-4', withdrawn ? 'text-slate-400' : 'text-emerald-600')} aria-hidden />
+    <div className="rounded-lg border border-line bg-muted p-3">
+      <div className="flex items-center gap-2 text-sm font-semibold text-fg">
+        <CheckCircle2 className={cn('w-4 h-4', withdrawn ? 'text-fg-subtle' : 'text-emerald-600')} aria-hidden />
         {withdrawn ? 'Application withdrawn' : 'Applied'}
         {!withdrawn && (
           <Badge tone={APPLICATION_STATUS_STYLES[application.status]} className="ml-auto">
@@ -135,7 +135,7 @@ function ApplicationStatusNote({ application }: { application: Application }) {
           </Badge>
         )}
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-fg-muted">
         {withdrawn ? 'You withdrew this application' : 'Submitted'} · {formatDate(application.appliedAt)}
       </p>
       <Link href="/applications" className="mt-2 inline-block text-xs font-medium text-primary-600 hover:text-primary-700">
@@ -149,18 +149,18 @@ function ReportJobControl({ job, signedIn }: { job: Job; signedIn: boolean }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 text-xs text-slate-500 sm:justify-start">
+    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 text-xs text-fg-muted sm:justify-start">
       <span>Something wrong with this posting?</span>
       {signedIn ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1 rounded font-medium text-slate-600 hover:text-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="inline-flex items-center gap-1 rounded font-medium text-fg-tertiary hover:text-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
           <Flag className="w-3.5 h-3.5" aria-hidden /> Report this job
         </button>
       ) : (
-        <Link href="/login" className="inline-flex items-center gap-1 font-medium text-slate-600 hover:text-primary-700">
+        <Link href="/login" className="inline-flex items-center gap-1 font-medium text-fg-tertiary hover:text-primary-700">
           <Flag className="w-3.5 h-3.5" aria-hidden /> Sign in to report
         </Link>
       )}
@@ -189,21 +189,21 @@ function ActionPanel({ job, role, isOwner, canManage, application, applicationLo
   return (
     <Card className="p-5 space-y-5">
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Salary</p>
-        <p className={cn('mt-1 font-semibold', salary ? 'text-lg text-slate-900' : 'text-sm text-slate-500')}>
+        <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Salary</p>
+        <p className={cn('mt-1 font-semibold', salary ? 'text-lg text-fg' : 'text-sm text-fg-muted')}>
           {salary ?? 'Not disclosed'}
         </p>
       </div>
 
       {(job.deadline || deadline.closed) && (
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Application deadline</p>
-          {job.deadline && <p className="mt-1 text-sm font-medium text-slate-900">{formatDate(job.deadline)}</p>}
+          <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Application deadline</p>
+          {job.deadline && <p className="mt-1 text-sm font-medium text-fg">{formatDate(job.deadline)}</p>}
           {deadline.label && (
             <p
               className={cn(
                 'mt-1 inline-flex items-center gap-1.5 text-xs font-medium',
-                deadline.closed ? 'text-slate-500' : deadline.urgent ? 'text-amber-700' : 'text-emerald-700'
+                deadline.closed ? 'text-fg-muted' : deadline.urgent ? 'text-amber-700' : 'text-emerald-700'
               )}
             >
               <CalendarClock className="w-3.5 h-3.5" aria-hidden />
@@ -213,14 +213,14 @@ function ActionPanel({ job, role, isOwner, canManage, application, applicationLo
         </div>
       )}
 
-      <div className="space-y-2 border-t border-slate-100 pt-5">
+      <div className="space-y-2 border-t border-line-subtle pt-5">
         {isCandidate && (
           applicationLoading ? (
             <div className="flex items-center justify-center h-10"><Spinner /></div>
           ) : application ? (
             <ApplicationStatusNote application={application} />
           ) : deadline.closed ? (
-            <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2.5 text-sm font-medium text-slate-600">
+            <div className="flex items-center gap-2 rounded-lg bg-subtle px-3 py-2.5 text-sm font-medium text-fg-tertiary">
               <Lock className="w-4 h-4" aria-hidden /> This job is no longer accepting applications
             </div>
           ) : (
@@ -264,23 +264,23 @@ function MobileApplyBar({ job, application, applicationLoading, onApply }: {
 }) {
   const deadline = getDeadline(job);
   return (
-    <div className="lg:hidden fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3">
+    <div className="lg:hidden fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t border-line bg-surface/95 backdrop-blur px-4 py-3">
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         <div className="min-w-0 flex-1">
           {application ? (
             <>
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-fg">
                 {application.status === 'WITHDRAWN' ? 'Application withdrawn' : 'Applied'}
               </p>
               {application.status !== 'WITHDRAWN' && (
-                <p className="text-xs text-slate-500 truncate">{APPLICATION_STATUS_LABELS[application.status]}</p>
+                <p className="text-xs text-fg-muted truncate">{APPLICATION_STATUS_LABELS[application.status]}</p>
               )}
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-slate-900 truncate">{job.title}</p>
+              <p className="text-sm font-semibold text-fg truncate">{job.title}</p>
               {deadline.label && (
-                <p className={cn('text-xs truncate', deadline.urgent ? 'text-amber-700' : 'text-slate-500')}>{deadline.label}</p>
+                <p className={cn('text-xs truncate', deadline.urgent ? 'text-amber-700' : 'text-fg-muted')}>{deadline.label}</p>
               )}
             </>
           )}
@@ -353,7 +353,7 @@ export default function JobDetailPage() {
   const backLabel = canManage ? 'Back to my jobs' : 'Back to jobs';
 
   const backLink = (
-    <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary-600 mb-6 transition-colors">
+    <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-primary-600 mb-6 transition-colors">
       <ArrowLeft className="w-4 h-4" aria-hidden /> {backLabel}
     </Link>
   );
@@ -421,8 +421,8 @@ export default function JobDetailPage() {
                     </Badge>
                   )}
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 break-words">{job.title}</h1>
-                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-slate-600">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg break-words">{job.title}</h1>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-fg-tertiary">
                   {job.companySlug ? (
                     <Link href={`/companies/${job.companySlug}`} className="break-words hover:text-primary-700 hover:underline">
                       {job.companyName}
@@ -437,32 +437,32 @@ export default function JobDetailPage() {
                   )}
                 </p>
 
-                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-fg-tertiary">
                   {job.location && (
                     <li className="flex items-center gap-1.5 min-w-0">
-                      <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden />
+                      <MapPin className="w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
                       <span className="break-words">{job.location}</span>
                     </li>
                   )}
                   <li className="flex items-center gap-1.5">
-                    <Briefcase className="w-4 h-4 text-slate-400" aria-hidden /> {JOB_TYPE_LABELS[job.jobType]}
+                    <Briefcase className="w-4 h-4 text-fg-subtle" aria-hidden /> {JOB_TYPE_LABELS[job.jobType]}
                   </li>
                   {salary && (
                     <li className="flex items-center gap-1.5">
-                      <Banknote className="w-4 h-4 text-slate-400" aria-hidden />
-                      <span className="font-medium text-slate-900">{salary}</span>
+                      <Banknote className="w-4 h-4 text-fg-subtle" aria-hidden />
+                      <span className="font-medium text-fg">{salary}</span>
                     </li>
                   )}
                   {job.deadline && (
                     <li className="flex items-center gap-1.5">
-                      <CalendarClock className="w-4 h-4 text-slate-400" aria-hidden />
+                      <CalendarClock className="w-4 h-4 text-fg-subtle" aria-hidden />
                       <span>
                         Apply by {formatDate(job.deadline)}
                         {deadline.label && (
                           <span
                             className={cn(
                               'ml-1.5 font-medium',
-                              deadline.closed ? 'text-slate-500' : deadline.urgent ? 'text-amber-700' : 'text-emerald-700'
+                              deadline.closed ? 'text-fg-muted' : deadline.urgent ? 'text-amber-700' : 'text-emerald-700'
                             )}
                           >
                             · {deadline.label}
@@ -475,7 +475,7 @@ export default function JobDetailPage() {
               </div>
             </div>
 
-            <div className="mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
+            <div className="mt-5 pt-5 border-t border-line-subtle flex flex-wrap gap-x-5 gap-y-2 text-xs text-fg-muted">
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" aria-hidden /> Posted {timeAgo(job.createdAt)}
               </span>
@@ -514,8 +514,8 @@ export default function JobDetailPage() {
           {/* Body */}
           <Card className="p-5 sm:p-8 space-y-8">
             <section aria-labelledby="about-role">
-              <h2 id="about-role" className="text-lg font-semibold text-slate-900 mb-3">About the role</h2>
-              <div className="space-y-4 text-[15px] leading-relaxed text-slate-700">
+              <h2 id="about-role" className="text-lg font-semibold text-fg mb-3">About the role</h2>
+              <div className="space-y-4 text-[15px] leading-relaxed text-fg-secondary">
                 {descParagraphs.map((p, i) => (
                   <p key={i} className="whitespace-pre-line break-words">{p}</p>
                 ))}
@@ -523,11 +523,11 @@ export default function JobDetailPage() {
             </section>
 
             {responsibilities.length > 0 && (
-              <section aria-labelledby="responsibilities" className="border-t border-slate-100 pt-8">
-                <h2 id="responsibilities" className="text-lg font-semibold text-slate-900 mb-3">Responsibilities</h2>
+              <section aria-labelledby="responsibilities" className="border-t border-line-subtle pt-8">
+                <h2 id="responsibilities" className="text-lg font-semibold text-fg mb-3">Responsibilities</h2>
                 <ul className="space-y-2.5">
                   {responsibilities.map((item, i) => (
-                    <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-slate-700">
+                    <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-fg-secondary">
                       <span className="mt-2.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary-500" aria-hidden />
                       <span className="break-words min-w-0">{item}</span>
                     </li>
@@ -537,11 +537,11 @@ export default function JobDetailPage() {
             )}
 
             {requirements.length > 0 && (
-              <section aria-labelledby="requirements" className="border-t border-slate-100 pt-8">
-                <h2 id="requirements" className="text-lg font-semibold text-slate-900 mb-3">Requirements</h2>
+              <section aria-labelledby="requirements" className="border-t border-line-subtle pt-8">
+                <h2 id="requirements" className="text-lg font-semibold text-fg mb-3">Requirements</h2>
                 <ul className="space-y-2.5">
                   {requirements.map((item, i) => (
-                    <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-slate-700">
+                    <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-fg-secondary">
                       <CheckCircle2 className="mt-1 w-4 h-4 flex-shrink-0 text-primary-500" aria-hidden />
                       <span className="break-words min-w-0">{item}</span>
                     </li>
@@ -551,8 +551,8 @@ export default function JobDetailPage() {
             )}
 
             {tags.length > 0 && (
-              <section aria-labelledby="skills" className="border-t border-slate-100 pt-8">
-                <h2 id="skills" className="text-lg font-semibold text-slate-900 mb-3">Skills</h2>
+              <section aria-labelledby="skills" className="border-t border-line-subtle pt-8">
+                <h2 id="skills" className="text-lg font-semibold text-fg mb-3">Skills</h2>
                 <ul className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
                     <li key={tag} className="rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700 ring-1 ring-inset ring-primary-600/10">

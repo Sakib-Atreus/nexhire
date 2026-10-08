@@ -47,11 +47,11 @@ export function TimeZoneNote({ className }: { className?: string }) {
   }, []);
   if (!tz) return null;
   return (
-    <p className={cn('inline-flex items-center gap-1.5 text-xs text-slate-500', className)}>
+    <p className={cn('inline-flex items-center gap-1.5 text-xs text-fg-muted', className)}>
       <Globe className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
       <span>
-        All times are in your time zone: <span className="font-medium text-slate-700">{tz}</span>
-        {zone && zone !== tz && <span className="text-slate-400"> ({zone.replace(/_/g, ' ')})</span>}
+        All times are in your time zone: <span className="font-medium text-fg-secondary">{tz}</span>
+        {zone && zone !== tz && <span className="text-fg-subtle"> ({zone.replace(/_/g, ' ')})</span>}
       </span>
     </p>
   );
@@ -62,7 +62,7 @@ export function InterviewLocation({ interview, className }: { interview: Intervi
   const loc = interview.location?.trim();
   if (!loc) {
     return (
-      <p className={cn('flex items-start gap-1.5 text-sm text-slate-500', className)}>
+      <p className={cn('flex items-start gap-1.5 text-sm text-fg-muted', className)}>
         <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" aria-hidden />
         {interview.type === 'VIDEO' ? 'Video link to be shared' : interview.type === 'PHONE' ? 'Phone details to be shared' : 'Location to be shared'}
       </p>
@@ -71,8 +71,8 @@ export function InterviewLocation({ interview, className }: { interview: Intervi
   const Icon = interview.type === 'VIDEO' ? Video : interview.type === 'PHONE' ? Phone : MapPin;
   const tel = interview.type === 'PHONE' ? telHref(loc) : null;
   return (
-    <p className={cn('flex items-start gap-1.5 text-sm text-slate-600 min-w-0', className)}>
-      <Icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-slate-400" aria-hidden />
+    <p className={cn('flex items-start gap-1.5 text-sm text-fg-tertiary min-w-0', className)}>
+      <Icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-fg-subtle" aria-hidden />
       {isHttpUrl(loc) ? (
         <a href={loc} target="_blank" rel="noopener noreferrer" className="min-w-0 break-all text-primary-600 hover:text-primary-700 hover:underline">
           {loc}

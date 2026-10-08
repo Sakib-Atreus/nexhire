@@ -119,10 +119,10 @@ function AdminJobsContent() {
       <PageHeader title="Jobs" description="Review, feature and moderate every job posting, including hidden and closed ones." />
 
       <Card className="overflow-hidden">
-        <div className="p-4 border-b border-slate-100 space-y-3">
+        <div className="p-4 border-b border-line-subtle space-y-3">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_repeat(4,minmax(0,10rem))]">
             <div className="relative sm:col-span-2 xl:col-span-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" aria-hidden />
               <Input
                 type="search"
                 value={q}
@@ -156,10 +156,10 @@ function AdminJobsContent() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2rem]">
-            <p className="text-sm text-slate-500" aria-live="polite">
+            <p className="text-sm text-fg-muted" aria-live="polite">
               {data ? (
                 <>
-                  <span className="font-medium text-slate-900">{pluralize(data.totalElements, 'job')}</span>
+                  <span className="font-medium text-fg">{pluralize(data.totalElements, 'job')}</span>
                   {filtering ? ' match your filters' : ' in total'}
                 </>
               ) : isLoading ? 'Loading jobs…' : null}
@@ -203,7 +203,7 @@ function AdminJobsContent() {
             {/* Desktop table (contained horizontal scroll if the viewport is tight) */}
             <div className="hidden xl:block overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
+                <thead className="bg-muted text-left text-xs font-medium text-fg-muted">
                   <tr>
                     <th scope="col" className="px-5 py-3">Job</th>
                     <th scope="col" className="px-4 py-3">Recruiter</th>
@@ -213,9 +213,9 @@ function AdminJobsContent() {
                     <th scope="col" className="px-5 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line-subtle">
                   {jobs.map((job) => (
-                    <tr key={job.id} className="hover:bg-slate-50/60 align-top">
+                    <tr key={job.id} className="hover:bg-muted/60 align-top">
                       <td className="px-5 py-3 min-w-[16rem]">
                         <JobIdentity job={job} />
                       </td>
@@ -225,8 +225,8 @@ function AdminJobsContent() {
                       <td className="px-4 py-3">
                         <JobBadges job={job} />
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-slate-700">{job.applicationCount ?? 0}</td>
-                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(job.createdAt)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-fg-secondary">{job.applicationCount ?? 0}</td>
+                      <td className="px-4 py-3 text-fg-muted whitespace-nowrap">{formatDate(job.createdAt)}</td>
                       <td className="px-5 py-3">
                         <JobModerationActions job={job} compact withStatus withDelete className="justify-end flex-nowrap" />
                       </td>
@@ -237,19 +237,19 @@ function AdminJobsContent() {
             </div>
 
             {/* Cards below xl */}
-            <ul className="xl:hidden divide-y divide-slate-100">
+            <ul className="xl:hidden divide-y divide-line-subtle">
               {jobs.map((job) => (
                 <li key={job.id} className="px-4 py-4 sm:px-5 space-y-3">
                   <JobIdentity job={job} />
                   <JobBadges job={job} />
-                  <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                  <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted">
                     <div className="flex gap-1">
                       <dt>Recruiter:</dt>
                       <dd><RecruiterLink job={job} active={recruiterId === job.recruiterId} onFilter={() => updateParams({ recruiterId: job.recruiterId })} /></dd>
                     </div>
                     <div className="flex gap-1">
                       <dt>Applicants:</dt>
-                      <dd className="font-medium text-slate-700">{job.applicationCount ?? 0}</dd>
+                      <dd className="font-medium text-fg-secondary">{job.applicationCount ?? 0}</dd>
                     </div>
                     <div className="flex gap-1">
                       <dt>Posted:</dt>
@@ -274,10 +274,10 @@ function JobIdentity({ job }: { job: Job }) {
     <div className="flex items-start gap-3 min-w-0">
       <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="sm" />
       <div className="min-w-0">
-        <Link href={`/jobs/${job.id}`} className="font-medium text-slate-900 hover:text-primary-700 break-words focus:outline-none focus-visible:underline">
+        <Link href={`/jobs/${job.id}`} className="font-medium text-fg hover:text-primary-700 break-words focus:outline-none focus-visible:underline">
           {job.title}
         </Link>
-        <p className="text-xs text-slate-500 break-words">
+        <p className="text-xs text-fg-muted break-words">
           {job.companyName}
           {job.category && <span> · {job.category}</span>}
         </p>
@@ -297,13 +297,13 @@ function JobBadges({ job }: { job: Job }) {
 }
 
 function RecruiterLink({ job, active, onFilter }: { job: Job; active: boolean; onFilter: () => void }) {
-  if (active) return <span className="text-slate-700">{job.recruiterName}</span>;
+  if (active) return <span className="text-fg-secondary">{job.recruiterName}</span>;
   return (
     <button
       type="button"
       onClick={onFilter}
       title={`Show all jobs by ${job.recruiterName}`}
-      className="text-left text-slate-700 hover:text-primary-700 hover:underline focus:outline-none focus-visible:underline"
+      className="text-left text-fg-secondary hover:text-primary-700 hover:underline focus:outline-none focus-visible:underline"
     >
       {job.recruiterName}
     </button>
@@ -312,7 +312,7 @@ function RecruiterLink({ job, active, onFilter }: { job: Job; active: boolean; o
 
 function ListSkeleton() {
   return (
-    <div className="divide-y divide-slate-100" aria-hidden>
+    <div className="divide-y divide-line-subtle" aria-hidden>
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-5 py-4">
           <Skeleton className="w-10 h-10 rounded-xl" />

@@ -25,7 +25,7 @@ function checkName(name: string, list: string[], ignoreIndex?: number): string |
 }
 
 const iconButton =
-  'p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+  'p-1.5 rounded-md text-fg-subtle hover:text-fg-secondary hover:bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
 
 export function CategoriesSettingsCard({ saved }: { saved: string[] }) {
   const [base, setBase] = useState(saved);
@@ -128,7 +128,7 @@ export function CategoriesSettingsCard({ saved }: { saved: string[] }) {
             add();
           }}
         >
-          <label htmlFor="new-category" className="block text-sm font-medium text-slate-700 mb-1.5">Add a category</label>
+          <label htmlFor="new-category" className="block text-sm font-medium text-fg-secondary mb-1.5">Add a category</label>
           <div className="flex gap-2">
             <Input
               id="new-category"
@@ -149,24 +149,24 @@ export function CategoriesSettingsCard({ saved }: { saved: string[] }) {
               Add
             </Button>
           </div>
-          <p id="new-category-help" className={cn('mt-1.5 text-xs', addError ? 'text-rose-600' : 'text-slate-500')} role={addError ? 'alert' : undefined}>
+          <p id="new-category-help" className={cn('mt-1.5 text-xs', addError ? 'text-rose-600' : 'text-fg-muted')} role={addError ? 'alert' : undefined}>
             {addError ?? `${draft.length}/${MAX_CATEGORIES} categories`}
           </p>
         </form>
 
         {draft.length === 0 ? (
-          <div className="flex flex-col items-center text-center rounded-xl border border-dashed border-slate-300 px-6 py-8">
-            <FolderOpen className="w-6 h-6 text-slate-400" aria-hidden />
-            <p className="mt-2 text-sm font-medium text-slate-700">No categories yet</p>
-            <p className="mt-0.5 text-xs text-slate-500">Without categories, recruiters can&apos;t categorise jobs.</p>
+          <div className="flex flex-col items-center text-center rounded-xl border border-dashed border-line-strong px-6 py-8">
+            <FolderOpen className="w-6 h-6 text-fg-subtle" aria-hidden />
+            <p className="mt-2 text-sm font-medium text-fg-secondary">No categories yet</p>
+            <p className="mt-0.5 text-xs text-fg-muted">Without categories, recruiters can&apos;t categorise jobs.</p>
           </div>
         ) : (
-          <ol className="rounded-xl border border-slate-200 divide-y divide-slate-100" aria-label="Categories">
+          <ol className="rounded-xl border border-line divide-y divide-line-subtle" aria-label="Categories">
             {draft.map((name, i) => {
               const isEditing = editing?.index === i;
               return (
                 <li key={name} className="flex items-center gap-2 px-3 py-2 min-w-0">
-                  <span className="w-6 text-right text-xs font-medium text-slate-400 flex-shrink-0" aria-hidden>{i + 1}.</span>
+                  <span className="w-6 text-right text-xs font-medium text-fg-subtle flex-shrink-0" aria-hidden>{i + 1}.</span>
                   {isEditing ? (
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
@@ -197,7 +197,7 @@ export function CategoriesSettingsCard({ saved }: { saved: string[] }) {
                     </div>
                   ) : (
                     <>
-                      <span className="flex-1 min-w-0 truncate text-sm text-slate-800" title={name}>{name}</span>
+                      <span className="flex-1 min-w-0 truncate text-sm text-fg-soft" title={name}>{name}</span>
                       <div className="flex items-center flex-shrink-0">
                         <button type="button" onClick={() => setEditing({ index: i, value: name, error: null })} className={iconButton} aria-label={`Rename ${name}`}>
                           <Pencil className="w-3.5 h-3.5" aria-hidden />

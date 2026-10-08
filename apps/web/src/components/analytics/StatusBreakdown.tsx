@@ -19,7 +19,7 @@ export function StatusBreakdown({ byStatus }: { byStatus: Partial<Record<Applica
 
   return (
     <figure className="m-0">
-      {total === 0 && <p className="mb-3 text-sm text-slate-500">No applications yet. Statuses will appear here as candidates apply.</p>}
+      {total === 0 && <p className="mb-3 text-sm text-fg-muted">No applications yet. Statuses will appear here as candidates apply.</p>}
       <ul className="space-y-3" aria-hidden>
         {rows.map(({ status, count }) => {
           const share = total > 0 ? (count / total) * 100 : 0;
@@ -28,14 +28,14 @@ export function StatusBreakdown({ byStatus }: { byStatus: Partial<Record<Applica
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="flex items-center gap-2 min-w-0">
                   <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-sm ${APPLICATION_STATUS_BAR[status]}`} />
-                  <span className="truncate text-slate-700">{APPLICATION_STATUS_LABELS[status]}</span>
+                  <span className="truncate text-fg-secondary">{APPLICATION_STATUS_LABELS[status]}</span>
                 </span>
                 <span className="flex-shrink-0 tabular-nums">
-                  <span className="font-semibold text-slate-900">{fmt(count)}</span>
-                  <span className="ml-1.5 text-xs text-slate-500">{total > 0 ? formatPercent(share) : '—'}</span>
+                  <span className="font-semibold text-fg">{fmt(count)}</span>
+                  <span className="ml-1.5 text-xs text-fg-muted">{total > 0 ? formatPercent(share) : '—'}</span>
                 </span>
               </div>
-              <div className="mt-1.5 h-2 rounded-full bg-slate-100">
+              <div className="mt-1.5 h-2 rounded-full bg-subtle">
                 <div
                   className={`h-full rounded-full ${APPLICATION_STATUS_BAR[status]}`}
                   style={{ width: count > 0 ? `max(${share}%, 4px)` : 0 }}

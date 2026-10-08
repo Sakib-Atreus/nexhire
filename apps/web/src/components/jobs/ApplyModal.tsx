@@ -135,10 +135,10 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
       >
         {/* Resume */}
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-slate-700">
+          <legend className="text-sm font-medium text-fg-secondary">
             Resume<span className="text-rose-500 ml-0.5" aria-hidden>*</span>
           </legend>
-          <div role="tablist" aria-label="How to provide your resume" className="inline-flex rounded-lg bg-slate-100 p-1">
+          <div role="tablist" aria-label="How to provide your resume" className="inline-flex rounded-lg bg-subtle p-1">
             {(['upload', 'url'] as const).map((m) => (
               <button
                 key={m}
@@ -150,7 +150,7 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
                 onClick={() => switchMode(m)}
                 className={cn(
                   'px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                  mode === m ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  mode === m ? 'bg-surface text-fg shadow-sm' : 'text-fg-tertiary hover:text-fg'
                 )}
               >
                 {m === 'upload' ? 'Upload file' : 'Paste a link'}
@@ -190,8 +190,8 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
         {questions.length > 0 && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">Screening questions</h3>
-              <p className="text-xs text-slate-500 mt-0.5">The recruiter asks every applicant to answer these.</p>
+              <h3 className="text-sm font-semibold text-fg">Screening questions</h3>
+              <p className="text-xs text-fg-muted mt-0.5">The recruiter asks every applicant to answer these.</p>
             </div>
             {questions.map((q, i) => (
               <FormField key={i} label={q} required error={errors.answers?.[i]}>

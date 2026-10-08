@@ -70,7 +70,7 @@ export function SkillsSettingsCard({ saved }: { saved: string[] }) {
             maxSkills={MAX_SKILLS}
           />
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-fg-muted">
           The first skills in the list are shown first as suggestions. Duplicates (ignoring case) are merged when you save.
         </p>
       </div>

@@ -44,7 +44,7 @@ function AnalyticsSkeleton() {
 
 function BackLink() {
   return (
-    <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-4">
+    <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-primary-600 mb-4">
       <ArrowLeft className="w-4 h-4" aria-hidden /> My jobs
     </Link>
   );
@@ -136,12 +136,12 @@ export default function JobAnalyticsPage() {
           <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
             <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="md" />
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Job analytics</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Job analytics</p>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h1 className="text-xl font-bold text-slate-900 break-words">{job.title}</h1>
+                <h1 className="text-xl font-bold text-fg break-words">{job.title}</h1>
                 <Badge tone={JOB_STATUS_STYLES[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
               </div>
-              <p className="mt-0.5 text-sm text-slate-500 break-words">
+              <p className="mt-0.5 text-sm text-fg-muted break-words">
                 {job.companyName} · {openFor}
               </p>
             </div>
@@ -214,8 +214,8 @@ export default function JobAnalyticsPage() {
             title="Daily applications"
             description="Last 30 days (UTC dates)."
             action={
-              <p className="text-right text-xs text-slate-500 flex-shrink-0">
-                <span className="block text-lg font-bold text-slate-900 tabular-nums">{periodTotal.toLocaleString('en-US')}</span>
+              <p className="text-right text-xs text-fg-muted flex-shrink-0">
+                <span className="block text-lg font-bold text-fg tabular-nums">{periodTotal.toLocaleString('en-US')}</span>
                 in 30 days
               </p>
             }
@@ -230,7 +230,7 @@ export default function JobAnalyticsPage() {
         </Card>
       </div>
 
-      <p className="mt-6 flex items-start gap-2 text-xs text-slate-500">
+      <p className="mt-6 flex items-start gap-2 text-xs text-fg-muted">
         <Info className="w-3.5 h-3.5 mt-px flex-shrink-0" aria-hidden />
         Views exclude your hiring team&apos;s own visits.
       </p>

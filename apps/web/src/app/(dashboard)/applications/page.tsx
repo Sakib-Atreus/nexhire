@@ -41,24 +41,24 @@ function ApplicationCard({ app, onWithdraw, activityOpen, onToggleActivity, high
   const updated = app.updatedAt && app.updatedAt !== app.appliedAt;
 
   return (
-    <Card id={`application-${app.id}`} className={cn('p-5 scroll-mt-6 transition-shadow', closed && 'bg-slate-50/60', highlighted && 'ring-2 ring-primary-500/60')}>
+    <Card id={`application-${app.id}`} className={cn('p-5 scroll-mt-6 transition-shadow', closed && 'bg-muted/60', highlighted && 'ring-2 ring-primary-500/60')}>
       <div className="flex items-start gap-4">
         <CompanyLogo name={app.companyName} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-base font-semibold leading-snug">
-                <Link href={`/jobs/${app.jobId}`} className="text-slate-900 hover:text-primary-700 break-words">
+                <Link href={`/jobs/${app.jobId}`} className="text-fg hover:text-primary-700 break-words">
                   {app.jobTitle}
                 </Link>
               </h2>
-              <p className="text-sm text-slate-600 truncate">{app.companyName}</p>
+              <p className="text-sm text-fg-tertiary truncate">{app.companyName}</p>
             </div>
             <Badge tone={APPLICATION_STATUS_STYLES[app.status]} className="self-start">
               {APPLICATION_STATUS_LABELS[app.status]}
             </Badge>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-fg-muted">
             Applied {formatDate(app.appliedAt)}
             {updated && <> · Updated {timeAgo(app.updatedAt)}</>}
           </p>
@@ -93,14 +93,14 @@ function ApplicationCard({ app, onWithdraw, activityOpen, onToggleActivity, high
         )}
 
         {app.status === 'REJECTED' ? (
-          <p className="text-sm text-slate-500">The employer has decided not to move forward with this application.</p>
+          <p className="text-sm text-fg-muted">The employer has decided not to move forward with this application.</p>
         ) : app.status === 'WITHDRAWN' ? (
-          <p className="text-sm text-slate-500">You withdrew this application.</p>
+          <p className="text-sm text-fg-muted">You withdrew this application.</p>
         ) : (
           <ApplicationProgress status={app.status} />
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-t border-slate-100 pt-3">
+        <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-t border-line-subtle pt-3">
           <Button
             variant={activityOpen ? 'secondary' : 'ghost'}
             size="sm"
@@ -151,8 +151,8 @@ function ApplicationCard({ app, onWithdraw, activityOpen, onToggleActivity, high
         </div>
 
         {app.coverLetter && showLetter && (
-          <div id={letterId} className="mt-2 rounded-lg bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
-            <p className="whitespace-pre-line break-words text-sm leading-relaxed text-slate-700">{app.coverLetter}</p>
+          <div id={letterId} className="mt-2 rounded-lg bg-muted p-4 ring-1 ring-inset ring-line">
+            <p className="whitespace-pre-line break-words text-sm leading-relaxed text-fg-secondary">{app.coverLetter}</p>
           </div>
         )}
 

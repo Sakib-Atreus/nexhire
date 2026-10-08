@@ -46,30 +46,30 @@ export function UpcomingInterviewsCard({ viewer }: { viewer: 'CANDIDATE' | 'RECR
         <ErrorState className="py-8" title="Couldn't load interviews" error={error} onRetry={() => refetch()} retrying={isRefetching} />
       ) : next.length === 0 ? (
         <div className="px-5 py-6 text-center">
-          <CalendarClock className="mx-auto w-5 h-5 text-slate-300" aria-hidden />
-          <p className="mt-2 text-sm text-slate-500">
+          <CalendarClock className="mx-auto w-5 h-5 text-fg-faint" aria-hidden />
+          <p className="mt-2 text-sm text-fg-muted">
             {recruiter
               ? 'No interviews scheduled. Schedule them from a job’s applicant pipeline.'
               : 'No interviews scheduled yet. Invitations will show up here.'}
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-line-subtle">
           {next.map((i) => {
             const href = recruiter ? `/jobs/${i.jobId}/applicants` : `/applications?application=${i.applicationId}`;
             const askRespond = !recruiter && i.response === 'AWAITING' && canRespond(i);
             return (
-              <li key={i.id} className="flex items-center gap-2 pr-4 hover:bg-slate-50/70 focus-within:bg-slate-50">
+              <li key={i.id} className="flex items-center gap-2 pr-4 hover:bg-muted/70 focus-within:bg-muted">
                 <Link href={href} className="flex min-w-0 flex-1 gap-3 py-3.5 pl-5 focus:outline-none">
                   <InterviewTypeIcon type={i.type} />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-slate-900 truncate">
+                    <span className="block text-sm font-medium text-fg truncate">
                       {recruiter ? i.candidateName : i.jobTitle}
                     </span>
-                    <span className="block text-xs text-slate-500 truncate">
+                    <span className="block text-xs text-fg-muted truncate">
                       {recruiter ? i.jobTitle : i.companyName} · {INTERVIEW_TYPE_LABELS[i.type]}
                     </span>
-                    <span className="block text-xs font-medium text-slate-700 mt-0.5">
+                    <span className="block text-xs font-medium text-fg-secondary mt-0.5">
                       <time dateTime={i.scheduledAt}>
                         {dayHeading(i.scheduledAt)} · {formatTime(i.scheduledAt)} ({formatDuration(i.durationMinutes)})
                       </time>

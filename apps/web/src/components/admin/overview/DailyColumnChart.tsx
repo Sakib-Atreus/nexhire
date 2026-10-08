@@ -40,7 +40,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
   const total = data.reduce((s, d) => s + d.count, 0);
   const n = data.length;
 
-  if (n === 0) return <p className="text-sm text-slate-500">No data for this period.</p>;
+  if (n === 0) return <p className="text-sm text-fg-muted">No data for this period.</p>;
 
   const ticks = Array.from(new Set([0, Math.round((n - 1) / 3), Math.round((2 * (n - 1)) / 3), n - 1]));
   const noun = (c: number) => (c === 1 ? unit[0] : unit[1]);
@@ -69,7 +69,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
     <figure className="m-0">
       <div className="flex gap-2">
         {/* Y axis labels */}
-        <div className="flex flex-col justify-between h-40 text-[11px] leading-none text-slate-400 tabular-nums text-right w-7 flex-shrink-0" aria-hidden>
+        <div className="flex flex-col justify-between h-40 text-[11px] leading-none text-fg-subtle tabular-nums text-right w-7 flex-shrink-0" aria-hidden>
           <span>{fmt(yMax)}</span>
           <span>0</span>
         </div>
@@ -86,8 +86,8 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
             className="relative h-40 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
           >
             {/* Recessive gridlines: top (y max) and baseline */}
-            <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-200" aria-hidden />
-            <div className="absolute inset-x-0 bottom-0 border-t border-slate-300" aria-hidden />
+            <div className="absolute inset-x-0 top-0 border-t border-dashed border-line" aria-hidden />
+            <div className="absolute inset-x-0 bottom-0 border-t border-line-strong" aria-hidden />
 
             <div className="absolute inset-0 flex items-end gap-[2px]" aria-hidden>
               {data.map((d, i) => {
@@ -99,7 +99,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
                     onMouseEnter={() => setActive(i)}
                     title={`${dayLabel(d.date)}: ${fmt(d.count)} ${noun(d.count)}`}
                   >
-                    {active === i && <div className="absolute inset-0 bg-slate-100/80 rounded-t" />}
+                    {active === i && <div className="absolute inset-0 bg-subtle/80 rounded-t" />}
                     <div
                       className={cn(
                         'relative w-full rounded-t transition-colors',
@@ -114,7 +114,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
 
             {total === 0 && (
               <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
-                <p className="text-sm text-slate-500 bg-white/90 px-3 py-1 rounded-md">{emptyMessage}</p>
+                <p className="text-sm text-fg-muted bg-surface/90 px-3 py-1 rounded-md">{emptyMessage}</p>
               </div>
             )}
 
@@ -125,7 +125,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
                 aria-hidden
               >
                 <div className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg">
-                  <span className="block text-slate-300">{dayLabel(point.date, true)}</span>
+                  <span className="block text-fg-faint">{dayLabel(point.date, true)}</span>
                   <span className="font-semibold tabular-nums">{fmt(point.count)}</span> {noun(point.count)}
                 </div>
               </div>
@@ -133,7 +133,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
           </div>
 
           {/* X axis ticks */}
-          <div className="relative h-5 mt-1.5 text-[11px] text-slate-400" aria-hidden>
+          <div className="relative h-5 mt-1.5 text-[11px] text-fg-subtle" aria-hidden>
             {ticks.map((i) => (
               <span
                 key={i}

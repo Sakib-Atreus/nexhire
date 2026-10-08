@@ -120,16 +120,16 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full sm:max-w-[560px] h-full bg-white shadow-2xl flex flex-col focus:outline-none"
+        className="relative w-full sm:max-w-[560px] h-full bg-surface shadow-2xl flex flex-col focus:outline-none"
       >
         {/* Header */}
-        <div className="px-4 sm:px-6 pt-4 pb-4 border-b border-slate-100">
+        <div className="px-4 sm:px-6 pt-4 pb-4 border-b border-line-subtle">
           <div className="flex items-start gap-3">
             <Avatar name={app.candidateName} src={app.candidateAvatarUrl} size="md" />
             <div className="min-w-0 flex-1">
-              <h2 id={titleId} className="text-lg font-bold text-slate-900 break-words leading-tight">{app.candidateName}</h2>
-              {app.candidateHeadline && <p className="text-sm text-slate-600 break-words">{app.candidateHeadline}</p>}
-              <a href={`mailto:${app.candidateEmail}`} className="mt-0.5 text-sm text-slate-500 hover:text-primary-600 inline-flex items-center gap-1 max-w-full">
+              <h2 id={titleId} className="text-lg font-bold text-fg break-words leading-tight">{app.candidateName}</h2>
+              {app.candidateHeadline && <p className="text-sm text-fg-tertiary break-words">{app.candidateHeadline}</p>}
+              <a href={`mailto:${app.candidateEmail}`} className="mt-0.5 text-sm text-fg-muted hover:text-primary-600 inline-flex items-center gap-1 max-w-full">
                 <Mail className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                 <span className="truncate">{app.candidateEmail}</span>
               </a>
@@ -139,7 +139,7 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
               type="button"
               onClick={onClose}
               aria-label="Close applicant details"
-              className="-mr-2 -mt-1 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="-mr-2 -mt-1 p-2 rounded-lg text-fg-subtle hover:text-fg-tertiary hover:bg-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               <X className="w-5 h-5" aria-hidden />
             </button>
@@ -147,13 +147,13 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
 
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
             {withdrawn ? (
-              <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+              <span className="inline-flex items-center gap-2 text-sm text-fg-muted">
                 <Badge tone={APPLICATION_STATUS_STYLES.WITHDRAWN}>{APPLICATION_STATUS_LABELS.WITHDRAWN}</Badge>
                 Withdrawn by the candidate
               </span>
             ) : (
               <div className="flex items-center gap-2">
-                <label htmlFor={`${titleId}-status`} className="text-xs font-medium text-slate-500">Stage</label>
+                <label htmlFor={`${titleId}-status`} className="text-xs font-medium text-fg-muted">Stage</label>
                 <Select
                   id={`${titleId}-status`}
                   value={app.status}
@@ -169,7 +169,7 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
               <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" className={buttonClasses('secondary', 'sm', 'sm:ml-auto')}>
                 <FileText className="w-3.5 h-3.5" aria-hidden />
                 Resume
-                <ExternalLink className="w-3 h-3 text-slate-400" aria-hidden />
+                <ExternalLink className="w-3 h-3 text-fg-subtle" aria-hidden />
                 <span className="sr-only">(opens in a new tab)</span>
               </a>
             )}
@@ -177,7 +177,7 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Applicant sections" onKeyDown={onTabKey} className="flex gap-1 px-2 sm:px-4 border-b border-slate-200 overflow-x-auto">
+        <div role="tablist" aria-label="Applicant sections" onKeyDown={onTabKey} className="flex gap-1 px-2 sm:px-4 border-b border-line overflow-x-auto">
           {tabs.map((t) => {
             const selected = tab === t.id;
             return (
@@ -191,13 +191,13 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'relative flex-shrink-0 px-3 py-2.5 text-sm font-medium inline-flex items-center gap-1.5 border-b-2 -mb-px focus:outline-none focus-visible:bg-slate-50',
-                  selected ? 'border-primary-600 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-800'
+                  'relative flex-shrink-0 px-3 py-2.5 text-sm font-medium inline-flex items-center gap-1.5 border-b-2 -mb-px focus:outline-none focus-visible:bg-muted',
+                  selected ? 'border-primary-600 text-primary-700' : 'border-transparent text-fg-muted hover:text-fg-soft'
                 )}
               >
                 {t.label}
                 {!!t.count && (
-                  <span className={cn('text-[11px] tabular-nums rounded-full px-1.5', selected ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-500')}>
+                  <span className={cn('text-[11px] tabular-nums rounded-full px-1.5', selected ? 'bg-primary-100 text-primary-700' : 'bg-subtle text-fg-muted')}>
                     {t.count}
                   </span>
                 )}

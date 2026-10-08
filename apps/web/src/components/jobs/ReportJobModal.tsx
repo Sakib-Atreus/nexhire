@@ -74,7 +74,7 @@ export function ReportJobModal({ jobId, jobTitle, open, onClose }: {
     >
       <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-5" noValidate>
         <fieldset aria-describedby={error ? errorId : undefined}>
-          <legend className="text-sm font-medium text-slate-700">
+          <legend className="text-sm font-medium text-fg-secondary">
             Reason<span className="text-rose-500 ml-0.5" aria-hidden>*</span>
           </legend>
           <div className="mt-2 space-y-2">
@@ -83,7 +83,7 @@ export function ReportJobModal({ jobId, jobTitle, open, onClose }: {
                 key={r}
                 className={cn(
                   'flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-2.5 text-sm transition-colors',
-                  reason === r ? 'border-primary-500 bg-primary-50/60 text-slate-900' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                  reason === r ? 'border-primary-500 bg-primary-50/60 text-fg' : 'border-line text-fg-secondary hover:bg-muted'
                 )}
               >
                 <input
@@ -92,7 +92,7 @@ export function ReportJobModal({ jobId, jobTitle, open, onClose }: {
                   value={r}
                   checked={reason === r}
                   onChange={() => { setReason(r); setError(null); }}
-                  className="h-4 w-4 border-slate-300 text-primary-600 focus:ring-primary-500"
+                  className="h-4 w-4 border-line-strong text-primary-600 focus:ring-primary-500"
                 />
                 {REPORT_REASON_LABELS[r]}
               </label>
@@ -101,8 +101,8 @@ export function ReportJobModal({ jobId, jobTitle, open, onClose }: {
         </fieldset>
 
         <div className="space-y-1.5">
-          <label htmlFor={detailsId} className="block text-sm font-medium text-slate-700">
-            Details <span className="font-normal text-slate-500">(optional)</span>
+          <label htmlFor={detailsId} className="block text-sm font-medium text-fg-secondary">
+            Details <span className="font-normal text-fg-muted">(optional)</span>
           </label>
           <Textarea
             id={detailsId}
@@ -113,7 +113,7 @@ export function ReportJobModal({ jobId, jobTitle, open, onClose }: {
             placeholder="Anything that helps us review it, e.g. what the posting asked you to do."
             aria-describedby={`${detailsId}-count`}
           />
-          <p id={`${detailsId}-count`} className="text-right text-xs text-slate-500 tabular-nums">
+          <p id={`${detailsId}-count`} className="text-right text-xs text-fg-muted tabular-nums">
             {details.length}/{MAX_DETAILS}
           </p>
         </div>

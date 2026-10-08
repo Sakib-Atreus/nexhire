@@ -88,7 +88,7 @@ export default function HomePage() {
   const signedIn = mounted && isAuthenticated && !!user;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <SiteHeader />
       <AnnouncementBanner variant="bar" />
 
@@ -102,7 +102,7 @@ export default function HomePage() {
           />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-28">
             <div className="max-w-3xl">
-              <OpenRolesCount className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium text-primary-50 mb-6" />
+              <OpenRolesCount className="inline-flex items-center gap-2 rounded-full border border-surface/20 bg-surface/10 px-3 py-1 text-sm font-medium text-primary-50 mb-6" />
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
                 Find work you care about.
                 <span className="block text-primary-200">Hire people who fit.</span>
@@ -120,7 +120,7 @@ export default function HomePage() {
                 {signedIn ? (
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-1.5 font-semibold text-white hover:text-primary-100 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="inline-flex items-center gap-1.5 font-semibold text-white hover:text-primary-100 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-surface"
                   >
                     <LayoutDashboard className="w-4 h-4" aria-hidden />
                     Go to your dashboard
@@ -130,14 +130,14 @@ export default function HomePage() {
                   <>
                     <Link
                       href="/register?role=RECRUITER"
-                      className="inline-flex items-center gap-1.5 font-semibold text-white hover:text-primary-100 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      className="inline-flex items-center gap-1.5 font-semibold text-white hover:text-primary-100 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-surface"
                     >
                       Hiring? Post a job
                       <ArrowRight className="w-4 h-4" aria-hidden />
                     </Link>
                     <Link
                       href="/jobs"
-                      className="text-primary-100 hover:text-white rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      className="text-primary-100 hover:text-white rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-surface"
                     >
                       Or browse all jobs
                     </Link>
@@ -152,37 +152,37 @@ export default function HomePage() {
         <LatestJobs />
 
         {/* How it works: two tracks */}
-        <section aria-labelledby="how-heading" className="py-16 sm:py-24 bg-white">
+        <section aria-labelledby="how-heading" className="py-16 sm:py-24 bg-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="max-w-2xl mb-12">
-              <h2 id="how-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+              <h2 id="how-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
                 How NexHire works
               </h2>
-              <p className="mt-3 text-slate-500 text-base sm:text-lg">
+              <p className="mt-3 text-fg-muted text-base sm:text-lg">
                 One platform, two sides of the same process.
               </p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {TRACKS.map((track) => (
-                <div key={track.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 sm:p-8">
+                <div key={track.id} className="rounded-2xl border border-line bg-muted/60 p-6 sm:p-8">
                   <div className="flex items-center gap-3">
                     <span className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
                       <track.icon className="w-5 h-5" aria-hidden />
                     </span>
-                    <h3 className="text-lg font-semibold text-slate-900">{track.title}</h3>
+                    <h3 className="text-lg font-semibold text-fg">{track.title}</h3>
                   </div>
                   <ol className="mt-6 space-y-5">
                     {track.steps.map((step, i) => (
                       <li key={step.title} className="flex gap-4">
                         <span
-                          className="flex-shrink-0 w-7 h-7 rounded-full bg-white ring-1 ring-slate-200 text-xs font-semibold text-primary-700 flex items-center justify-center"
+                          className="flex-shrink-0 w-7 h-7 rounded-full bg-surface ring-1 ring-line text-xs font-semibold text-primary-700 flex items-center justify-center"
                           aria-hidden
                         >
                           {i + 1}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-medium text-slate-900">{step.title}</p>
-                          <p className="mt-0.5 text-sm text-slate-500 leading-relaxed">{step.desc}</p>
+                          <p className="font-medium text-fg">{step.title}</p>
+                          <p className="mt-0.5 text-sm text-fg-muted leading-relaxed">{step.desc}</p>
                         </div>
                       </li>
                     ))}
@@ -200,24 +200,24 @@ export default function HomePage() {
         </section>
 
         {/* Features */}
-        <section aria-labelledby="features-heading" className="py-16 sm:py-24 bg-slate-50 border-y border-slate-200/70">
+        <section aria-labelledby="features-heading" className="py-16 sm:py-24 bg-canvas border-y border-line/70">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="max-w-2xl mb-12">
-              <h2 id="features-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+              <h2 id="features-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
                 Built for both sides of hiring
               </h2>
-              <p className="mt-3 text-slate-500 text-base sm:text-lg">
+              <p className="mt-3 text-fg-muted text-base sm:text-lg">
                 The essentials for finding a role or filling one, without the clutter.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {FEATURES.map((f) => (
-                <div key={f.title} className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+                <div key={f.title} className="rounded-xl border border-line bg-surface p-6 shadow-card">
                   <span className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
                     <f.icon className="w-5 h-5" aria-hidden />
                   </span>
-                  <h3 className="mt-4 font-semibold text-slate-900">{f.title}</h3>
-                  <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{f.description}</p>
+                  <h3 className="mt-4 font-semibold text-fg">{f.title}</h3>
+                  <p className="mt-1.5 text-sm text-fg-muted leading-relaxed">{f.description}</p>
                 </div>
               ))}
             </div>
@@ -225,7 +225,7 @@ export default function HomePage() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 sm:py-20 bg-white">
+        <section className="py-16 sm:py-20 bg-surface">
           <div className="max-w-5xl mx-auto px-4 sm:px-6">
             <div className="rounded-2xl bg-primary-600 px-6 py-12 sm:px-12 text-center">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
@@ -255,7 +255,7 @@ export default function HomePage() {
                     </Link>
                     <Link
                       href="/register?role=RECRUITER"
-                      className={buttonClasses('ghost', 'lg', 'text-white ring-1 ring-inset ring-white/40 hover:bg-white/10 hover:text-white focus-visible:ring-white')}
+                      className={buttonClasses('ghost', 'lg', 'text-white ring-1 ring-inset ring-surface/40 hover:bg-surface/10 hover:text-white focus-visible:ring-surface')}
                     >
                       I&apos;m hiring
                     </Link>

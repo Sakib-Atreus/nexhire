@@ -25,7 +25,7 @@ function ListSkeleton() {
     <div className="space-y-6" aria-busy="true" aria-label="Loading interviews">
       {Array.from({ length: 2 }).map((_, g) => (
         <Card key={g} className="overflow-hidden" aria-hidden>
-          <div className="px-5 py-3 border-b border-slate-100"><Skeleton className="h-4 w-32" /></div>
+          <div className="px-5 py-3 border-b border-line-subtle"><Skeleton className="h-4 w-32" /></div>
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex gap-4 px-5 py-4">
               <Skeleton className="h-5 w-20" />
@@ -56,9 +56,9 @@ function RecruiterResponseBar({ interviews, filter, onFilter }: {
   const followUp = scheduled.filter((i) => i.needsFollowUp).length;
   const action = scheduled.filter(needsRecruiterAction).length;
   const parts = [
-    { n: awaiting, label: 'awaiting response', tone: 'text-slate-900' },
-    { n: newTimes, label: newTimes === 1 ? 'new time request' : 'new time requests', tone: newTimes ? 'text-amber-700' : 'text-slate-900' },
-    { n: followUp, label: 'need follow-up', tone: followUp ? 'text-amber-700' : 'text-slate-900' },
+    { n: awaiting, label: 'awaiting response', tone: 'text-fg' },
+    { n: newTimes, label: newTimes === 1 ? 'new time request' : 'new time requests', tone: newTimes ? 'text-amber-700' : 'text-fg' },
+    { n: followUp, label: 'need follow-up', tone: followUp ? 'text-amber-700' : 'text-fg' },
   ];
   const tabs: { key: Filter; label: string; count: number }[] = [
     { key: 'ALL', label: 'All', count: interviews.length },
@@ -67,15 +67,15 @@ function RecruiterResponseBar({ interviews, filter, onFilter }: {
 
   return (
     <Card className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-tertiary">
         {parts.map((p, idx) => (
           <span key={p.label} className="whitespace-nowrap">
-            {idx > 0 && <span className="mr-2 text-slate-300" aria-hidden>·</span>}
+            {idx > 0 && <span className="mr-2 text-fg-faint" aria-hidden>·</span>}
             <span className={cn('font-semibold tabular-nums', p.tone)}>{p.n}</span> {p.label}
           </span>
         ))}
       </p>
-      <div role="group" aria-label="Filter interviews" className="inline-flex self-start rounded-lg bg-slate-100 p-0.5 sm:self-auto">
+      <div role="group" aria-label="Filter interviews" className="inline-flex self-start rounded-lg bg-subtle p-0.5 sm:self-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -84,13 +84,13 @@ function RecruiterResponseBar({ interviews, filter, onFilter }: {
             onClick={() => onFilter(t.key)}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-              filter === t.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              filter === t.key ? 'bg-surface text-fg shadow-sm' : 'text-fg-tertiary hover:text-fg'
             )}
           >
             {t.label}
             <span className={cn(
               'rounded-full px-1.5 tabular-nums',
-              t.key === 'ACTION' && t.count > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-200/70 text-slate-600'
+              t.key === 'ACTION' && t.count > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emphasis/70 text-fg-tertiary'
             )}>
               {t.count}
             </span>
@@ -105,7 +105,7 @@ function RecruiterResponseBar({ interviews, filter, onFilter }: {
 function CandidateResponseBanner({ count }: { count: number }) {
   if (count === 0) {
     return (
-      <p className="flex items-center gap-2 text-sm text-slate-600">
+      <p className="flex items-center gap-2 text-sm text-fg-tertiary">
         <CheckCircle2 className="w-4 h-4 text-emerald-600" aria-hidden /> You’ve answered every invitation.
       </p>
     );
@@ -140,26 +140,26 @@ function SummaryCard({ interviews, recruiter }: { interviews: Interview[]; recru
   return (
     <Card>
       <CardHeader title="At a glance" />
-      <dl className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
+      <dl className="grid grid-cols-3 divide-x divide-line-subtle border-b border-line-subtle">
         {stats.map((s) => (
           <div key={s.label} className="px-3 py-4 text-center">
-            <dt className="text-xs text-slate-500">{s.label}</dt>
-            <dd className="mt-1 text-xl font-semibold text-slate-900 tabular-nums">{s.value}</dd>
+            <dt className="text-xs text-fg-muted">{s.label}</dt>
+            <dd className="mt-1 text-xl font-semibold text-fg tabular-nums">{s.value}</dd>
           </div>
         ))}
       </dl>
       <div className="p-5 space-y-3">
         {next ? (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Next up</p>
-            <p className="mt-1 text-sm font-medium text-slate-900 break-words">
+            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Next up</p>
+            <p className="mt-1 text-sm font-medium text-fg break-words">
               {recruiter ? `${next.candidateName} · ${next.jobTitle}` : `${next.jobTitle} at ${next.companyName}`}
             </p>
-            <p className="text-sm text-slate-600">{formatInterviewWhen(next)}</p>
-            <p className="text-xs text-slate-500">{INTERVIEW_TYPE_LABELS[next.type]}</p>
+            <p className="text-sm text-fg-tertiary">{formatInterviewWhen(next)}</p>
+            <p className="text-xs text-fg-muted">{INTERVIEW_TYPE_LABELS[next.type]}</p>
           </div>
         ) : null}
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-fg-muted">
           {recruiter
             ? 'Shows scheduled interviews for every job you manage, including jobs posted by your company team. Rescheduling resets the candidate’s answer so they confirm the new time — unless you pick one of their suggested times.'
             : 'Accept, decline or suggest another time for each invitation — you can change your answer until the interview starts. You’ll be notified if the time changes; please confirm the new time when it does.'}
@@ -286,18 +286,18 @@ export default function InterviewsPage() {
             {groups.map((g) => (
               <section key={g.key} aria-labelledby={`day-${g.key}`}>
                 <Card className="overflow-hidden">
-                  <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                    <h2 id={`day-${g.key}`} className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <CalendarDays className="w-4 h-4 text-slate-400" aria-hidden />
+                  <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-line-subtle bg-muted/60">
+                    <h2 id={`day-${g.key}`} className="flex items-center gap-2 text-sm font-semibold text-fg">
+                      <CalendarDays className="w-4 h-4 text-fg-subtle" aria-hidden />
                       {g.heading}
                     </h2>
-                    <span className={cn('text-xs', !recruiter && g.items.some((i) => canRespond(i) && i.response === 'AWAITING') ? 'font-medium text-primary-700' : 'text-slate-500')}>
+                    <span className={cn('text-xs', !recruiter && g.items.some((i) => canRespond(i) && i.response === 'AWAITING') ? 'font-medium text-primary-700' : 'text-fg-muted')}>
                       {!recruiter && g.items.some((i) => canRespond(i) && i.response === 'AWAITING')
                         ? `${g.items.filter((i) => canRespond(i) && i.response === 'AWAITING').length} to answer · ${pluralize(g.items.length, 'interview')}`
                         : pluralize(g.items.length, 'interview')}
                     </span>
                   </div>
-                  <ul className="divide-y divide-slate-100">
+                  <ul className="divide-y divide-line-subtle">
                     {g.items.map((i) => (
                       <InterviewRow
                         key={i.id}
@@ -315,10 +315,10 @@ export default function InterviewsPage() {
             <SummaryCard interviews={interviews} recruiter={recruiter} />
             {!recruiter && (
               <Card className="p-5">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
                   <Clock className="w-4 h-4 text-primary-600" aria-hidden /> Preparing
                 </h2>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-fg-tertiary">
                   <li>Re-read the job description and your application.</li>
                   <li>For video calls, test your camera and link a few minutes early.</li>
                   <li>Have a couple of questions ready for the team.</li>

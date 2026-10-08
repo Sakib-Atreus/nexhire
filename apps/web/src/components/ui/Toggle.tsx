@@ -22,10 +22,10 @@ export function Toggle({ checked, onChange, disabled, id, label, labelledBy }: {
       className={cn(
         'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50',
-        checked ? 'bg-primary-600' : 'bg-slate-200'
+        checked ? 'bg-primary-600' : 'bg-emphasis'
       )}
     >
-      <span className={cn('pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition', checked ? 'translate-x-5' : 'translate-x-0')} />
+      <span className={cn('pointer-events-none inline-block h-5 w-5 rounded-full bg-surface shadow transition', checked ? 'translate-x-5' : 'translate-x-0')} />
     </button>
   );
 }

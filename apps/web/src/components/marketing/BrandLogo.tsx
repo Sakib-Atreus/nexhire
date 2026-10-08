@@ -16,7 +16,7 @@ export function BrandLogo({ tone = 'dark', className }: { tone?: 'dark' | 'light
       <span className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shadow-sm">
         <Briefcase className="w-4 h-4 text-white" aria-hidden />
       </span>
-      <span className={cn('text-lg font-bold tracking-tight', tone === 'light' ? 'text-white' : 'text-slate-900')}>
+      <span className={cn('text-lg font-bold tracking-tight', tone === 'light' ? 'text-white' : 'text-fg')}>
         NexHire
       </span>
     </Link>

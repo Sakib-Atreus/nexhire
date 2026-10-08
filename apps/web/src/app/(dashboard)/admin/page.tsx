@@ -117,8 +117,8 @@ export default function AdminOverviewPage() {
 function PeriodTotal({ value, label }: { value: number; label: string }) {
   return (
     <p className="text-right flex-shrink-0">
-      <span className="block text-lg font-bold leading-tight text-slate-900 tabular-nums">{value.toLocaleString('en-US')}</span>
-      <span className="block text-xs text-slate-500">{label}</span>
+      <span className="block text-lg font-bold leading-tight text-fg tabular-nums">{value.toLocaleString('en-US')}</span>
+      <span className="block text-xs text-fg-muted">{label}</span>
     </p>
   );
 }

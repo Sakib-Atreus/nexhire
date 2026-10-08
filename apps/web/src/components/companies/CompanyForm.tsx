@@ -160,7 +160,7 @@ export function CompanyForm({ company, mode, submitting, onSubmit }: {
               />
               <p
                 id={`${id}-count`}
-                className={cn('mt-1 text-right text-xs', description.length > DESCRIPTION_MAX ? 'text-rose-600 font-medium' : 'text-slate-400')}
+                className={cn('mt-1 text-right text-xs', description.length > DESCRIPTION_MAX ? 'text-rose-600 font-medium' : 'text-fg-subtle')}
               >
                 {description.length.toLocaleString('en-US')} / {DESCRIPTION_MAX.toLocaleString('en-US')}
               </p>
@@ -169,9 +169,9 @@ export function CompanyForm({ company, mode, submitting, onSubmit }: {
         </FormField>
       </div>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex flex-col-reverse gap-3 border-t border-line-subtle pt-5 sm:flex-row sm:items-center sm:justify-end">
         {mode === 'edit' && (
-          <p className="text-sm text-slate-500 sm:mr-auto" aria-live="polite">
+          <p className="text-sm text-fg-muted sm:mr-auto" aria-live="polite">
             {isDirty ? <span className="font-medium text-amber-700">You have unsaved changes</span> : 'All changes saved'}
           </p>
         )}

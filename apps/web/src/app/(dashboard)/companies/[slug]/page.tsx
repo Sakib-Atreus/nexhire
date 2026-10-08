@@ -25,10 +25,10 @@ function displayHost(url: string): string {
 function Fact({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <Icon className="mt-0.5 w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden />
+      <Icon className="mt-0.5 w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
       <div className="min-w-0">
-        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</dt>
-        <dd className="mt-0.5 text-sm text-slate-900 break-words">{children}</dd>
+        <dt className="text-xs font-medium uppercase tracking-wide text-fg-muted">{label}</dt>
+        <dd className="mt-0.5 text-sm text-fg break-words">{children}</dd>
       </div>
     </div>
   );
@@ -68,7 +68,7 @@ export default function CompanyProfilePage() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useCompanyProfile(slug);
 
   const backLink = (
-    <Link href="/companies" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary-600 mb-6 transition-colors">
+    <Link href="/companies" className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-primary-600 mb-6 transition-colors">
       <ArrowLeft className="w-4 h-4" aria-hidden /> All companies
     </Link>
   );
@@ -110,25 +110,25 @@ export default function CompanyProfilePage() {
           <CompanyLogo name={company.name} src={company.logoUrl} size="lg" className="sm:w-20 sm:h-20 sm:text-xl" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 break-words">{company.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg break-words">{company.name}</h1>
               {company.verified && <VerifiedBadge label="Verified company" />}
             </div>
-            <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+            <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-fg-tertiary">
               {company.industry && (
                 <li className="flex items-center gap-1.5 min-w-0">
-                  <Factory className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden />
+                  <Factory className="w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
                   <span className="break-words">{company.industry}</span>
                 </li>
               )}
               {company.headquarters && (
                 <li className="flex items-center gap-1.5 min-w-0">
-                  <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden />
+                  <MapPin className="w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
                   <span className="break-words">{company.headquarters}</span>
                 </li>
               )}
               {size && (
                 <li className="flex items-center gap-1.5">
-                  <Users className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden />
+                  <Users className="w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
                   {size}
                 </li>
               )}
@@ -162,17 +162,17 @@ export default function CompanyProfilePage() {
             <CardHeader title={`About ${company.name}`} />
             <div className="px-5 py-5 sm:px-6">
               {company.description ? (
-                <p className="whitespace-pre-line break-words text-[15px] leading-relaxed text-slate-700">{company.description}</p>
+                <p className="whitespace-pre-line break-words text-[15px] leading-relaxed text-fg-secondary">{company.description}</p>
               ) : (
-                <p className="text-sm text-slate-500">This company hasn&apos;t added a description yet.</p>
+                <p className="text-sm text-fg-muted">This company hasn&apos;t added a description yet.</p>
               )}
             </div>
           </Card>
 
           <section aria-labelledby="open-roles">
             <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 id="open-roles" className="text-lg font-semibold text-slate-900">Open roles</h2>
-              {openJobs.length > 0 && <span className="text-sm text-slate-500">{pluralize(openJobs.length, 'role')}</span>}
+              <h2 id="open-roles" className="text-lg font-semibold text-fg">Open roles</h2>
+              {openJobs.length > 0 && <span className="text-sm text-fg-muted">{pluralize(openJobs.length, 'role')}</span>}
             </div>
             {openJobs.length === 0 ? (
               <Card>

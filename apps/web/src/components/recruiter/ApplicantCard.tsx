@@ -17,7 +17,7 @@ export function ActivityCounts({ app, className }: { app: Application; className
   const messages = app.messageCount ?? 0;
   if (!notes && !messages) return null;
   return (
-    <span className={cn('inline-flex items-center gap-2.5 text-xs text-slate-500', className)}>
+    <span className={cn('inline-flex items-center gap-2.5 text-xs text-fg-muted', className)}>
       {notes > 0 && (
         <span className="inline-flex items-center gap-1" title={`${notes} private note${notes === 1 ? '' : 's'}`}>
           <StickyNote className="w-3.5 h-3.5" aria-hidden />
@@ -49,11 +49,11 @@ export function ApplicantCard({ app, selected, onToggle, onOpen, onMove }: {
     <div
       onClick={() => onOpen(app)}
       className={cn(
-        'group relative bg-white rounded-xl border border-slate-200 px-3 py-3 sm:px-4 cursor-pointer transition-colors hover:border-primary-300',
+        'group relative bg-surface rounded-xl border border-line px-3 py-3 sm:px-4 cursor-pointer transition-colors hover:border-primary-300',
         'grid grid-cols-[auto_minmax(0,1fr)_auto] items-start md:items-center gap-x-3 gap-y-2',
         'md:grid-cols-[auto_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_7rem_auto]',
         selected && 'border-primary-400 ring-2 ring-primary-100',
-        app.status === 'WITHDRAWN' && 'bg-slate-50'
+        app.status === 'WITHDRAWN' && 'bg-muted'
       )}
     >
       <input
@@ -64,7 +64,7 @@ export function ApplicantCard({ app, selected, onToggle, onOpen, onMove }: {
         disabled={!selectable}
         aria-label={`Select ${app.candidateName}`}
         title={selectable ? undefined : 'Withdrawn applications are read-only'}
-        className="mt-2.5 md:mt-0 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-2.5 md:mt-0 w-4 h-4 rounded border-line-strong text-primary-600 focus:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
       />
 
       <div className="flex items-start md:items-center gap-3 min-w-0">
@@ -73,18 +73,18 @@ export function ApplicantCard({ app, selected, onToggle, onOpen, onMove }: {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onOpen(app); }}
-            className="font-semibold text-sm text-slate-900 hover:text-primary-600 text-left break-words focus:outline-none focus-visible:underline"
+            className="font-semibold text-sm text-fg hover:text-primary-600 text-left break-words focus:outline-none focus-visible:underline"
           >
             {app.candidateName}
           </button>
-          <p className="text-xs text-slate-500 truncate">{app.candidateHeadline || app.candidateEmail}</p>
+          <p className="text-xs text-fg-muted truncate">{app.candidateHeadline || app.candidateEmail}</p>
           {/* Mobile-only meta */}
           <div className="md:hidden mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             <Badge tone={APPLICATION_STATUS_STYLES[app.status]}>{APPLICATION_STATUS_LABELS[app.status]}</Badge>
             <StarDisplay rating={app.rating} />
             <ActivityCounts app={app} />
             <InterviewChip at={app.nextInterviewAt} response={app.nextInterviewResponse} />
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-fg-subtle">
               <time dateTime={app.appliedAt} title={formatDate(app.appliedAt)}>{timeAgo(app.appliedAt)}</time>
             </span>
           </div>
@@ -103,7 +103,7 @@ export function ApplicantCard({ app, selected, onToggle, onOpen, onMove }: {
         <InterviewChip at={app.nextInterviewAt} response={app.nextInterviewResponse} />
       </div>
 
-      <span className="hidden md:block text-xs text-slate-500">
+      <span className="hidden md:block text-xs text-fg-muted">
         <time dateTime={app.appliedAt} title={formatDate(app.appliedAt)}>{timeAgo(app.appliedAt)}</time>
       </span>
 

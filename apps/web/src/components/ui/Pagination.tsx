@@ -9,9 +9,9 @@ export function Pagination({ page, totalPages, onChange }: { page: number; total
       <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => onChange(page - 1)}>
         <ChevronLeft className="w-4 h-4" aria-hidden /> Previous
       </Button>
-      <span className="text-sm text-slate-500">
-        Page <span className="font-medium text-slate-900">{page + 1}</span> of{' '}
-        <span className="font-medium text-slate-900">{totalPages}</span>
+      <span className="text-sm text-fg-muted">
+        Page <span className="font-medium text-fg">{page + 1}</span> of{' '}
+        <span className="font-medium text-fg">{totalPages}</span>
       </span>
       <Button variant="secondary" size="sm" disabled={page >= totalPages - 1} onClick={() => onChange(page + 1)}>
         Next <ChevronRight className="w-4 h-4" aria-hidden />

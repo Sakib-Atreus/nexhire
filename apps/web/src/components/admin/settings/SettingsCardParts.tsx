@@ -32,8 +32,8 @@ export function SettingsCardFooter({ dirty, saving, invalid, onDiscard, onSave, 
   note?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-xl">
-      <p className="text-xs text-slate-500 min-w-0">{note ?? (dirty ? 'You have unsaved changes.' : 'All changes saved.')}</p>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-5 py-4 border-t border-line-subtle bg-muted/60 rounded-b-xl">
+      <p className="text-xs text-fg-muted min-w-0">{note ?? (dirty ? 'You have unsaved changes.' : 'All changes saved.')}</p>
       <div className="flex flex-col-reverse gap-2 sm:flex-row">
         <Button variant="secondary" onClick={onDiscard} disabled={!dirty || saving}>Discard</Button>
         <Button onClick={onSave} loading={saving} disabled={!dirty || invalid}>

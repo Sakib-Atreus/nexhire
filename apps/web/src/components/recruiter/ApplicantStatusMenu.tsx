@@ -110,7 +110,7 @@ export function ApplicantStatusMenu({ app, onMove, size = 'sm', className }: {
         aria-controls={open ? menuId : undefined}
         aria-label={`Move ${app.candidateName} to another stage`}
         className={size === 'xs'
-          ? 'inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
+          ? 'inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-fg-tertiary hover:bg-subtle hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
           : buttonClasses('secondary', 'sm')}
       >
         Move to
@@ -125,7 +125,7 @@ export function ApplicantStatusMenu({ app, onMove, size = 'sm', className }: {
           aria-label={`Move ${app.candidateName} to`}
           onKeyDown={onMenuKeyDown}
           style={style}
-          className="fixed bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-[55]"
+          className="fixed bg-surface rounded-xl border border-line shadow-lg py-1.5 z-[55]"
         >
           {targets.map((t) => (
             <button
@@ -134,8 +134,8 @@ export function ApplicantStatusMenu({ app, onMove, size = 'sm', className }: {
               role="menuitem"
               onClick={() => choose(t.status)}
               className={cn(
-                'w-full h-9 px-3.5 text-left text-sm flex items-center gap-2.5 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none',
-                t.status === 'REJECTED' ? 'text-rose-700' : t.status === 'HIRED' ? 'text-emerald-700' : 'text-slate-700'
+                'w-full h-9 px-3.5 text-left text-sm flex items-center gap-2.5 hover:bg-muted focus:bg-muted focus:outline-none',
+                t.status === 'REJECTED' ? 'text-rose-700' : t.status === 'HIRED' ? 'text-emerald-700' : 'text-fg-secondary'
               )}
             >
               <span className={cn('w-2 h-2 rounded-full flex-shrink-0', APPLICATION_STATUS_BAR[t.status])} aria-hidden />

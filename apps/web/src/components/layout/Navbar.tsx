@@ -22,11 +22,11 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
           const last = i === crumbs.length - 1;
           return (
             <li key={c.label} className="flex items-center gap-1.5 min-w-0">
-              {i > 0 && <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" aria-hidden />}
+              {i > 0 && <ChevronRight className="w-4 h-4 text-fg-faint flex-shrink-0" aria-hidden />}
                 {c.href && !last ? (
-                  <Link href={c.href} className="text-slate-500 hover:text-slate-800 transition-colors">{c.label}</Link>
+                  <Link href={c.href} className="text-fg-muted hover:text-fg-soft transition-colors">{c.label}</Link>
                 ) : (
-                  <span className={cn('truncate', last ? 'font-semibold text-slate-900' : 'text-slate-500')} aria-current={last ? 'page' : undefined}>
+                  <span className={cn('truncate', last ? 'font-semibold text-fg' : 'text-fg-muted')} aria-current={last ? 'page' : undefined}>
                     {c.label}
                   </span>
                 )}
@@ -48,7 +48,7 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
+      <header className="sticky top-0 z-20 bg-surface/95 backdrop-blur border-b border-line">
         <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <BrandMark href="/" size="sm" className="lg:hidden" />
           <Breadcrumbs pathname={pathname} />
@@ -63,19 +63,19 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
               <Link
                 href="/notifications"
                 aria-label={bellLabel}
-                className="relative p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                className="relative p-2 rounded-lg text-fg-tertiary hover:bg-subtle transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               >
                 <Bell className="w-5 h-5" aria-hidden />
                 {unreadCount > 0 && (
                   <span
-                    className="absolute top-1 right-1 min-w-[1.125rem] h-[1.125rem] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-white"
+                    className="absolute top-1 right-1 min-w-[1.125rem] h-[1.125rem] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-surface"
                     aria-hidden
                   >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Link>
-              <span className="hidden sm:block w-px h-6 bg-slate-200" aria-hidden />
+              <span className="hidden sm:block w-px h-6 bg-emphasis" aria-hidden />
               <UserMenu user={user} />
             </div>
           )}
@@ -85,7 +85,7 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
       {mobileNav.length > 0 && (
         <nav
           aria-label="Main"
-          className="lg:hidden fixed bottom-0 inset-x-0 z-30 h-[calc(3.5rem+env(safe-area-inset-bottom))] bg-white border-t border-slate-200 flex pb-[env(safe-area-inset-bottom)]"
+          className="lg:hidden fixed bottom-0 inset-x-0 z-30 h-[calc(3.5rem+env(safe-area-inset-bottom))] bg-surface border-t border-line flex pb-[env(safe-area-inset-bottom)]"
         >
           {mobileNav.map((item) => {
             const active = isNavActive(item.href, pathname);
@@ -99,13 +99,13 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
                 aria-label={isNotif && unreadCount > 0 ? `${item.label}, ${unreadCount} unread` : undefined}
                 className={cn(
                   'flex-1 min-w-0 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors',
-                  active ? 'text-primary-600' : 'text-slate-500 hover:text-slate-800'
+                  active ? 'text-primary-600' : 'text-fg-muted hover:text-fg-soft'
                 )}
               >
                 <span className="relative">
                   <Icon className="w-5 h-5" aria-hidden />
                   {isNotif && unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white" aria-hidden />
+                    <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-surface" aria-hidden />
                   )}
                 </span>
                 <span className="truncate max-w-full px-0.5">{item.short ?? item.label}</span>

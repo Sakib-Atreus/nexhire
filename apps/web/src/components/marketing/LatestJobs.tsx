@@ -24,7 +24,7 @@ export function JobCard({ job }: { job: Job }) {
       <div className="flex items-start gap-3">
         <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="sm" />
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-slate-900 leading-snug line-clamp-2 group-hover:text-primary-700">
+          <h3 className="font-semibold text-fg leading-snug line-clamp-2 group-hover:text-primary-700">
             {/* Overlay link: makes the whole card clickable while the company link stays separate. */}
             <Link
               href={`/jobs/${job.id}`}
@@ -33,7 +33,7 @@ export function JobCard({ job }: { job: Job }) {
               {job.title}
             </Link>
           </h3>
-          <p className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-slate-600">
+          <p className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-fg-tertiary">
             {job.companySlug ? (
               <Link
                 href={`/companies/${job.companySlug}`}
@@ -48,7 +48,7 @@ export function JobCard({ job }: { job: Job }) {
           </p>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-muted">
         {job.location && (
           <span className="inline-flex items-center gap-1 min-w-0">
             <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
@@ -63,9 +63,9 @@ export function JobCard({ job }: { job: Job }) {
           </Badge>
         )}
       </div>
-      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
-        <span className="font-semibold text-slate-800 truncate">{salary ?? 'Salary not listed'}</span>
-        <span className="inline-flex items-center gap-1 text-slate-400 whitespace-nowrap">
+      <div className="mt-4 pt-4 border-t border-line-subtle flex items-center justify-between gap-3 text-xs">
+        <span className="font-semibold text-fg-soft truncate">{salary ?? 'Salary not listed'}</span>
+        <span className="inline-flex items-center gap-1 text-fg-subtle whitespace-nowrap">
           <Clock className="w-3.5 h-3.5" aria-hidden />
           {timeAgo(job.createdAt)}
         </span>
@@ -85,7 +85,7 @@ export function JobCardSkeleton() {
         </div>
       </div>
       <Skeleton className="mt-5 h-3 w-2/3" />
-      <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between">
+      <div className="mt-4 pt-4 border-t border-line-subtle flex justify-between">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-3 w-16" />
       </div>
@@ -103,14 +103,14 @@ export function LatestJobs() {
   const total = data?.totalElements ?? 0;
 
   return (
-    <section aria-labelledby="latest-heading" className="py-16 sm:py-20 bg-slate-50 border-b border-slate-200/70">
+    <section aria-labelledby="latest-heading" className="py-16 sm:py-20 bg-canvas border-b border-line/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
-            <h2 id="latest-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            <h2 id="latest-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
               Latest openings
             </h2>
-            <p className="mt-2 text-slate-500">
+            <p className="mt-2 text-fg-muted">
               {isLoading ? 'Loading the newest roles…' : 'Recently posted roles from teams hiring on NexHire.'}
             </p>
           </div>

@@ -168,10 +168,10 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
     >
       <form id={`request-time-${i.id}`} onSubmit={submit} className="space-y-5" noValidate>
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-slate-700">
+          <legend className="text-sm font-medium text-fg-secondary">
             Suggest {rows.length === 1 ? 'a time' : 'times'} that work for you
           </legend>
-          <p className="-mt-1 text-xs text-slate-500">
+          <p className="-mt-1 text-xs text-fg-muted">
             Same length: {formatDuration(i.durationMinutes)}. Your time zone. Up to {MAX_SUGGESTIONS} options.
           </p>
           <ol className="space-y-3">
@@ -182,7 +182,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
                   <div className="flex items-end gap-2">
                     <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 min-[400px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                       <label className="min-w-0">
-                        <span className="mb-1 block text-xs text-slate-500">Option {idx + 1} · date</span>
+                        <span className="mb-1 block text-xs text-fg-muted">Option {idx + 1} · date</span>
                         <Input
                           type="date"
                           value={row.date}
@@ -193,7 +193,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
                         />
                       </label>
                       <label className="min-w-0">
-                        <span className="mb-1 block text-xs text-slate-500">Time</span>
+                        <span className="mb-1 block text-xs text-fg-muted">Time</span>
                         <Input
                           type="time"
                           value={row.time}
@@ -208,7 +208,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-10 px-2.5 text-slate-500 hover:text-rose-600"
+                        className="h-10 px-2.5 text-fg-muted hover:text-rose-600"
                         onClick={() => setRows((rs) => rs.filter((r) => r.key !== row.key))}
                         aria-label={`Remove option ${idx + 1}`}
                       >
@@ -219,7 +219,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
                   {errors[idx] ? (
                     <p className="text-xs text-rose-600" role="alert">{errors[idx]}</p>
                   ) : iso ? (
-                    <p className="text-xs text-slate-500">{formatInterviewWhen({ scheduledAt: iso, durationMinutes: i.durationMinutes })}</p>
+                    <p className="text-xs text-fg-muted">{formatInterviewWhen({ scheduledAt: iso, durationMinutes: i.durationMinutes })}</p>
                   ) : null}
                   <ClashNote clashes={clashes} compact />
                 </li>
@@ -234,8 +234,8 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
         </fieldset>
 
         <div className="space-y-1.5">
-          <label htmlFor={noteId} className="block text-sm font-medium text-slate-700">
-            Note <span className="font-normal text-slate-400">(optional)</span>
+          <label htmlFor={noteId} className="block text-sm font-medium text-fg-secondary">
+            Note <span className="font-normal text-fg-subtle">(optional)</span>
           </label>
           <Textarea
             id={noteId}
@@ -245,7 +245,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
             onChange={(e) => setNote(e.target.value)}
             placeholder="e.g. I have a class on Tuesday mornings — afternoons work best."
           />
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-fg-muted">
             {i.companyName} will see your note.
             {note.length > NOTE_MAX - 200 && <span className="ml-1 tabular-nums">{note.length}/{NOTE_MAX}</span>}
           </p>
@@ -300,8 +300,8 @@ function DeclineModal({ open, onClose, interview: i }: { open: boolean; onClose:
       }
     >
       <div className="space-y-1.5">
-        <label htmlFor={reasonId} className="block text-sm font-medium text-slate-700">
-          Reason <span className="font-normal text-slate-400">(optional)</span>
+        <label htmlFor={reasonId} className="block text-sm font-medium text-fg-secondary">
+          Reason <span className="font-normal text-fg-subtle">(optional)</span>
         </label>
         <Textarea
           id={reasonId}
@@ -311,7 +311,7 @@ function DeclineModal({ open, onClose, interview: i }: { open: boolean; onClose:
           onChange={(e) => setReason(e.target.value)}
           placeholder="Let the hiring team know why, if you like."
         />
-        {reason.length > NOTE_MAX - 200 && <p className="text-xs text-slate-500 tabular-nums">{reason.length}/{NOTE_MAX}</p>}
+        {reason.length > NOTE_MAX - 200 && <p className="text-xs text-fg-muted tabular-nums">{reason.length}/{NOTE_MAX}</p>}
         {serverError && <p className="text-sm text-rose-600" role="alert">{serverError}</p>}
       </div>
     </Modal>
@@ -378,7 +378,7 @@ export function InterviewResponsePanel({ interview: i, compact, className }: {
           <StateIcon className="w-4 h-4 flex-shrink-0" aria-hidden />
           {state.text}
           {answered && i.respondedAt && (
-            <span className="font-normal text-xs text-slate-500">
+            <span className="font-normal text-xs text-fg-muted">
               · <time dateTime={i.respondedAt}>{new Date(i.respondedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</time>
             </span>
           )}
@@ -391,11 +391,11 @@ export function InterviewResponsePanel({ interview: i, compact, className }: {
       </div>
 
       {i.response === 'NEW_TIME_REQUESTED' && i.proposedTimes.length > 0 && (
-        <div className="text-xs text-slate-600">
+        <div className="text-xs text-fg-tertiary">
           <p>Your suggestions — {i.companyName} will confirm one:</p>
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {i.proposedTimes.map((t) => (
-              <li key={t} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 font-medium text-slate-700 ring-1 ring-inset ring-amber-200">
+              <li key={t} className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 font-medium text-fg-secondary ring-1 ring-inset ring-amber-200">
                 <CalendarClock className="w-3 h-3 text-amber-600" aria-hidden />
                 <time dateTime={t}>{formatSlot(t)}</time>
               </li>
@@ -404,12 +404,12 @@ export function InterviewResponsePanel({ interview: i, compact, className }: {
         </div>
       )}
       {answered && i.responseNote && (i.response === 'NEW_TIME_REQUESTED' || i.response === 'DECLINED') && (
-        <p className="text-xs text-slate-600 whitespace-pre-line break-words">
-          <span className="font-medium text-slate-700">Your note:</span> {i.responseNote}
+        <p className="text-xs text-fg-tertiary whitespace-pre-line break-words">
+          <span className="font-medium text-fg-secondary">Your note:</span> {i.responseNote}
         </p>
       )}
       {i.response === 'AWAITING' && !compact && (
-        <p className="text-xs text-slate-600">Let {i.companyName} know whether this time works for you.</p>
+        <p className="text-xs text-fg-tertiary">Let {i.companyName} know whether this time works for you.</p>
       )}
 
       <ClashNote clashes={clashes} compact={compact} />

@@ -291,13 +291,13 @@ export function InterviewsTab({ applicationId, candidateName, readOnly, onSendRe
             const past = new Date(iv.scheduledAt).getTime() < Date.now();
             const scheduled = iv.status === 'SCHEDULED';
             return (
-              <li key={iv.id} className="rounded-xl border border-slate-200 p-4">
+              <li key={iv.id} className="rounded-xl border border-line p-4">
                 <div className="flex flex-wrap items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-sm font-semibold text-fg">
                       <time dateTime={iv.scheduledAt}>{formatLongDateTime(iv.scheduledAt)}</time>
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="mt-0.5 text-xs text-fg-muted flex flex-wrap items-center gap-x-3 gap-y-1">
                       <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" aria-hidden /> {iv.durationMinutes} min</span>
                       <span className="inline-flex items-center gap-1"><Icon className="w-3.5 h-3.5" aria-hidden /> {INTERVIEW_TYPE_LABELS[iv.type]}</span>
                       {iv.status === 'SCHEDULED' && past && <span className="text-amber-700">Time has passed</span>}
@@ -320,16 +320,16 @@ export function InterviewsTab({ applicationId, candidateName, readOnly, onSendRe
                   />
                 )}
                 {iv.location?.trim() && (
-                  <p className="mt-2 text-sm text-slate-700 break-words">
-                    <span className="text-slate-500">{iv.type === 'VIDEO' ? 'Link: ' : iv.type === 'PHONE' ? 'Phone: ' : 'Address: '}</span>
+                  <p className="mt-2 text-sm text-fg-secondary break-words">
+                    <span className="text-fg-muted">{iv.type === 'VIDEO' ? 'Link: ' : iv.type === 'PHONE' ? 'Phone: ' : 'Address: '}</span>
                     <Location interview={iv} />
                   </p>
                 )}
                 {iv.message?.trim() && (
-                  <p className="mt-2 text-sm text-slate-600 whitespace-pre-line break-words bg-slate-50 rounded-lg px-3 py-2">{iv.message}</p>
+                  <p className="mt-2 text-sm text-fg-tertiary whitespace-pre-line break-words bg-muted rounded-lg px-3 py-2">{iv.message}</p>
                 )}
                 {!readOnly && iv.status === 'SCHEDULED' && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                  <div className="mt-3 pt-3 border-t border-line-subtle flex flex-wrap gap-2">
                     <Button size="sm" variant="secondary" onClick={() => { setEditing(iv); setScheduling(true); }}>Reschedule</Button>
                     <Button size="sm" variant="secondary" onClick={() => setStatus(iv, 'COMPLETED')} disabled={update.isPending}>
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" aria-hidden /> Mark completed

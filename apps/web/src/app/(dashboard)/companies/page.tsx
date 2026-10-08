@@ -79,7 +79,7 @@ function CompaniesView() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <label htmlFor="company-search" className="sr-only">Search companies</label>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" aria-hidden />
             <Input
               id="company-search"
               type="search"
@@ -90,7 +90,7 @@ function CompaniesView() {
               autoComplete="off"
             />
           </div>
-          <p className="text-sm text-slate-500 sm:whitespace-nowrap" aria-live="polite">
+          <p className="text-sm text-fg-muted sm:whitespace-nowrap" aria-live="polite">
             {data ? pluralize(data.totalElements, q ? 'matching company' : 'company', q ? 'matching companies' : 'companies') : ' '}
           </p>
         </div>

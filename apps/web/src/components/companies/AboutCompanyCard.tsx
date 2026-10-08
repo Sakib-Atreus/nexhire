@@ -12,10 +12,10 @@ export function AboutCompanyCard({ job, className }: { job: Job; className?: str
   return (
     <Card className={className}>
       <div className="p-5">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">About {job.companyName}</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wide text-fg-muted">About {job.companyName}</h2>
         <div className="mt-3 flex items-center gap-3">
           <CompanyLogo name={job.companyName} src={job.companyLogoUrl} size="sm" />
-          <p className="flex min-w-0 items-center gap-1 font-semibold text-slate-900">
+          <p className="flex min-w-0 items-center gap-1 font-semibold text-fg">
             <span className="min-w-0 truncate">{job.companyName}</span>
             {verified && <VerifiedIcon />}
           </p>

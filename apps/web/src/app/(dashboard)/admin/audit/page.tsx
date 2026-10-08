@@ -117,7 +117,7 @@ function AuditLogBrowser() {
           </div>
           <div className="relative flex-1 min-w-0">
             <label htmlFor="audit-actor" className="sr-only">Administrator name or email</label>
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" aria-hidden />
             <Input
               id="audit-actor"
               type="search"
@@ -152,8 +152,8 @@ function AuditLogBrowser() {
 
       {!isLoading && !isError && (
         <div className="flex items-center justify-between gap-3 mb-3 min-h-8">
-          <p className="text-sm text-slate-600" aria-live="polite">
-            <span className="font-semibold text-slate-900">{pluralize(total, 'entry', 'entries')}</span>
+          <p className="text-sm text-fg-tertiary" aria-live="polite">
+            <span className="font-semibold text-fg">{pluralize(total, 'entry', 'entries')}</span>
             {hasFilters ? ' match your filters' : ' in total'}
           </p>
           <div className="flex items-center gap-2">

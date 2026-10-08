@@ -114,7 +114,7 @@ function AdminReportsContent() {
       />
 
       <div className="mb-4 -mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0">
-        <div role="tablist" aria-label="Report status" className="inline-flex gap-1 rounded-lg bg-slate-100 p-1">
+        <div role="tablist" aria-label="Report status" className="inline-flex gap-1 rounded-lg bg-subtle p-1">
           {TABS.map((t, i) => {
             const selected = t.id === tab;
             const count = t.id === 'open' ? openCount?.totalElements : undefined;
@@ -133,7 +133,7 @@ function AdminReportsContent() {
                 className={cn(
                   'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                  selected ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  selected ? 'bg-surface text-fg shadow-sm' : 'text-fg-tertiary hover:text-fg'
                 )}
               >
                 {t.label}
@@ -164,7 +164,7 @@ function AdminReportsContent() {
           </Card>
         ) : (
           <>
-            <p className="mb-3 text-sm text-slate-500" aria-live="polite">
+            <p className="mb-3 text-sm text-fg-muted" aria-live="polite">
               {pluralize(data!.totalElements, tab === 'all' ? 'report' : `${current.label.toLowerCase()} report`)}
             </p>
             <ul className={cn('space-y-4', isPlaceholderData && 'opacity-60 transition-opacity')}>

@@ -20,8 +20,8 @@ const TYPE_ICONS: Record<NotificationType, { icon: LucideIcon; tone: string }> =
   APPLICATION_RECEIVED: { icon: UserPlus, tone: 'bg-primary-50 text-primary-600' },
   APPLICATION_STATUS_CHANGED: { icon: RefreshCw, tone: 'bg-sky-50 text-sky-600' },
   JOB_POSTED: { icon: Briefcase, tone: 'bg-emerald-50 text-emerald-600' },
-  JOB_CLOSED: { icon: Archive, tone: 'bg-slate-100 text-slate-600' },
-  GENERAL: { icon: Info, tone: 'bg-slate-100 text-slate-600' },
+  JOB_CLOSED: { icon: Archive, tone: 'bg-subtle text-fg-tertiary' },
+  GENERAL: { icon: Info, tone: 'bg-subtle text-fg-tertiary' },
   INTERVIEW_SCHEDULED: { icon: CalendarClock, tone: 'bg-indigo-50 text-indigo-600' },
   INTERVIEW_UPDATED: { icon: CalendarClock, tone: 'bg-amber-50 text-amber-600' },
   MESSAGE_RECEIVED: { icon: MessageSquare, tone: 'bg-sky-50 text-sky-600' },
@@ -72,7 +72,7 @@ function NotificationItem({ n, role }: { n: Notification; role?: Role }) {
   }
 
   return (
-    <li className={cn('relative flex gap-3 sm:gap-4 px-4 sm:px-5 py-4 transition-colors', !n.read && 'bg-primary-50/40', target && 'hover:bg-slate-50')}>
+    <li className={cn('relative flex gap-3 sm:gap-4 px-4 sm:px-5 py-4 transition-colors', !n.read && 'bg-primary-50/40', target && 'hover:bg-muted')}>
       <span className={cn('w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0', tone)}>
         <Icon className="w-4 h-4" aria-hidden />
       </span>
@@ -82,12 +82,12 @@ function NotificationItem({ n, role }: { n: Notification; role?: Role }) {
             <button
               type="button"
               onClick={open}
-              className="text-left text-sm font-semibold text-slate-900 hover:text-primary-700 focus:outline-none focus-visible:underline after:absolute after:inset-0"
+              className="text-left text-sm font-semibold text-fg hover:text-primary-700 focus:outline-none focus-visible:underline after:absolute after:inset-0"
             >
               {n.title}
             </button>
           ) : (
-            <p className="text-sm font-semibold text-slate-900">{n.title}</p>
+            <p className="text-sm font-semibold text-fg">{n.title}</p>
           )}
           {!n.read && (
             <>
@@ -96,8 +96,8 @@ function NotificationItem({ n, role }: { n: Notification; role?: Role }) {
             </>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-slate-600 break-words">{humanize(n.message)}</p>
-        <p className="mt-1.5 text-xs text-slate-500">
+        <p className="mt-0.5 text-sm text-fg-tertiary break-words">{humanize(n.message)}</p>
+        <p className="mt-1.5 text-xs text-fg-muted">
           <time dateTime={n.createdAt} title={formatDate(n.createdAt)}>{timeAgo(n.createdAt)}</time>
           {target && <span className="text-primary-600 font-medium"> · {target.label}</span>}
         </p>
@@ -109,7 +109,7 @@ function NotificationItem({ n, role }: { n: Notification; role?: Role }) {
           disabled={markRead.isPending}
           aria-label={`Mark "${n.title}" as read`}
           title="Mark as read"
-          className="relative z-10 self-start p-2 -m-1 rounded-lg text-slate-400 hover:text-primary-700 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
+          className="relative z-10 self-start p-2 -m-1 rounded-lg text-fg-subtle hover:text-primary-700 hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
         >
           <Check className="w-4 h-4" aria-hidden />
         </button>
@@ -157,7 +157,7 @@ export default function NotificationsPage() {
 
       <Card className="overflow-hidden">
         {isLoading ? (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-line-subtle">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex gap-4 px-5 py-4">
                 <Skeleton className="w-9 h-9 rounded-full" />
@@ -183,13 +183,13 @@ export default function NotificationsPage() {
             }
           />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line-subtle">
             {items.map((n) => <NotificationItem key={n.id} n={n} role={role} />)}
           </ul>
         )}
       </Card>
       {data && data.totalElements > items.length && (
-        <p className="mt-3 text-xs text-slate-500">Showing your {items.length} most recent notifications.</p>
+        <p className="mt-3 text-xs text-fg-muted">Showing your {items.length} most recent notifications.</p>
       )}
     </div>
   );

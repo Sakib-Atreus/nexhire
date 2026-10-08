@@ -53,16 +53,16 @@ function JobRow({ job, currentUserId, onDelete }: { job: Job; currentUserId?: st
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Link
                 href={isDraft ? `/jobs/${job.id}/edit` : `/jobs/${job.id}`}
-                className="font-semibold text-slate-900 hover:text-primary-600 break-words min-w-0"
+                className="font-semibold text-fg hover:text-primary-600 break-words min-w-0"
               >
                 {job.title}
               </Link>
               <Badge tone={JOB_STATUS_STYLES[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
             </div>
-            <p className="text-sm text-slate-500 mt-0.5 truncate">
+            <p className="text-sm text-fg-muted mt-0.5 truncate">
               {[job.companyName, JOB_TYPE_LABELS[job.jobType], openings > 1 ? `${openings} openings` : null].filter(Boolean).join(' · ')}
             </p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-fg-muted">
               {byTeammate && (
                 <span className="inline-flex items-center gap-1 min-w-0">
                   <UserRound className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
@@ -166,8 +166,8 @@ function MyJobs() {
         <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {stats.map((s) => (
             <Card key={s.label} className="px-3 py-3 sm:px-5 sm:py-4">
-              <dt className="text-xs font-medium text-slate-500">{s.label}</dt>
-              <dd className="mt-1 text-xl sm:text-2xl font-bold text-slate-900 tabular-nums">
+              <dt className="text-xs font-medium text-fg-muted">{s.label}</dt>
+              <dd className="mt-1 text-xl sm:text-2xl font-bold text-fg tabular-nums">
                 {isLoading ? <Skeleton className="h-7 w-10" /> : s.value.toLocaleString('en-US')}
               </dd>
             </Card>
@@ -186,11 +186,11 @@ function MyJobs() {
               aria-pressed={active}
               className={cn(
                 'flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
-                active ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                active ? 'bg-primary-600 text-white border-primary-600' : 'bg-surface text-fg-tertiary border-line hover:bg-muted'
               )}
             >
               {s ? FILTER_LABELS[s] : 'All'}
-              <span className={cn('text-xs tabular-nums', active ? 'text-primary-100' : 'text-slate-400')}>{countFor(s)}</span>
+              <span className={cn('text-xs tabular-nums', active ? 'text-primary-100' : 'text-fg-subtle')}>{countFor(s)}</span>
             </button>
           );
         })}
@@ -254,7 +254,7 @@ function MyJobs() {
       )}
 
       {data && data.totalElements > jobs.length && (
-        <p className="mt-4 text-xs text-slate-500 text-center">
+        <p className="mt-4 text-xs text-fg-muted text-center">
           Showing your {jobs.length} most recent jobs of {data.totalElements.toLocaleString('en-US')}.
         </p>
       )}

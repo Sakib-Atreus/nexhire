@@ -21,7 +21,7 @@ function NameLink({ user, isSelf }: { user: User; isSelf: boolean }) {
     <div className="flex items-center gap-2 min-w-0">
       <Link
         href={`/admin/users/${user.id}`}
-        className="font-medium text-slate-900 hover:text-primary-700 truncate focus:outline-none focus-visible:underline"
+        className="font-medium text-fg hover:text-primary-700 truncate focus:outline-none focus-visible:underline"
       >
         {user.fullName}
       </Link>
@@ -34,7 +34,7 @@ function NameLink({ user, isSelf }: { user: User; isSelf: boolean }) {
 export function UsersTable({ users, currentUserId, busyId, onAction }: ListProps) {
   return (
     <table className="hidden md:table w-full text-sm">
-      <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
+      <thead className="bg-muted text-left text-xs font-medium text-fg-muted">
         <tr>
           <th scope="col" className="px-5 py-3">User</th>
           <th scope="col" className="px-5 py-3">Role</th>
@@ -43,17 +43,17 @@ export function UsersTable({ users, currentUserId, busyId, onAction }: ListProps
           <th scope="col" className="px-5 py-3 text-right"><span className="sr-only">Actions</span></th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody className="divide-y divide-line-subtle">
         {users.map((u) => {
           const isSelf = u.id === currentUserId;
           return (
-            <tr key={u.id} className="hover:bg-slate-50/60">
+            <tr key={u.id} className="hover:bg-muted/60">
               <td className="px-5 py-3 max-w-xs lg:max-w-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <Avatar name={u.fullName} src={u.avatarUrl} size="sm" />
                   <div className="min-w-0">
                     <NameLink user={u} isSelf={isSelf} />
-                    <p className="text-slate-500 truncate">{u.email}</p>
+                    <p className="text-fg-muted truncate">{u.email}</p>
                   </div>
                 </div>
               </td>
@@ -64,7 +64,7 @@ export function UsersTable({ users, currentUserId, busyId, onAction }: ListProps
                 </div>
               </td>
               <td className="px-5 py-3"><UserStatusBadge enabled={u.enabled} /></td>
-              <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{formatDate(u.createdAt)}</td>
+              <td className="px-5 py-3 text-fg-muted whitespace-nowrap">{formatDate(u.createdAt)}</td>
               <td className="px-5 py-3 text-right">
                 <UserActionsMenu user={u} isSelf={isSelf} busy={busyId === u.id} onAction={onAction} />
               </td>
@@ -79,7 +79,7 @@ export function UsersTable({ users, currentUserId, busyId, onAction }: ListProps
 /** Stacked cards for small screens. */
 export function UsersCards({ users, currentUserId, busyId, onAction }: ListProps) {
   return (
-    <ul className="md:hidden divide-y divide-slate-100">
+    <ul className="md:hidden divide-y divide-line-subtle">
       {users.map((u) => {
         const isSelf = u.id === currentUserId;
         return (
@@ -88,13 +88,13 @@ export function UsersCards({ users, currentUserId, busyId, onAction }: ListProps
               <Avatar name={u.fullName} src={u.avatarUrl} size="sm" />
               <div className="min-w-0 flex-1">
                 <NameLink user={u} isSelf={isSelf} />
-                <p className="text-sm text-slate-500 truncate">{u.email}</p>
+                <p className="text-sm text-fg-muted truncate">{u.email}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <RoleBadge role={u.role} />
                   {u.role === 'RECRUITER' && <VerifiedBadge verified={u.verified} />}
                   <UserStatusBadge enabled={u.enabled} />
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500">Joined {formatDate(u.createdAt)}</p>
+                <p className="mt-1.5 text-xs text-fg-muted">Joined {formatDate(u.createdAt)}</p>
               </div>
               <UserActionsMenu user={u} isSelf={isSelf} busy={busyId === u.id} onAction={onAction} />
             </div>
@@ -107,7 +107,7 @@ export function UsersCards({ users, currentUserId, busyId, onAction }: ListProps
 
 export function UsersListSkeleton() {
   return (
-    <div className="divide-y divide-slate-100" aria-busy="true" aria-label="Loading users">
+    <div className="divide-y divide-line-subtle" aria-busy="true" aria-label="Loading users">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-5 py-4">
           <Skeleton className="w-9 h-9 rounded-full" />

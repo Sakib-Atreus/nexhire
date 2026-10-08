@@ -57,7 +57,7 @@ export function SkillsInput({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5 min-h-[2.5rem] rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/30 focus-within:border-primary-500 transition">
+      <div className="flex flex-wrap gap-1.5 min-h-[2.5rem] rounded-lg border border-line-strong bg-surface px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/30 focus-within:border-primary-500 transition">
         {value.map((skill) => (
           <span
             key={skill}
@@ -82,11 +82,11 @@ export function SkillsInput({
             onKeyDown={onKeyDown}
             aria-label={ariaLabel}
             placeholder={value.length === 0 ? placeholder : ''}
-            className="flex-1 min-w-[8rem] bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
+            className="flex-1 min-w-[8rem] bg-transparent text-sm text-fg-soft placeholder:text-fg-subtle outline-none"
           />
         )}
       </div>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-fg-subtle">
         {value.length}/{maxSkills} skills · Press Enter or comma to add
       </p>
     </div>

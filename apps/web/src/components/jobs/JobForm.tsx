@@ -187,16 +187,16 @@ function Section({ step, icon: Icon, title, description, children, bodyClassName
 }) {
   return (
     <Card>
-      <div className="flex items-start gap-3 px-4 sm:px-6 py-4 border-b border-slate-100">
+      <div className="flex items-start gap-3 px-4 sm:px-6 py-4 border-b border-line-subtle">
         <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600" aria-hidden>
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-900">
-            <span className="text-slate-400 font-medium mr-1.5">{step}.</span>
+          <h2 className="text-sm font-semibold text-fg">
+            <span className="text-fg-subtle font-medium mr-1.5">{step}.</span>
             {title}
           </h2>
-          {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+          {description && <p className="text-xs text-fg-muted mt-0.5">{description}</p>}
         </div>
       </div>
       <div className={cn('p-4 sm:p-6', bodyClassName ?? 'grid grid-cols-1 sm:grid-cols-2 gap-5')}>{children}</div>
@@ -216,17 +216,17 @@ function PreviewCard({ v }: { v: FormInput }) {
   const openingsNum = Number(v.openings);
   const openings = Number.isInteger(openingsNum) && openingsNum >= 1 && openingsNum <= MAX_OPENINGS ? openingsNum : null;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-line bg-surface p-4">
       <div className="flex items-start gap-3">
         <CompanyLogo key={logo ?? 'none'} name={v.companyName?.trim() || 'Company'} src={logo} size="sm" />
         <div className="min-w-0 flex-1">
-          <p className={cn('font-semibold leading-snug break-words', v.title?.trim() ? 'text-slate-900' : 'text-slate-400')}>
+          <p className={cn('font-semibold leading-snug break-words', v.title?.trim() ? 'text-fg' : 'text-fg-subtle')}>
             {v.title?.trim() || 'Job title'}
           </p>
-          <p className="text-sm text-slate-500 truncate">{v.companyName?.trim() || 'Company name'}</p>
+          <p className="text-sm text-fg-muted truncate">{v.companyName?.trim() || 'Company name'}</p>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-muted">
         <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden />{v.location?.trim() || 'Location'}</span>
         <span className="inline-flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" aria-hidden />{JOB_TYPE_LABELS[v.jobType]}</span>
         {v.category?.trim() && (
@@ -240,11 +240,11 @@ function PreviewCard({ v }: { v: FormInput }) {
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Badge tone={EXPERIENCE_STYLES[v.experienceLevel]}>{EXPERIENCE_LABELS[v.experienceLevel]}</Badge>
         {tags.slice(0, 3).map((t) => (
-          <span key={t} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{t}</span>
+          <span key={t} className="rounded-md bg-subtle px-2 py-0.5 text-xs text-fg-tertiary">{t}</span>
         ))}
-        {tags.length > 3 && <span className="px-1 py-0.5 text-xs text-slate-400">+{tags.length - 3}</span>}
+        {tags.length > 3 && <span className="px-1 py-0.5 text-xs text-fg-subtle">+{tags.length - 3}</span>}
       </div>
-      {v.deadline && <p className="mt-3 text-xs text-slate-400">Applications close {formatDate(v.deadline)}</p>}
+      {v.deadline && <p className="mt-3 text-xs text-fg-subtle">Applications close {formatDate(v.deadline)}</p>}
     </div>
   );
 }
@@ -272,11 +272,11 @@ function Checklist({ v }: { v: FormInput }) {
   return (
     <div>
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-slate-700">Posting quality</span>
-        <span className="text-slate-500">{done} of {items.length}</span>
+        <span className="font-medium text-fg-secondary">Posting quality</span>
+        <span className="text-fg-muted">{done} of {items.length}</span>
       </div>
       <div
-        className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden"
+        className="mt-2 h-1.5 rounded-full bg-subtle overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -287,16 +287,16 @@ function Checklist({ v }: { v: FormInput }) {
       </div>
       <ul className="mt-3 space-y-1.5">
         {items.map((i) => (
-          <li key={i.label} className={cn('flex items-center gap-2 text-xs', i.done ? 'text-slate-600' : 'text-slate-400')}>
+          <li key={i.label} className={cn('flex items-center gap-2 text-xs', i.done ? 'text-fg-tertiary' : 'text-fg-subtle')}>
             {i.done
               ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500" aria-hidden />
-              : <Circle className="h-4 w-4 flex-shrink-0 text-slate-300" aria-hidden />}
+              : <Circle className="h-4 w-4 flex-shrink-0 text-fg-faint" aria-hidden />}
             <span>{i.label}</span>
             <span className="sr-only">{i.done ? '(done)' : '(not done yet)'}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-slate-400">Complete postings get noticeably more qualified applicants.</p>
+      <p className="mt-3 text-xs text-fg-subtle">Complete postings get noticeably more qualified applicants.</p>
     </div>
   );
 }
@@ -305,12 +305,12 @@ function Checklist({ v }: { v: FormInput }) {
 function CompanyRow({ name, logoUrl, canEditCompany }: { name: string; logoUrl?: string | null; canEditCompany: boolean }) {
   return (
     <div className="sm:col-span-2">
-      <p className="text-sm font-medium text-slate-700">Company</p>
-      <div className="mt-1.5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4">
+      <p className="text-sm font-medium text-fg-secondary">Company</p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-muted px-3 py-3 sm:px-4">
         <CompanyLogo name={name} src={logoUrl} size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-900 break-words">{name}</p>
-          <p className="text-xs text-slate-500">Posting as {name}. The name and logo come from your company profile.</p>
+          <p className="font-semibold text-fg break-words">{name}</p>
+          <p className="text-xs text-fg-muted">Posting as {name}. The name and logo come from your company profile.</p>
         </div>
         {canEditCompany && (
           <Link href="/company" className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline">
@@ -452,7 +452,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
             )}
           </FormField>
             {isRecruiter && (
-              <p className="sm:col-span-2 -mt-2 text-xs text-slate-500">
+              <p className="sm:col-span-2 -mt-2 text-xs text-fg-muted">
                 Hiring with colleagues?{' '}
                 <Link href="/company" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
                   Create a company profile to post as a team
@@ -558,7 +558,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
             )}
           </FormField>
         {mode === 'edit' && (
-          <p className="sm:col-span-3 -mt-2 text-xs text-slate-500">Clearing a salary field keeps the currently published amount.</p>
+          <p className="sm:col-span-3 -mt-2 text-xs text-fg-muted">Clearing a salary field keeps the currently published amount.</p>
         )}
       </Section>
 
@@ -603,7 +603,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
                   <SkillsInput value={current} onChange={field.onChange} placeholder="Type a skill and press Enter…" maxSkills={MAX_TAGS} />
                   {suggestedSkills.length > 0 && !atLimit && (
                     <div className="mt-3">
-                      <p id="skill-suggestions-label" className="text-xs font-medium text-slate-500">Popular skills</p>
+                      <p id="skill-suggestions-label" className="text-xs font-medium text-fg-muted">Popular skills</p>
                       <ul aria-labelledby="skill-suggestions-label" className="mt-2 flex flex-wrap gap-1.5">
                         {suggestedSkills.map((skill) => (
                           <li key={skill}>
@@ -611,7 +611,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
                               type="button"
                               onClick={() => field.onChange([...current, skill])}
                               aria-label={`Add skill ${skill}`}
-                              className="inline-flex items-center gap-1 rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                              className="inline-flex items-center gap-1 rounded-full border border-dashed border-line-strong bg-surface px-2.5 py-0.5 text-xs font-medium text-fg-tertiary hover:border-primary-400 hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                             >
                               <Plus className="h-3 w-3" aria-hidden />
                               {skill}
@@ -641,8 +641,8 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           </FormField>
 
           <fieldset>
-            <legend className="text-sm font-medium text-slate-700">Screening questions</legend>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <legend className="text-sm font-medium text-fg-secondary">Screening questions</legend>
+            <p className="text-xs text-fg-muted mt-0.5">
               Optional. Applicants answer these when they apply. Up to {MAX_QUESTIONS}.
             </p>
             {questions.fields.length > 0 && (
@@ -652,7 +652,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
                   return (
                     <li key={field.id}>
                       <div className="flex items-center gap-2">
-                        <span className="w-5 text-xs font-medium text-slate-400 text-right flex-shrink-0" aria-hidden>{index + 1}.</span>
+                        <span className="w-5 text-xs font-medium text-fg-subtle text-right flex-shrink-0" aria-hidden>{index + 1}.</span>
                         <Input
                           {...register(`screeningQuestions.${index}.value` as const)}
                           aria-label={`Screening question ${index + 1}`}
@@ -664,7 +664,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
                           type="button"
                           onClick={() => questions.remove(index)}
                           aria-label={`Remove question ${index + 1}`}
-                          className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex-shrink-0"
+                          className="p-2 rounded-lg text-fg-subtle hover:text-rose-600 hover:bg-rose-50 flex-shrink-0"
                         >
                           <Trash2 className="w-4 h-4" aria-hidden />
                         </button>
@@ -692,8 +692,8 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
       {/* Side panel: sticky on desktop, stacked after the form on smaller screens. */}
       <aside className="min-w-0 space-y-4 lg:sticky lg:top-24" aria-label="Preview and publish">
         <Card className="p-4 sm:p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Preview</h2>
-          <p className="mt-0.5 mb-3 text-xs text-slate-400">How candidates will see this job in search.</p>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Preview</h2>
+          <p className="mt-0.5 mb-3 text-xs text-fg-subtle">How candidates will see this job in search.</p>
           <PreviewCard v={values} />
         </Card>
 
@@ -735,12 +735,12 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
             <Link href={cancelHref} className={buttonClasses('ghost', 'lg', 'w-full')}>Cancel</Link>
           </div>
           {mode === 'create' && (
-            <p className="mt-3 text-center text-xs text-slate-400">
+            <p className="mt-3 text-center text-xs text-fg-subtle">
               Publishing makes the job live immediately. Drafts stay private to your hiring team until you publish them.
             </p>
           )}
           {isDraft && (
-            <p className="mt-3 text-center text-xs text-slate-400">This job is a draft. Candidates can’t see it until you publish it.</p>
+            <p className="mt-3 text-center text-xs text-fg-subtle">This job is a draft. Candidates can’t see it until you publish it.</p>
           )}
         </Card>
       </aside>

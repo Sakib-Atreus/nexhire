@@ -149,13 +149,13 @@ function JobsBrowser() {
       <PageHeader title="Find jobs" description="Search open roles and filter by location, job type and experience level." />
 
       {/* Filter bar */}
-      <div className="lg:sticky lg:top-16 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-4 lg:pt-3 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80">
+      <div className="lg:sticky lg:top-16 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-4 lg:pt-3 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
         <Card className="p-3">
           <form role="search" onSubmit={(e) => e.preventDefault()} className="space-y-3">
             <div className="flex gap-2 sm:gap-3">
               <div className="relative flex-1 min-w-0">
                 <label htmlFor="job-keyword" className="sr-only">Keyword</label>
-                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" aria-hidden />
                 <Input
                   id="job-keyword"
                   type="search"
@@ -168,7 +168,7 @@ function JobsBrowser() {
               </div>
               <div className="relative hidden sm:block sm:w-56">
                 <label htmlFor="job-location" className="sr-only">Location</label>
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" aria-hidden />
                 <Input
                   id="job-location"
                   value={location}
@@ -200,7 +200,7 @@ function JobsBrowser() {
             >
               <div className="relative sm:hidden">
                 <label htmlFor="job-location-mobile" className="sr-only">Location</label>
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" aria-hidden />
                 <Input
                   id="job-location-mobile"
                   value={location}
@@ -211,7 +211,7 @@ function JobsBrowser() {
               </div>
               <div className="relative">
                 <label htmlFor="job-company" className="sr-only">Company</label>
-                <Building2 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
+                <Building2 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" aria-hidden />
                 <Input
                   id="job-company"
                   value={company}
@@ -249,8 +249,8 @@ function JobsBrowser() {
       {/* Results summary */}
       {!isLoading && !isError && (
         <div className="flex items-center justify-between gap-3 mb-3 min-h-8">
-          <p className="text-sm text-slate-600" aria-live="polite">
-            <span className="font-semibold text-slate-900">{pluralize(total, 'job')}</span>
+          <p className="text-sm text-fg-tertiary" aria-live="polite">
+            <span className="font-semibold text-fg">{pluralize(total, 'job')}</span>
             {hasFilters ? ' match your search' : ' open now'}
           </p>
           <div className="flex items-center gap-2">
