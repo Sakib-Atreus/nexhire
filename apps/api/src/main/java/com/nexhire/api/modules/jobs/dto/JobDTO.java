@@ -35,5 +35,9 @@ public record JobDTO(
     int viewCount,
     List<String> screeningQuestions,
     boolean isSaved,
-    Integer applicationCount
+    Integer applicationCount,
+    String category,
+    boolean featured,
+    boolean hidden,
+    boolean recruiterVerified
 ) {}

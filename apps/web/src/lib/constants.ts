@@ -1,4 +1,4 @@
-import type { ApplicationStatus, ExperienceLevel, JobStatus, JobType, Role } from '@/types';
+import type { ApplicationStatus, AuditAction, ExperienceLevel, JobStatus, JobType, ReportReason, ReportStatus, Role } from '@/types';
 
 // Human-readable labels and badge styles for every enum the API returns.
 // Never render a raw enum value (e.g. "FULL_TIME") in the UI — use these maps.
@@ -111,3 +111,61 @@ export const EXPERIENCE_OPTIONS = (Object.keys(EXPERIENCE_LABELS) as ExperienceL
   value: v,
   label: EXPERIENCE_LABELS[v],
 }));
+
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  SPAM: 'Spam or advertising',
+  SCAM: 'Scam or asks for payment',
+  MISLEADING: 'Misleading or false information',
+  OFFENSIVE: 'Offensive or discriminatory',
+  DUPLICATE: 'Duplicate posting',
+  OTHER: 'Something else',
+};
+
+export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
+  OPEN: 'Open',
+  RESOLVED: 'Resolved',
+  DISMISSED: 'Dismissed',
+};
+
+export const REPORT_STATUS_STYLES: Record<ReportStatus, string> = {
+  OPEN: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  RESOLVED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  DISMISSED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+};
+
+export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
+  USER_SUSPENDED: 'Suspended user',
+  USER_RESTORED: 'Restored user',
+  USER_ROLE_CHANGED: 'Changed role',
+  USER_DELETED: 'Deleted user',
+  USER_VERIFIED: 'Verified recruiter',
+  USER_UNVERIFIED: 'Removed verification',
+  JOB_HIDDEN: 'Hid job',
+  JOB_UNHIDDEN: 'Unhid job',
+  JOB_FEATURED: 'Featured job',
+  JOB_UNFEATURED: 'Unfeatured job',
+  JOB_STATUS_CHANGED: 'Changed job status',
+  JOB_DELETED: 'Deleted job',
+  REPORT_RESOLVED: 'Resolved report',
+  REPORT_DISMISSED: 'Dismissed report',
+  SETTINGS_UPDATED: 'Updated settings',
+};
+
+/** Tone per action family for audit badges: destructive red, positive green, neutral slate. */
+export const AUDIT_ACTION_STYLES: Record<AuditAction, string> = {
+  USER_SUSPENDED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
+  USER_DELETED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
+  JOB_DELETED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
+  JOB_HIDDEN: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  USER_UNVERIFIED: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  JOB_UNFEATURED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+  USER_RESTORED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  USER_VERIFIED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  JOB_UNHIDDEN: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  JOB_FEATURED: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
+  USER_ROLE_CHANGED: 'bg-sky-50 text-sky-700 ring-sky-600/20',
+  JOB_STATUS_CHANGED: 'bg-sky-50 text-sky-700 ring-sky-600/20',
+  REPORT_RESOLVED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  REPORT_DISMISSED: 'bg-slate-100 text-slate-600 ring-slate-500/20',
+  SETTINGS_UPDATED: 'bg-violet-50 text-violet-700 ring-violet-600/20',
+};

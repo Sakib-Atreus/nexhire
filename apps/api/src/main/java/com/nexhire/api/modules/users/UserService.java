@@ -1,5 +1,7 @@
 package com.nexhire.api.modules.users;
 
+import com.nexhire.api.modules.admin.AuditAction;
+import com.nexhire.api.modules.admin.AuditService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nexhire.api.exception.ResourceNotFoundException;
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final AuditService auditService;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -70,27 +73,57 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public void delete(UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User", "id", id);
-        }
-        userRepository.deleteById(id);
+    public void delete(UUID id, User actor) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        userRepository.delete(user);
+        auditService.record(actor, AuditAction.USER_DELETED, AuditService.TARGET_USER, id,
+            user.getFullName() + " <" + user.getEmail() + ">", "Role: " + user.getRole());
     }
 
     @Transactional
-    public UserDTO banUser(UUID id, boolean enable) {
+    public UserDTO banUser(UUID id, boolean enable, User actor) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        if (user.isEnabled() == enable) return toDTO(user);
         user.setEnabled(enable);
-        return toDTO(userRepository.save(user));
+        User saved = userRepository.save(user);
+        auditService.record(actor, enable ? AuditAction.USER_RESTORED : AuditAction.USER_SUSPENDED,
+            AuditService.TARGET_USER, id, label(user), null);
+        return toDTO(saved);
     }
 
     @Transactional
-    public UserDTO promoteUser(UUID id, Role newRole) {
+    public UserDTO promoteUser(UUID id, Role newRole, User actor) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        Role previous = user.getRole();
+        if (previous == newRole) return toDTO(user);
         user.setRole(newRole);
-        return toDTO(userRepository.save(user));
+        if (newRole != Role.RECRUITER) user.setVerified(false); // verification only applies to recruiters
+        User saved = userRepository.save(user);
+        auditService.record(actor, AuditAction.USER_ROLE_CHANGED, AuditService.TARGET_USER, id, label(user),
+            previous + " → " + newRole);
+        return toDTO(saved);
+    }
+
+    @Transactional
+    public UserDTO setVerified(UUID id, boolean verified, User actor) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        if (user.getRole() != Role.RECRUITER && verified) {
+            throw new com.nexhire.api.exception.BadRequestException("Only recruiters can be verified");
+        }
+        if (user.isVerified() == verified) return toDTO(user);
+        user.setVerified(verified);
+        User saved = userRepository.save(user);
+        auditService.record(actor, verified ? AuditAction.USER_VERIFIED : AuditAction.USER_UNVERIFIED,
+            AuditService.TARGET_USER, id, label(user), null);
+        return toDTO(saved);
+    }
+
+    private static String label(User user) {
+        return user.getFullName() + " <" + user.getEmail() + ">";
     }
 
     public UserDTO toDTO(User user) {
@@ -110,7 +143,8 @@ public class UserService implements UserDetailsService {
             user.getHeadline(),
             parseJsonList(user.getPortfolioLinks()),
             user.isEnabled(),
-            user.isOpenToWork()
+            user.isOpenToWork(),
+            user.isVerified()
         );
     }
 

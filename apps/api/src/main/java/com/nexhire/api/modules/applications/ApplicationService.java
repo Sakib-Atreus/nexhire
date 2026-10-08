@@ -124,6 +124,14 @@ public class ApplicationService {
         return applicationRepository.findByJobIdAndCandidateId(jobId, candidateId).map(this::toDTO);
     }
 
+    public long countByCandidate(UUID candidateId) {
+        return applicationRepository.countByCandidateId(candidateId);
+    }
+
+    public List<ApplicationDTO> recentByCandidate(UUID candidateId) {
+        return applicationRepository.findTop5ByCandidateIdOrderByAppliedAtDesc(candidateId).stream().map(this::toDTO).toList();
+    }
+
     public ApplicationStatsDTO getRecruiterStats(User recruiter) {
         if (recruiter.getRole() == Role.ADMIN) {
             return new ApplicationStatsDTO(

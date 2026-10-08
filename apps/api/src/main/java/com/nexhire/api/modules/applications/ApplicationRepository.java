@@ -27,6 +27,19 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     long countByStatus(ApplicationStatus status);
 
+    long countByCandidateId(UUID candidateId);
+
+    long countByAppliedAtAfter(java.time.Instant since);
+
+    java.util.List<Application> findTop5ByCandidateIdOrderByAppliedAtDesc(UUID candidateId);
+
+    /** [yyyy-MM-dd, count] rows for applications since the given time. */
+    @Query(value = """
+        SELECT to_char(applied_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day, COUNT(*) AS total
+        FROM applications WHERE applied_at >= :since GROUP BY day ORDER BY day
+        """, nativeQuery = true)
+    java.util.List<Object[]> countApplicationsPerDay(@Param("since") java.time.Instant since);
+
     @Query("SELECT COUNT(a) FROM Application a WHERE a.job.recruiter.id = :recruiterId AND a.status = :status")
     long countByRecruiterIdAndStatus(@Param("recruiterId") UUID recruiterId, @Param("status") ApplicationStatus status);
 

@@ -37,11 +37,14 @@ public class JobController {
         @RequestParam(required = false) ExperienceLevel experienceLevel,
         @RequestParam(required = false) BigDecimal salaryMin,
         @RequestParam(required = false) BigDecimal salaryMax,
+        @RequestParam(required = false) String category,
+        @RequestParam(defaultValue = "false") boolean featured,
         Pageable pageable,
         @AuthenticationPrincipal User currentUser
     ) {
         UUID userId = currentUser != null ? currentUser.getId() : null;
-        return ResponseEntity.ok(jobService.search(keyword, location, companyName, jobType, experienceLevel, salaryMin, salaryMax, pageable, userId));
+        return ResponseEntity.ok(jobService.search(keyword, location, companyName, jobType, experienceLevel,
+            salaryMin, salaryMax, category, featured, pageable, userId));
     }
 
     @GetMapping("/saved")
@@ -70,7 +73,7 @@ public class JobController {
         @PathVariable UUID id,
         @AuthenticationPrincipal User currentUser
     ) {
-        return ResponseEntity.ok(jobService.getByIdForUser(id, currentUser != null ? currentUser.getId() : null));
+        return ResponseEntity.ok(jobService.getByIdForUser(id, currentUser));
     }
 
     @PostMapping

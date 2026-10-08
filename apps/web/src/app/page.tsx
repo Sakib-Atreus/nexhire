@@ -21,6 +21,8 @@ import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { HeroSearch } from '@/components/marketing/HeroSearch';
 import { LatestJobs, OpenRolesCount } from '@/components/marketing/LatestJobs';
 import { useMounted } from '@/components/marketing/useMounted';
+import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
+import { FeaturedJobs } from '@/components/marketing/FeaturedJobs';
 
 const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
   {
@@ -88,6 +90,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <SiteHeader />
+      <AnnouncementBanner variant="bar" />
 
       <main className="flex-1">
         {/* Hero */}
@@ -145,6 +148,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        <FeaturedJobs />
         <LatestJobs />
 
         {/* How it works: two tracks */}

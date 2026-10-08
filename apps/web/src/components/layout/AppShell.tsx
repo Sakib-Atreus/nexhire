@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/States';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { isPublicPath } from './nav';
+import { AnnouncementBanner } from './AnnouncementBanner';
 
 /** True once the persisted auth store has been read from localStorage. */
 function useAuthHydrated() {
@@ -61,7 +62,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar guest={guest} />
       <div className="lg:pl-64">
         <Navbar guest={guest} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24 sm:pt-8 lg:pb-10">{children}</main>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24 sm:pt-8 lg:pb-10">
+          <AnnouncementBanner className="mb-6" />
+          {children}
+        </main>
       </div>
     </div>
   );

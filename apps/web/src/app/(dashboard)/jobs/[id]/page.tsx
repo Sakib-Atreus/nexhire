@@ -7,6 +7,7 @@ import axios from 'axios';
 import {
   ArrowLeft, MapPin, Briefcase, Banknote, CalendarClock, Clock, Eye, UserRound,
   Pencil, Users, Share2, Check, Bookmark, BookmarkCheck, CheckCircle2, FileSearch, Lock,
+  BadgeCheck, EyeOff, Flag, Tag,
 } from 'lucide-react';
 import type { Application, Job } from '@/types';
 import { useJob, useSaveJob, useUnsaveJob } from '@/hooks/useJobs';
@@ -25,6 +26,9 @@ import { Button, buttonClasses } from '@/components/ui/Button';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { EmptyState, ErrorState, Skeleton, Spinner } from '@/components/ui/States';
 import { ApplyModal } from '@/components/jobs/ApplyModal';
+import { ReportJobModal } from '@/components/jobs/ReportJobModal';
+import { FeaturedBadge } from '@/components/admin/jobs/JobFlagBadges';
+import { JobModerationCard } from '@/components/admin/jobs/JobModerationCard';
 
 // ---------- Helpers ----------
 
@@ -138,6 +142,30 @@ function ApplicationStatusNote({ application }: { application: Application }) {
       <Link href="/applications" className="mt-2 inline-block text-xs font-medium text-primary-600 hover:text-primary-700">
         View my applications
       </Link>
+    </div>
+  );
+}
+
+function ReportJobControl({ job, signedIn }: { job: Job; signedIn: boolean }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 text-xs text-slate-500 sm:justify-start">
+      <span>Something wrong with this posting?</span>
+      {signedIn ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1 rounded font-medium text-slate-600 hover:text-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        >
+          <Flag className="w-3.5 h-3.5" aria-hidden /> Report this job
+        </button>
+      ) : (
+        <Link href="/login" className="inline-flex items-center gap-1 font-medium text-slate-600 hover:text-primary-700">
+          <Flag className="w-3.5 h-3.5" aria-hidden /> Sign in to report
+        </Link>
+      )}
+      {signedIn && <ReportJobModal jobId={job.id} jobTitle={job.title} open={open} onClose={close} />}
     </div>
   );
 }
@@ -355,10 +383,19 @@ export default function JobDetailPage() {
   const responsibilities = toListItems(job.responsibilities);
   const requirements = toListItems(job.requirements);
   const showMobileBar = isCandidate;
+  // Signed-out visitors get a sign-in link; owners and admins can't report.
+  const canReport = !isOwner && !isAdmin;
 
   return (
     <div>
       {backLink}
+
+      {job.hidden && (
+        <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <EyeOff className="mt-0.5 w-4 h-4 flex-shrink-0 text-amber-600" aria-hidden />
+          <p className="font-medium">This job is hidden by a moderator and isn&apos;t visible to candidates.</p>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
         <div className="space-y-6 min-w-0">
@@ -372,9 +409,22 @@ export default function JobDetailPage() {
                   {job.status !== 'OPEN' && (
                     <Badge tone={JOB_STATUS_STYLES[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
                   )}
+                  {job.featured && <FeaturedBadge />}
+                  {job.category && (
+                    <Badge>
+                      <Tag className="w-3 h-3" aria-hidden /> {job.category}
+                    </Badge>
+                  )}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 break-words">{job.title}</h1>
-                <p className="mt-1 text-base font-medium text-slate-600">{job.companyName}</p>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-slate-600">
+                  <span className="break-words">{job.companyName}</span>
+                  {job.recruiterVerified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                      <BadgeCheck className="w-3.5 h-3.5" aria-hidden /> Verified employer
+                    </span>
+                  )}
+                </p>
 
                 <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
                   {job.location && (
@@ -448,6 +498,8 @@ export default function JobDetailPage() {
             )}
           </Card>
 
+          {isAdmin && <JobModerationCard job={job} className="lg:hidden" />}
+
           {/* Body */}
           <Card className="p-5 sm:p-8 space-y-8">
             <section aria-labelledby="about-role">
@@ -500,10 +552,12 @@ export default function JobDetailPage() {
               </section>
             )}
           </Card>
+
+          {canReport && <ReportJobControl job={job} signedIn={!!user} />}
         </div>
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block lg:sticky lg:top-24" aria-label="Job actions">
+        <aside className="hidden lg:block lg:sticky lg:top-24 space-y-4" aria-label="Job actions">
           <ActionPanel
             job={job}
             role={user?.role}
@@ -513,6 +567,7 @@ export default function JobDetailPage() {
             applicationLoading={isCandidate && applicationLoading}
             onApply={openApply}
           />
+          {isAdmin && <JobModerationCard job={job} />}
         </aside>
       </div>
 

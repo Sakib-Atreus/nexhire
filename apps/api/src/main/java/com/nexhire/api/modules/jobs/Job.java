@@ -78,6 +78,19 @@ public class Job {
 
     private LocalDate deadline;
 
+    @Column(length = 50)
+    private String category;
+
+    /** Shown first in search and on the home page. */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean featured = false;
+
+    /** Hidden by moderation: invisible to everyone except its recruiter and admins. */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean hidden = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruiter_id", nullable = false)
     private User recruiter;

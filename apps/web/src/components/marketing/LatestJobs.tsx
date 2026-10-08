@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Clock, MapPin } from 'lucide-react';
+import { ArrowRight, Clock, MapPin, Star } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import { JOB_TYPE_LABELS } from '@/lib/constants';
 import { formatSalary, pluralize, timeAgo } from '@/lib/format';
@@ -15,7 +15,7 @@ import { buttonClasses } from '@/components/ui/Button';
 // `sort` is forwarded to the API as a query param (Spring Pageable) so the newest roles come first.
 const LATEST_PARAMS = { size: 6, sort: 'createdAt,desc' };
 
-function JobCard({ job }: { job: Job }) {
+export function JobCard({ job }: { job: Job }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
   return (
     <Link
@@ -40,6 +40,12 @@ function JobCard({ job }: { job: Job }) {
             </span>
           )}
           <Badge>{JOB_TYPE_LABELS[job.jobType] ?? job.jobType}</Badge>
+          {job.featured && (
+            <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-500" aria-hidden />
+              Featured
+            </Badge>
+          )}
         </div>
         <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
           <span className="font-semibold text-slate-800 truncate">{salary ?? 'Salary not listed'}</span>
@@ -53,7 +59,7 @@ function JobCard({ job }: { job: Job }) {
   );
 }
 
-function JobCardSkeleton() {
+export function JobCardSkeleton() {
   return (
     <Card className="p-5">
       <div className="flex items-start gap-3">

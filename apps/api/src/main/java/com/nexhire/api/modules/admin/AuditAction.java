@@ -1,0 +1,19 @@
+package com.nexhire.api.modules.admin;
+
+public enum AuditAction {
+    USER_SUSPENDED,
+    USER_RESTORED,
+    USER_ROLE_CHANGED,
+    USER_DELETED,
+    USER_VERIFIED,
+    USER_UNVERIFIED,
+    JOB_HIDDEN,
+    JOB_UNHIDDEN,
+    JOB_FEATURED,
+    JOB_UNFEATURED,
+    JOB_STATUS_CHANGED,
+    JOB_DELETED,
+    REPORT_RESOLVED,
+    REPORT_DISMISSED,
+    SETTINGS_UPDATED
+}

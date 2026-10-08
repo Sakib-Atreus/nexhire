@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Briefcase, Banknote, Clock, Bookmark, BookmarkCheck } from 'lucide-react';
+import { MapPin, Briefcase, Banknote, Clock, Bookmark, BookmarkCheck, BadgeCheck } from 'lucide-react';
 import type { Job } from '@/types';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/store/authStore';
@@ -12,6 +12,7 @@ import { toast } from '@/store/toastStore';
 import { Badge } from '@/components/ui/Badge';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { Skeleton } from '@/components/ui/States';
+import { FeaturedBadge } from '@/components/admin/jobs/JobFlagBadges';
 
 const MAX_TAGS = 3;
 
@@ -55,8 +56,22 @@ export function JobCard({ job }: { job: Job }) {
               </Link>
             </h3>
             <Badge tone={EXPERIENCE_STYLES[job.experienceLevel]}>{EXPERIENCE_LABELS[job.experienceLevel]}</Badge>
+            {job.featured && <FeaturedBadge />}
           </div>
-          <p className="mt-0.5 text-sm text-slate-600 truncate">{job.companyName}</p>
+          <p className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-slate-600">
+            <span className="min-w-0 truncate">{job.companyName}</span>
+            {job.recruiterVerified && (
+              <span className="flex-shrink-0 text-emerald-600" title="Verified employer">
+                <BadgeCheck className="w-4 h-4" aria-hidden />
+                <span className="sr-only">Verified employer</span>
+              </span>
+            )}
+            {job.category && (
+              <span className="hidden sm:inline min-w-0 truncate text-slate-400">
+                <span aria-hidden>· </span>{job.category}
+              </span>
+            )}
+          </p>
 
           <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500">
             {job.location && (

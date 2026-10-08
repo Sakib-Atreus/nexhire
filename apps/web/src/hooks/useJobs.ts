@@ -22,6 +22,7 @@ export interface JobPayload {
   tags?: string;
   deadline?: string | null;
   screeningQuestions?: string[];
+  category?: string;
 }
 
 interface JobSearchParams {
@@ -34,8 +35,11 @@ interface JobSearchParams {
   salaryMax?: number;
   page?: number;
   size?: number;
-  /** Spring sort, e.g. "createdAt,desc". */
+  /** Spring sort, e.g. "createdAt,desc". Featured jobs always come first. */
   sort?: string;
+  category?: string;
+  /** Only featured jobs (home page spotlight). */
+  featured?: boolean;
 }
 
 export function useJobs(params: JobSearchParams = {}) {

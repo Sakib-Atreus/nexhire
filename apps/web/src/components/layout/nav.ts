@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  BarChart3, Bell, Bookmark, Briefcase, FileText, LayoutDashboard, PlusCircle, Search, User2, Users,
+  Bell, Bookmark, Briefcase, FileText, Flag, LayoutDashboard, PlusCircle, ScrollText, Search, Settings, User2, Users,
 } from 'lucide-react';
 import type { Role } from '@/types';
 
@@ -16,6 +16,7 @@ const DASHBOARD: NavItem = { href: '/dashboard', label: 'Dashboard', short: 'Hom
 const BROWSE: NavItem = { href: '/jobs', label: 'Browse jobs', short: 'Jobs', icon: Search };
 const NOTIFICATIONS: NavItem = { href: '/notifications', label: 'Notifications', short: 'Alerts', icon: Bell };
 const PROFILE: NavItem = { href: '/profile', label: 'Profile', icon: User2 };
+const ADMIN_OVERVIEW: NavItem = { href: '/admin', label: 'Overview', icon: LayoutDashboard };
 
 export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
   CANDIDATE: [
@@ -34,10 +35,12 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
     PROFILE,
   ],
   ADMIN: [
-    DASHBOARD,
+    ADMIN_OVERVIEW,
     { href: '/admin/users', label: 'Users', icon: Users },
-    { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-    { ...BROWSE, label: 'Browse jobs' },
+    { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
+    { href: '/admin/reports', label: 'Reports', icon: Flag },
+    { href: '/admin/audit', label: 'Audit log', short: 'Audit', icon: ScrollText },
+    { href: '/admin/settings', label: 'Site settings', short: 'Settings', icon: Settings },
     NOTIFICATIONS,
     PROFILE,
   ],
@@ -47,7 +50,7 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
 export const MOBILE_NAV: Record<Role, NavItem[]> = {
   CANDIDATE: [DASHBOARD, BROWSE, SIDEBAR_NAV.CANDIDATE[3], SIDEBAR_NAV.CANDIDATE[2], PROFILE],
   RECRUITER: [DASHBOARD, SIDEBAR_NAV.RECRUITER[1], SIDEBAR_NAV.RECRUITER[2], NOTIFICATIONS, PROFILE],
-  ADMIN: [DASHBOARD, SIDEBAR_NAV.ADMIN[1], BROWSE, SIDEBAR_NAV.ADMIN[2], PROFILE],
+  ADMIN: [ADMIN_OVERVIEW, SIDEBAR_NAV.ADMIN[1], SIDEBAR_NAV.ADMIN[2], SIDEBAR_NAV.ADMIN[3], PROFILE],
 };
 
 export const PUBLIC_NAV: NavItem[] = [BROWSE];
@@ -65,6 +68,7 @@ export function isNavActive(href: string, pathname: string): boolean {
   if (pathname === href) return true;
   switch (href) {
     case '/dashboard':
+    case '/admin':
     case '/jobs/create':
       return false;
     case '/jobs/my':
@@ -97,11 +101,16 @@ export function getBreadcrumbs(pathname: string, role?: Role): Crumb[] {
     '/notifications': [{ label: 'Notifications' }],
     '/notifications/preferences': [{ label: 'Notifications', href: '/notifications' }, { label: 'Settings' }],
     '/profile': [{ label: 'Profile' }],
-    '/admin/users': [{ label: 'Administration' }, { label: 'Users' }],
-    '/admin/analytics': [{ label: 'Administration' }, { label: 'Analytics' }],
+    '/admin': [{ label: 'Administration' }, { label: 'Overview' }],
+    '/admin/users': [{ label: 'Administration', href: '/admin' }, { label: 'Users' }],
+    '/admin/jobs': [{ label: 'Administration', href: '/admin' }, { label: 'Jobs' }],
+    '/admin/reports': [{ label: 'Administration', href: '/admin' }, { label: 'Reports' }],
+    '/admin/audit': [{ label: 'Administration', href: '/admin' }, { label: 'Audit log' }],
+    '/admin/settings': [{ label: 'Administration', href: '/admin' }, { label: 'Site settings' }],
   };
   const clean = pathname.replace(/\/$/, '') || '/';
   if (exact[clean]) return exact[clean];
+  if (/^\/admin\/users\/[^/]+$/.test(clean)) return [{ label: 'Users', href: '/admin/users' }, { label: 'User details' }];
   if (/^\/jobs\/[^/]+\/applicants$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Applicants' }];
   if (/^\/jobs\/[^/]+\/edit$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Edit job' }];
   if (/^\/jobs\/[^/]+$/.test(clean)) return [jobsRoot, { label: 'Job details' }];

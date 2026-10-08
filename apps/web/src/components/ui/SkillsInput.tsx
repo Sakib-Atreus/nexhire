@@ -8,6 +8,8 @@ interface SkillsInputProps {
   onChange: (skills: string[]) => void;
   placeholder?: string;
   maxSkills?: number;
+  /** Accessible name for the text input (defaults to "Add a skill"). */
+  ariaLabel?: string;
 }
 
 export function SkillsInput({
@@ -15,6 +17,7 @@ export function SkillsInput({
   onChange,
   placeholder = 'Type a skill and press Enter…',
   maxSkills = 20,
+  ariaLabel = 'Add a skill',
 }: SkillsInputProps) {
   const [input, setInput] = useState('');
 
@@ -77,6 +80,7 @@ export function SkillsInput({
             value={input}
             onChange={onInputChange}
             onKeyDown={onKeyDown}
+            aria-label={ariaLabel}
             placeholder={value.length === 0 ? placeholder : ''}
             className="flex-1 min-w-[8rem] bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
           />

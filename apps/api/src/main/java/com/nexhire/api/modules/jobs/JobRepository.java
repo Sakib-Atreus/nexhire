@@ -3,6 +3,7 @@ package com.nexhire.api.modules.jobs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Repository
-public interface JobRepository extends JpaRepository<Job, UUID> {
+public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificationExecutor<Job> {
 
     Page<Job> findByStatus(JobStatus status, Pageable pageable);
 
@@ -61,6 +62,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
         AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin)
         AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax)
+        AND j.hidden = false
+        AND (CAST(:category AS String) IS NULL OR j.category = CAST(:category AS String))
+        AND (:featuredOnly = false OR j.featured = true)
+        ORDER BY j.featured DESC
         """,
         countQuery = """
         SELECT COUNT(j) FROM Job j
@@ -73,6 +78,9 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
         AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin)
         AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax)
+        AND j.hidden = false
+        AND (CAST(:category AS String) IS NULL OR j.category = CAST(:category AS String))
+        AND (:featuredOnly = false OR j.featured = true)
         """)
     Page<Job> searchExtended(
         @Param("status") JobStatus status,
@@ -83,8 +91,32 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         @Param("experienceLevel") ExperienceLevel experienceLevel,
         @Param("salaryMin") java.math.BigDecimal salaryMin,
         @Param("salaryMax") java.math.BigDecimal salaryMax,
+        @Param("category") String category,
+        @Param("featuredOnly") boolean featuredOnly,
         Pageable pageable
     );
+
+    long countByStatus(JobStatus status);
+
+    long countByHiddenTrue();
+
+    long countByFeaturedTrue();
+
+    long countByRecruiterId(UUID recruiterId);
+
+    java.util.List<Job> findTop5ByRecruiterIdOrderByCreatedAtDesc(UUID recruiterId);
+
+    /** [companyName, openJobs, applications] for the companies with the most applications. */
+    @Query(value = """
+        SELECT j.company_name,
+               COUNT(DISTINCT j.id) FILTER (WHERE j.status = 'OPEN') AS open_jobs,
+               COUNT(a.id) AS applications
+        FROM jobs j LEFT JOIN applications a ON a.job_id = j.id
+        GROUP BY j.company_name
+        ORDER BY applications DESC, open_jobs DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    java.util.List<Object[]> topCompanies(@Param("limit") int limit);
 
     @Query("SELECT j FROM Job j WHERE j.status = 'OPEN' AND j.deadline IS NOT NULL AND j.deadline < :now")
     java.util.List<Job> findExpiredOpenJobs(@Param("now") java.time.LocalDate now);

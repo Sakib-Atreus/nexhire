@@ -26,5 +26,6 @@ public record CreateJobRequest(
     String salaryCurrency,
     String tags,
     LocalDate deadline,
-    List<String> screeningQuestions
+    List<String> screeningQuestions,
+    @Size(max = 50) String category
 ) {}

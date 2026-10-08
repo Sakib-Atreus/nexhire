@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Search, MapPin, Building2, SlidersHorizontal, X, SearchX } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
+import { usePublicSettings } from '@/hooks/useSettings';
 import { JobCard, JobCardSkeleton } from '@/components/jobs/JobCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -70,13 +71,20 @@ function JobsBrowser() {
     const v = searchParams.get('level');
     return isLevel(v) ? v : '';
   });
+  const [category, setCategory] = useState(() => searchParams.get('category') ?? '');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { data: settings } = usePublicSettings();
+  // Keep a category from a shared link selectable even if it is no longer in the admin list.
+  const categoryOptions = useMemo(() => {
+    const list = settings?.categories ?? [];
+    return category && !list.includes(category) ? [...list, category] : list;
+  }, [settings?.categories, category]);
 
   const debouncedKeyword = useDebouncedValue(keyword.trim());
   const debouncedLocation = useDebouncedValue(location.trim());
   const debouncedCompany = useDebouncedValue(company.trim());
 
-  const filterKey = [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level].join('|');
+  const filterKey = [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, category].join('|');
 
   // The page belongs to a specific filter combination; changing any filter returns to page 1.
   const [pageState, setPageState] = useState(() => ({
@@ -93,13 +101,14 @@ function JobsBrowser() {
     if (debouncedCompany) params.set('company', debouncedCompany);
     if (jobType) params.set('type', jobType);
     if (level) params.set('level', level);
+    if (category) params.set('category', category);
     if (page > 0) params.set('page', String(page + 1));
     const qs = params.toString();
     const next = qs ? `${pathname}?${qs}` : pathname;
     if (next !== `${pathname}${window.location.search}`) {
       router.replace(next, { scroll: false });
     }
-  }, [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, page, pathname, router]);
+  }, [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, category, page, pathname, router]);
 
   const query = useMemo(
     () => ({
@@ -108,13 +117,14 @@ function JobsBrowser() {
       companyName: debouncedCompany || undefined,
       jobType: jobType || undefined,
       experienceLevel: level || undefined,
+      category: category || undefined,
       page,
     }),
-    [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, page]
+    [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, category, page]
   );
   const { data, isLoading, isError, error, refetch, isPlaceholderData, isRefetching } = useJobs(query);
 
-  const secondaryFilterCount = [company.trim(), jobType, level].filter(Boolean).length;
+  const secondaryFilterCount = [company.trim(), jobType, level, category].filter(Boolean).length;
   const hasFilters = !!(keyword.trim() || location.trim() || secondaryFilterCount);
 
   const clearFilters = () => {
@@ -123,6 +133,7 @@ function JobsBrowser() {
     setCompany('');
     setJobType('');
     setLevel('');
+    setCategory('');
   };
 
   const goToPage = (p: number) => {
@@ -185,7 +196,7 @@ function JobsBrowser() {
 
             <div
               id="job-filters"
-              className={cn('grid-cols-1 gap-3 sm:grid sm:grid-cols-3', filtersOpen ? 'grid' : 'hidden')}
+              className={cn('grid-cols-1 gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4', filtersOpen ? 'grid' : 'hidden')}
             >
               <div className="relative sm:hidden">
                 <label htmlFor="job-location-mobile" className="sr-only">Location</label>
@@ -221,6 +232,13 @@ function JobsBrowser() {
                 <Select id="job-level" value={level} onChange={(e) => setLevel(e.target.value as ExperienceLevel | '')}>
                   <option value="">All experience levels</option>
                   {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </Select>
+              </div>
+              <div>
+                <label htmlFor="job-category" className="sr-only">Category</label>
+                <Select id="job-category" value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="">All categories</option>
+                  {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
                 </Select>
               </div>
             </div>

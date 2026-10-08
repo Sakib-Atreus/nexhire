@@ -60,7 +60,7 @@ public class UserController {
     @Operation(summary = "Delete user (ADMIN only)")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal User currentUser) {
         if (currentUser.getId().equals(id)) throw new BadRequestException("You cannot delete your own account");
-        userService.delete(id);
+        userService.delete(id, currentUser);
         return ResponseEntity.noContent().build();
     }
 
@@ -73,7 +73,7 @@ public class UserController {
         @AuthenticationPrincipal User currentUser
     ) {
         if (currentUser.getId().equals(id)) throw new BadRequestException("You cannot suspend your own account");
-        return ResponseEntity.ok(userService.banUser(id, request.enabled()));
+        return ResponseEntity.ok(userService.banUser(id, request.enabled(), currentUser));
     }
 
     @PatchMapping("/{id}/role")
@@ -85,6 +85,6 @@ public class UserController {
         @AuthenticationPrincipal User currentUser
     ) {
         if (currentUser.getId().equals(id)) throw new BadRequestException("You cannot change your own role");
-        return ResponseEntity.ok(userService.promoteUser(id, request.role()));
+        return ResponseEntity.ok(userService.promoteUser(id, request.role(), currentUser));
     }
 }

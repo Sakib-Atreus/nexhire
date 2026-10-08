@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertCircle, Banknote, Briefcase, CheckCircle2, Circle, ClipboardList, FileText, MapPin, Plus, Tags, Trash2 } from 'lucide-react';
+import { AlertCircle, Banknote, Briefcase, CheckCircle2, Circle, ClipboardList, FileText, FolderOpen, MapPin, Plus, Tags, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Job, JobStatus } from '@/types';
 import type { JobPayload } from '@/hooks/useJobs';
+import { usePublicSettings } from '@/hooks/useSettings';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -27,6 +28,8 @@ import { formatDate, formatSalary, parseTags, toListItems } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
 const MAX_QUESTIONS = 5;
+const MAX_TAGS = 15;
+const MAX_SUGGESTIONS = 12;
 const JOB_STATUSES: JobStatus[] = ['OPEN', 'DRAFT', 'CLOSED', 'FILLED'];
 
 /** Empty input → undefined (never 0); anything else must be a non-negative whole amount. */
@@ -59,6 +62,7 @@ function makeSchema(mode: 'create' | 'edit') {
         .trim()
         .refine((v) => v === '' || /^https?:\/\/\S+$/i.test(v), 'Enter a full URL starting with https://'),
       location: z.string().trim().max(255, 'Keep the location under 255 characters'),
+      category: z.string().trim().max(50, 'Keep the category under 50 characters'),
       jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE'], {
         errorMap: () => ({ message: 'Choose a job type' }),
       }),
@@ -102,6 +106,7 @@ function defaultsFrom(job?: Job): FormInput {
     companyName: job?.companyName ?? '',
     companyLogoUrl: job?.companyLogoUrl ?? '',
     location: job?.location ?? '',
+    category: job?.category ?? '',
     jobType: job?.jobType ?? 'FULL_TIME',
     experienceLevel: job?.experienceLevel ?? 'MID',
     status: job?.status,
@@ -123,6 +128,8 @@ function toPayload(v: FormOutput, mode: 'create' | 'edit'): JobPayload {
     companyName: v.companyName,
     companyLogoUrl: v.companyLogoUrl,
     location: v.location,
+    // Blank clears the category on edit (backend stores blank as null).
+    category: v.category,
     jobType: v.jobType,
     experienceLevel: v.experienceLevel,
     salaryCurrency: v.salaryCurrency,
@@ -189,6 +196,9 @@ function PreviewCard({ v }: { v: FormInput }) {
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
         <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden />{v.location?.trim() || 'Location'}</span>
         <span className="inline-flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" aria-hidden />{JOB_TYPE_LABELS[v.jobType]}</span>
+        {v.category?.trim() && (
+          <span className="inline-flex items-center gap-1 min-w-0"><FolderOpen className="h-3.5 w-3.5 flex-shrink-0" aria-hidden /><span className="truncate">{v.category.trim()}</span></span>
+        )}
         {salary && <span className="inline-flex items-center gap-1"><Banknote className="h-3.5 w-3.5" aria-hidden />{salary}</span>}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -275,6 +285,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
     mode: 'onTouched',
   });
   const questions = useFieldArray({ control, name: 'screeningQuestions' });
+  const { data: settings } = usePublicSettings();
 
   const values = watch();
   const companyName = values.companyName;
@@ -282,6 +293,18 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
   const currency = values.salaryCurrency;
   const descriptionLength = values.description?.trim().length ?? 0;
   const validLogo = /^https?:\/\/\S+$/i.test(logoUrl?.trim() ?? '') ? logoUrl.trim() : null;
+
+  // Admin-managed categories, plus the job's current one if it was since removed from the list.
+  const categoryOptions = (() => {
+    const list = settings?.categories ?? [];
+    const current = job?.category?.trim();
+    return current && !list.some((c) => c.toLowerCase() === current.toLowerCase()) ? [...list, current] : list;
+  })();
+
+  const selectedTags = values.tags ?? [];
+  const suggestedSkills = (settings?.skills ?? [])
+    .filter((s) => !selectedTags.some((t) => t.toLowerCase() === s.toLowerCase()))
+    .slice(0, MAX_SUGGESTIONS);
 
   const submit = handleSubmit((values) => onSubmit(toPayload(values, mode)));
 
@@ -337,6 +360,20 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           {(id) => (
             <Select id={id} {...register('experienceLevel')} invalid={!!errors.experienceLevel}>
               {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </Select>
+          )}
+        </FormField>
+
+        <FormField
+          label="Category"
+          error={errors.category?.message}
+          hint="Optional. Helps candidates browse by field."
+          className="sm:col-span-2"
+        >
+          {(id) => (
+            <Select id={id} {...register('category')} invalid={!!errors.category} className="sm:max-w-xs">
+              <option value="">Select a category</option>
+              {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
           )}
         </FormField>
@@ -419,9 +456,35 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           <Controller
             control={control}
             name="tags"
-            render={({ field }) => (
-              <SkillsInput value={field.value ?? []} onChange={field.onChange} placeholder="Type a skill and press Enter…" maxSkills={15} />
-            )}
+            render={({ field }) => {
+              const current = field.value ?? [];
+              const atLimit = current.length >= MAX_TAGS;
+              return (
+                <div>
+                  <SkillsInput value={current} onChange={field.onChange} placeholder="Type a skill and press Enter…" maxSkills={MAX_TAGS} />
+                  {suggestedSkills.length > 0 && !atLimit && (
+                    <div className="mt-3">
+                      <p id="skill-suggestions-label" className="text-xs font-medium text-slate-500">Popular skills</p>
+                      <ul aria-labelledby="skill-suggestions-label" className="mt-2 flex flex-wrap gap-1.5">
+                        {suggestedSkills.map((skill) => (
+                          <li key={skill}>
+                            <button
+                              type="button"
+                              onClick={() => field.onChange([...current, skill])}
+                              aria-label={`Add skill ${skill}`}
+                              className="inline-flex items-center gap-1 rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                            >
+                              <Plus className="h-3 w-3" aria-hidden />
+                              {skill}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            }}
           />
       </Section>
 

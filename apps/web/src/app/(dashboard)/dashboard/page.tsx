@@ -1,21 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight, Bookmark, Briefcase, CheckCircle2, Circle, Clock, FileText, Inbox, Plus, Search,
-  Send, ShieldCheck, Trophy, UserCheck, Users, BarChart3,
+  Send, Trophy, Users,
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
 import { useRecruiterStats } from '@/hooks/useApplications';
 import { useJobs, useMyJobs, useSavedJobs } from '@/hooks/useJobs';
-import { useAllUsers } from '@/hooks/useUsers';
 import { useMe } from '@/hooks/useProfile';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { buttonClasses } from '@/components/ui/Button';
-import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
+import { EmptyState, ErrorState, Skeleton, Spinner } from '@/components/ui/States';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { PipelineBars, statsToCounts, type StatusCounts } from '@/components/dashboard/PipelineBars';
 import { getProfileCompleteness } from '@/components/profile/completeness';
@@ -315,62 +316,16 @@ function RecruiterDashboard() {
 }
 
 // ─── Admin ────────────────────────────────────────────────────────
-function AdminDashboard() {
-  const users = useAllUsers(0, 1);
-  const openJobs = useJobs({ size: 1 });
-  const stats = useRecruiterStats();
-
-  const links = [
-    { href: '/admin/users', label: 'Manage users', description: 'Change roles, suspend or restore accounts', icon: UserCheck },
-    { href: '/admin/analytics', label: 'Analytics', description: 'Platform-wide hiring funnel', icon: BarChart3 },
-    { href: '/jobs', label: 'Browse jobs', description: 'Review live job listings', icon: Search },
-  ];
-
+/** Admins have their own Overview at /admin; send them there instead of a duplicate dashboard. */
+function AdminRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/admin');
+  }, [router]);
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Users" value={users.isError ? null : users.data?.totalElements} icon={Users} href="/admin/users" hint="Registered accounts" />
-        <StatCard label="Open jobs" value={openJobs.isError ? null : openJobs.data?.totalElements} icon={Briefcase} tone="bg-sky-50 text-sky-600" href="/jobs" hint="Accepting applications" />
-        <StatCard label="Applications" value={stats.isError ? null : stats.data?.total} icon={FileText} tone="bg-violet-50 text-violet-600" href="/admin/analytics" hint="Platform-wide" />
-        <StatCard label="Awaiting review" value={stats.isError ? null : stats.data?.pending} icon={Inbox} tone="bg-amber-50 text-amber-600" hint="Not yet reviewed by recruiters" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader title="Hiring pipeline" description="All applications on the platform, by stage" action={<ViewAll href="/admin/analytics" label="Details" />} />
-          <div className="p-5">
-            {stats.isLoading ? (
-              <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6" />)}</div>
-            ) : stats.isError ? (
-              <ErrorState title="Couldn't load pipeline" error={stats.error} onRetry={() => stats.refetch()} retrying={stats.isRefetching} />
-            ) : !stats.data || stats.data.total === 0 ? (
-              <p className="text-sm text-slate-500">No applications have been submitted yet.</p>
-            ) : (
-              <PipelineBars counts={statsToCounts(stats.data)} />
-            )}
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <CardHeader title="Administration" />
-          <ul className="divide-y divide-slate-100">
-            {links.map(({ href, label, description, icon: Icon }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/70 focus:outline-none focus-visible:bg-slate-50 group">
-                  <span className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-slate-900">{label}</span>
-                    <span className="block text-xs text-slate-500 truncate">{description}</span>
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary-600" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+    <div className="flex justify-center py-16" role="status">
+      <Spinner className="w-6 h-6 text-primary-600" />
+      <span className="sr-only">Opening the admin overview…</span>
     </div>
   );
 }
@@ -379,12 +334,12 @@ function AdminDashboard() {
 const SUBTITLES = {
   CANDIDATE: 'Track your applications and find your next role.',
   RECRUITER: 'Review new applicants and manage your job posts.',
-  ADMIN: 'Platform activity at a glance.',
 } as const;
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   if (!user) return null;
+  if (user.role === 'ADMIN') return <AdminRedirect />;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -408,16 +363,10 @@ export default function DashboardPage() {
             <Search className="w-4 h-4" aria-hidden /> Browse jobs
           </Link>
         )}
-        {user.role === 'ADMIN' && (
-          <Link href="/admin/users" className={buttonClasses('secondary', 'md', 'self-start sm:self-auto')}>
-            <ShieldCheck className="w-4 h-4" aria-hidden /> Manage users
-          </Link>
-        )}
       </div>
 
       {user.role === 'CANDIDATE' && <CandidateDashboard />}
       {user.role === 'RECRUITER' && <RecruiterDashboard />}
-      {user.role === 'ADMIN' && <AdminDashboard />}
     </div>
   );
 }

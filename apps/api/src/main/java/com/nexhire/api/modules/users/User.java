@@ -74,6 +74,11 @@ public class User implements UserDetails {
     @Column(name = "open_to_work", nullable = false)
     private boolean openToWork = false;
 
+    /** Recruiter identity checked by an admin; shown as a badge on their job posts. */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean verified = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

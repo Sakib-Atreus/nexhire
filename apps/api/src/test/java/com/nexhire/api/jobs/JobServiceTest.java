@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import com.nexhire.api.modules.admin.AuditService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -35,6 +36,7 @@ class JobServiceTest {
     @Mock private SavedJobRepository savedJobRepository;
     @Mock private NotificationService notificationService;
     @Mock private ApplicationRepository applicationRepository;
+    @Mock private AuditService auditService;
     @Spy private ObjectMapper objectMapper = new ObjectMapper();
     @InjectMocks private JobService jobService;
 
@@ -49,7 +51,7 @@ class JobServiceTest {
         CreateJobRequest request = new CreateJobRequest(
             "Backend Developer", "Description", null, null,
             "ACME Corp", null, "Remote", JobType.REMOTE,
-            ExperienceLevel.MID, null, null, null, null, null, null
+            ExperienceLevel.MID, null, null, null, null, null, null, null
         );
         Job savedJob = Job.builder()
             .id(UUID.randomUUID())
@@ -106,10 +108,10 @@ class JobServiceTest {
 
     @Test
     void search_returnsPageOfJobs() {
-        when(jobRepository.searchExtended(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(jobRepository.searchExtended(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of()));
 
-        var result = jobService.search(null, null, null, null, null, null, null, Pageable.unpaged(), null);
+        var result = jobService.search(null, null, null, null, null, null, null, null, false, Pageable.unpaged(), null);
 
         assertThat(result.getContent()).isEmpty();
     }
