@@ -4,21 +4,27 @@ import Link from 'next/link';
 import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, Banknote, Briefcase, CheckCircle2, Circle, ClipboardList, FileText, MapPin, Plus, Tags, Trash2 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Job, JobStatus } from '@/types';
 import type { JobPayload } from '@/hooks/useJobs';
 import { Button, buttonClasses } from '@/components/ui/Button';
-import { Card, CardHeader } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { FormField, Input, Select, Textarea } from '@/components/ui/Field';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { SkillsInput } from '@/components/ui/SkillsInput';
 import {
   CURRENCIES,
+  EXPERIENCE_LABELS,
   EXPERIENCE_OPTIONS,
+  EXPERIENCE_STYLES,
   JOB_STATUS_LABELS,
+  JOB_TYPE_LABELS,
   JOB_TYPE_OPTIONS,
 } from '@/lib/constants';
-import { parseTags } from '@/lib/format';
+import { formatDate, formatSalary, parseTags, toListItems } from '@/lib/format';
+import { cn } from '@/lib/cn';
 
 const MAX_QUESTIONS = 5;
 const JOB_STATUSES: JobStatus[] = ['OPEN', 'DRAFT', 'CLOSED', 'FILLED'];
@@ -133,12 +139,112 @@ function toPayload(v: FormOutput, mode: 'create' | 'edit'): JobPayload {
   return payload;
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Section({ step, icon: Icon, title, description, children, bodyClassName }: {
+  step: number;
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  bodyClassName?: string;
+}) {
   return (
     <Card>
-      <CardHeader title={title} description={description} />
-      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">{children}</div>
+      <div className="flex items-start gap-3 px-4 sm:px-6 py-4 border-b border-slate-100">
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600" aria-hidden>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-slate-900">
+            <span className="text-slate-400 font-medium mr-1.5">{step}.</span>
+            {title}
+          </h2>
+          {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+        </div>
+      </div>
+      <div className={cn('p-4 sm:p-6', bodyClassName ?? 'grid grid-cols-1 sm:grid-cols-2 gap-5')}>{children}</div>
     </Card>
+  );
+}
+
+/** How the posting will look in search results, updated as the recruiter types. */
+function PreviewCard({ v }: { v: FormInput }) {
+  const toNum = (x: unknown) => {
+    const n = Number(String(x ?? '').replace(/[,\s]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const salary = formatSalary(toNum(v.salaryMin), toNum(v.salaryMax), v.salaryCurrency || 'USD');
+  const logo = /^https?:\/\/\S+$/i.test(v.companyLogoUrl?.trim() ?? '') ? v.companyLogoUrl.trim() : null;
+  const tags = v.tags ?? [];
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-start gap-3">
+        <CompanyLogo key={logo ?? 'none'} name={v.companyName?.trim() || 'Company'} src={logo} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className={cn('font-semibold leading-snug break-words', v.title?.trim() ? 'text-slate-900' : 'text-slate-400')}>
+            {v.title?.trim() || 'Job title'}
+          </p>
+          <p className="text-sm text-slate-500 truncate">{v.companyName?.trim() || 'Company name'}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden />{v.location?.trim() || 'Location'}</span>
+        <span className="inline-flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" aria-hidden />{JOB_TYPE_LABELS[v.jobType]}</span>
+        {salary && <span className="inline-flex items-center gap-1"><Banknote className="h-3.5 w-3.5" aria-hidden />{salary}</span>}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <Badge tone={EXPERIENCE_STYLES[v.experienceLevel]}>{EXPERIENCE_LABELS[v.experienceLevel]}</Badge>
+        {tags.slice(0, 3).map((t) => (
+          <span key={t} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{t}</span>
+        ))}
+        {tags.length > 3 && <span className="px-1 py-0.5 text-xs text-slate-400">+{tags.length - 3}</span>}
+      </div>
+      {v.deadline && <p className="mt-3 text-xs text-slate-400">Applications close {formatDate(v.deadline)}</p>}
+    </div>
+  );
+}
+
+/** Quality checklist; only the first two items are required to publish. */
+function Checklist({ v }: { v: FormInput }) {
+  const items = [
+    { label: 'Job title and company', done: (v.title?.trim().length ?? 0) >= 3 && !!v.companyName?.trim() },
+    { label: 'Description (20+ characters)', done: (v.description?.trim().length ?? 0) >= 20 },
+    { label: 'Location', done: !!v.location?.trim() },
+    { label: 'Salary range', done: String(v.salaryMin ?? '') !== '' || String(v.salaryMax ?? '') !== '' },
+    { label: 'Responsibilities', done: toListItems(v.responsibilities).length > 0 },
+    { label: 'Requirements', done: toListItems(v.requirements).length > 0 },
+    { label: 'At least 3 skills', done: (v.tags?.length ?? 0) >= 3 },
+  ];
+  const done = items.filter((i) => i.done).length;
+  const pct = Math.round((done / items.length) * 100);
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-medium text-slate-700">Posting quality</span>
+        <span className="text-slate-500">{done} of {items.length}</span>
+      </div>
+      <div
+        className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Posting completeness"
+      >
+        <div className={cn('h-full rounded-full transition-all', pct === 100 ? 'bg-emerald-500' : 'bg-primary-500')} style={{ width: `${pct}%` }} />
+      </div>
+      <ul className="mt-3 space-y-1.5">
+        {items.map((i) => (
+          <li key={i.label} className={cn('flex items-center gap-2 text-xs', i.done ? 'text-slate-600' : 'text-slate-400')}>
+            {i.done
+              ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500" aria-hidden />
+              : <Circle className="h-4 w-4 flex-shrink-0 text-slate-300" aria-hidden />}
+            <span>{i.label}</span>
+            <span className="sr-only">{i.done ? '(done)' : '(not done yet)'}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-slate-400">Complete postings get noticeably more qualified applicants.</p>
+    </div>
   );
 }
 
@@ -170,15 +276,18 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
   });
   const questions = useFieldArray({ control, name: 'screeningQuestions' });
 
-  const companyName = watch('companyName');
-  const logoUrl = watch('companyLogoUrl');
-  const currency = watch('salaryCurrency');
+  const values = watch();
+  const companyName = values.companyName;
+  const logoUrl = values.companyLogoUrl;
+  const currency = values.salaryCurrency;
+  const descriptionLength = values.description?.trim().length ?? 0;
   const validLogo = /^https?:\/\/\S+$/i.test(logoUrl?.trim() ?? '') ? logoUrl.trim() : null;
 
   const submit = handleSubmit((values) => onSubmit(toPayload(values, mode)));
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-6">
+    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <div className="min-w-0 space-y-6">
       {serverError && (
         <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden />
@@ -186,7 +295,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
         </div>
       )}
 
-      <Section title="Role" description="The basics candidates see first.">
+      <Section step={1} icon={Briefcase} title="Role" description="The basics candidates see first.">
         <FormField label="Job title" required error={errors.title?.message} className="sm:col-span-2">
           {(id) => <Input id={id} {...register('title')} invalid={!!errors.title} placeholder="e.g. Senior Frontend Engineer" />}
         </FormField>
@@ -248,9 +357,13 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
         )}
       </Section>
 
-      <Card>
-        <CardHeader title="Compensation" description="Annual base salary. Leave blank if you prefer not to share it." />
-        <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <Section
+        step={2}
+        icon={Banknote}
+        title="Compensation"
+        description="Annual base salary. Leave blank if you prefer not to share it."
+        bodyClassName="grid grid-cols-1 sm:grid-cols-3 gap-5"
+      >
           <FormField label="Currency" error={errors.salaryCurrency?.message}>
             {(id) => (
               <Select id={id} {...register('salaryCurrency')}>
@@ -268,16 +381,24 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
               <Input id={id} type="number" inputMode="numeric" min={0} step={1000} {...register('salaryMax')} invalid={!!errors.salaryMax} placeholder="e.g. 110000" />
             )}
           </FormField>
-        </div>
         {mode === 'edit' && (
-          <p className="px-5 pb-4 -mt-2 text-xs text-slate-500">Clearing a salary field keeps the currently published amount.</p>
+          <p className="sm:col-span-3 -mt-2 text-xs text-slate-500">Clearing a salary field keeps the currently published amount.</p>
         )}
-      </Card>
+      </Section>
 
-      <Card>
-        <CardHeader title="Details" description="What the job involves and who you are looking for." />
-        <div className="p-5 space-y-5">
-          <FormField label="Description" required error={errors.description?.message}>
+      <Section
+        step={3}
+        icon={FileText}
+        title="Details"
+        description="What the job involves and who you are looking for."
+        bodyClassName="space-y-5"
+      >
+          <FormField
+            label="Description"
+            required
+            error={errors.description?.message}
+            hint={`${descriptionLength.toLocaleString('en-US')} characters · Separate paragraphs with a blank line.`}
+          >
             {(id) => (
               <Textarea id={id} rows={6} {...register('description')} invalid={!!errors.description} placeholder="Summarize the role, the team and what success looks like." />
             )}
@@ -292,12 +413,9 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
               <Textarea id={id} rows={5} {...register('requirements')} placeholder={'3+ years with React and TypeScript\nStrong written communication'} />
             )}
           </FormField>
-        </div>
-      </Card>
+      </Section>
 
-      <Card>
-        <CardHeader title="Skills & tags" description="Help candidates find this job in search." />
-        <div className="p-5">
+      <Section step={4} icon={Tags} title="Skills & tags" description="Help candidates find this job in search." bodyClassName="">
           <Controller
             control={control}
             name="tags"
@@ -305,12 +423,15 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
               <SkillsInput value={field.value ?? []} onChange={field.onChange} placeholder="Type a skill and press Enter…" maxSkills={15} />
             )}
           />
-        </div>
-      </Card>
+      </Section>
 
-      <Card>
-        <CardHeader title="Application" description="Deadline and optional questions for applicants." />
-        <div className="p-5 space-y-6">
+      <Section
+        step={5}
+        icon={ClipboardList}
+        title="Application"
+        description="Deadline and optional questions for applicants."
+        bodyClassName="space-y-6"
+      >
           <FormField label="Application deadline" error={errors.deadline?.message} hint="Optional." className="sm:max-w-xs">
             {(id) => (
               <Input id={id} type="date" min={mode === 'create' ? todayISO() : undefined} {...register('deadline')} invalid={!!errors.deadline} />
@@ -363,15 +484,39 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
               Add question
             </Button>
           </fieldset>
-        </div>
-      </Card>
-
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-        <Link href={cancelHref} className={buttonClasses('secondary')}>Cancel</Link>
-        <Button type="submit" loading={isSubmitting}>
-          {mode === 'create' ? (isSubmitting ? 'Publishing…' : 'Publish job') : isSubmitting ? 'Saving…' : 'Save changes'}
-        </Button>
+      </Section>
       </div>
+
+      {/* Side panel: sticky on desktop, stacked after the form on smaller screens. */}
+      <aside className="min-w-0 space-y-4 lg:sticky lg:top-24" aria-label="Preview and publish">
+        <Card className="p-4 sm:p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Preview</h2>
+          <p className="mt-0.5 mb-3 text-xs text-slate-400">How candidates will see this job in search.</p>
+          <PreviewCard v={values} />
+        </Card>
+
+        <Card className="p-4 sm:p-5">
+          <Checklist v={values} />
+        </Card>
+
+        <Card className="p-4 sm:p-5">
+          {Object.keys(errors).length > 0 && (
+            <p className="mb-3 flex items-start gap-2 text-xs text-rose-600" role="alert">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden />
+              Please fix the highlighted fields before {mode === 'create' ? 'publishing' : 'saving'}.
+            </p>
+          )}
+          <div className="flex flex-col gap-2">
+            <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
+              {mode === 'create' ? (isSubmitting ? 'Publishing…' : 'Publish job') : isSubmitting ? 'Saving…' : 'Save changes'}
+            </Button>
+            <Link href={cancelHref} className={buttonClasses('secondary', 'lg', 'w-full')}>Cancel</Link>
+          </div>
+          {mode === 'create' && (
+            <p className="mt-3 text-center text-xs text-slate-400">The job goes live immediately. You can edit or close it anytime.</p>
+          )}
+        </Card>
+      </aside>
     </form>
   );
 }

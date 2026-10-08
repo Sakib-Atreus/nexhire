@@ -15,7 +15,7 @@ import { toast } from '@/store/toastStore';
 
 function FormSkeleton() {
   return (
-    <div className="max-w-3xl space-y-6" aria-busy="true" aria-label="Loading job">
+    <div className="mx-auto w-full max-w-6xl space-y-6" aria-busy="true" aria-label="Loading job">
       <Skeleton className="h-4 w-24" />
       <Skeleton className="h-8 w-56" />
       {[0, 1, 2].map((i) => (
@@ -43,7 +43,7 @@ export default function EditJobPage() {
 
   if (error || !job) {
     return (
-      <Card className="max-w-3xl">
+      <Card className="mx-auto max-w-2xl">
         <ErrorState title="We couldn't load this job" error={error} onRetry={() => refetch()} retrying={isRefetching} />
       </Card>
     );
@@ -52,7 +52,7 @@ export default function EditJobPage() {
   const canEdit = user.role === 'ADMIN' || (user.role === 'RECRUITER' && user.id === job.recruiterId);
   if (!canEdit) {
     return (
-      <Card className="max-w-3xl">
+      <Card className="mx-auto max-w-2xl">
         <EmptyState
           icon={Lock}
           title="You can't edit this job"
@@ -64,7 +64,7 @@ export default function EditJobPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto w-full max-w-6xl">
       <Link href={`/jobs/${job.id}`} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-4">
         <ArrowLeft className="w-4 h-4" aria-hidden /> Back to job
       </Link>

@@ -52,7 +52,7 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">
       <div className="h-16 flex items-center px-5 border-b border-slate-100">
-        <BrandMark href={guest ? '/' : '/dashboard'} />
+        <BrandMark href="/" />
       </div>
 
       <nav aria-label="Main" className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">

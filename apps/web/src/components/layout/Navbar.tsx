@@ -50,7 +50,7 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
     <>
       <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
         <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-          <BrandMark href={guest ? '/' : '/dashboard'} size="sm" className="lg:hidden" />
+          <BrandMark href="/" size="sm" className="lg:hidden" />
           <Breadcrumbs pathname={pathname} />
 
           {guest || !user ? (

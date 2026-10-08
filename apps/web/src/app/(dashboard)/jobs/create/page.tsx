@@ -20,7 +20,7 @@ export default function CreateJobPage() {
 
   if (!user) {
     return (
-      <div className="max-w-3xl space-y-4">
+      <div className="mx-auto w-full max-w-6xl space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-96 rounded-xl" />
       </div>
@@ -29,7 +29,7 @@ export default function CreateJobPage() {
 
   if (user.role !== 'RECRUITER' && user.role !== 'ADMIN') {
     return (
-      <Card className="max-w-3xl">
+      <Card className="mx-auto max-w-2xl">
         <EmptyState
           icon={Lock}
           title="Only recruiters can post jobs"
@@ -41,11 +41,11 @@ export default function CreateJobPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto w-full max-w-6xl">
       <Link href="/jobs/my" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 mb-4">
         <ArrowLeft className="w-4 h-4" aria-hidden /> My jobs
       </Link>
-      <PageHeader title="Post a job" description="Fill in the details below. The job goes live as soon as you publish it." />
+      <PageHeader title="Post a job" description="Fill in the details below. Fields marked * are required." />
       <JobForm
         mode="create"
         cancelHref="/jobs/my"
