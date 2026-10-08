@@ -49,6 +49,15 @@ class AuthServiceTest {
     }
 
     @Test
+    void register_asAdmin_isRejected() {
+        RegisterRequest request = new RegisterRequest("evil@test.com", "password123", "Eve", "Hacker", Role.ADMIN);
+
+        assertThatThrownBy(() -> authService.register(request))
+            .isInstanceOf(BadRequestException.class);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void register_withNewEmail_returnsAuthResponse() {
         RegisterRequest request = new RegisterRequest("test@test.com", "password123", "John", "Doe", Role.CANDIDATE);
         User savedUser = User.builder()

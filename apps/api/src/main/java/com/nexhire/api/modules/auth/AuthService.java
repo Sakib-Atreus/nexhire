@@ -9,6 +9,7 @@ import com.nexhire.api.modules.auth.dto.RefreshTokenRequest;
 import com.nexhire.api.modules.auth.dto.RegisterRequest;
 import com.nexhire.api.modules.auth.dto.ResetPasswordRequest;
 import com.nexhire.api.modules.auth.dto.VerifyEmailRequest;
+import com.nexhire.api.modules.users.Role;
 import com.nexhire.api.modules.users.User;
 import com.nexhire.api.modules.users.UserRepository;
 import com.nexhire.api.modules.users.UserService;
@@ -44,6 +45,10 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        // Administrators are appointed by an existing admin, never self-registered.
+        if (request.role() == Role.ADMIN) {
+            throw new BadRequestException("You can only sign up as a job seeker or a recruiter");
+        }
         if (userRepository.existsByEmail(request.email())) {
             throw new BadRequestException("Email already in use: " + request.email());
         }

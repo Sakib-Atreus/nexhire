@@ -1,6 +1,21 @@
+# Local development only. These match docker/docker-compose.dev.yml and are NOT used in production
+# (the Docker image runs with SPRING_PROFILES_ACTIVE=prod). Environment variables still override them.
 spring:
+  datasource:
+    username: ${SPRING_DATASOURCE_USERNAME:nexhire}
+    password: ${SPRING_DATASOURCE_PASSWORD:root1234}
+  rabbitmq:
+    username: ${SPRING_RABBITMQ_USERNAME:nexhire}
+    password: ${SPRING_RABBITMQ_PASSWORD:root1234}
   jpa:
     show-sql: true
+
+jwt:
+  secret: ${JWT_SECRET:local-dev-only-jwt-secret-do-not-use-in-production}
+
+minio:
+  access-key: ${MINIO_ACCESS_KEY:nexhire-minio}
+  secret-key: ${MINIO_SECRET_KEY:minio1234}
 
 logging:
   level:

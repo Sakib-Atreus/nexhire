@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -25,7 +26,9 @@ public class NotificationConsumer {
     private final ObjectMapper objectMapper;
 
     @RabbitListener(queues = RabbitMQConfig.NOTIFICATION_QUEUE)
-    @Transactional
+    // Own write transaction: the direct-delivery fallback is called from NotificationService,
+    // whose read-only transaction would otherwise silently discard the insert.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void consume(NotificationMessage message) {
         log.debug("Processing notification: type={}, userId={}", message.getType(), message.getUserId());
 

@@ -24,10 +24,14 @@ public class MinioConfig {
 
     @Bean
     public MinioClient minioClient() {
-        return MinioClient.builder()
-            .endpoint(endpoint)
-            .credentials(accessKey, secretKey)
-            .build();
+        MinioClient.Builder builder = MinioClient.builder().endpoint(endpoint);
+        if (accessKey.isBlank() || secretKey.isBlank()) {
+            // Start anyway so the rest of the API works; only file uploads will fail.
+            log.warn("MINIO_ACCESS_KEY / MINIO_SECRET_KEY are not set; file uploads are disabled");
+        } else {
+            builder.credentials(accessKey, secretKey);
+        }
+        return builder.build();
     }
 
     @Bean

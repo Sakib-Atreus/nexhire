@@ -5,8 +5,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/nexhire}
-    username: ${SPRING_DATASOURCE_USERNAME:nexhire}
-    password: ${SPRING_DATASOURCE_PASSWORD:root1234}
+    # No default: must come from the environment (local values live in application-dev.yml).
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -23,12 +24,16 @@ spring:
     addresses: ${SPRING_RABBITMQ_ADDRESSES:}
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: ${SPRING_RABBITMQ_PORT:5672}
-    username: ${SPRING_RABBITMQ_USERNAME:nexhire}
-    password: ${SPRING_RABBITMQ_PASSWORD:root1234}
+    username: ${SPRING_RABBITMQ_USERNAME:}
+    password: ${SPRING_RABBITMQ_PASSWORD:}
     virtual-host: ${SPRING_RABBITMQ_VIRTUAL_HOST:/}
     ssl:
       enabled: ${SPRING_RABBITMQ_SSL_ENABLED:false}
       validate-server-certificate: false
+    listener:
+      simple:
+        # A broker outage must not take the API down (see RabbitMQConfig).
+        missing-queues-fatal: false
 
 server:
   port: 8080
@@ -36,7 +41,8 @@ server:
     context-path: /api
 
 jwt:
-  secret: ${JWT_SECRET:07f65aeb7653e5222410f0b42d76bda3cc3eaa12b3f0edb7329292f931899ac0598e061ace63faed6248b6610d3b2bee136e637f3fe2412fa5e300435248da6a}
+  # No default: set JWT_SECRET (32+ random characters). The app refuses to start without it.
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
@@ -55,6 +61,15 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  health:
+    # Notifications fall back to direct delivery, so the broker isn't critical to being "UP".
+    rabbit:
+      enabled: false
+
+# First administrator, created on startup only while no admin exists (see AdminBootstrap).
+admin:
+  email: ${ADMIN_EMAIL:}
+  password: ${ADMIN_PASSWORD:}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
@@ -62,6 +77,6 @@ cors:
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
   public-url: ${MINIO_PUBLIC_URL:http://localhost:9000/nexhire-files}
-  access-key: ${MINIO_ACCESS_KEY:nexhire-minio}
-  secret-key: ${MINIO_SECRET_KEY:minio1234}
+  access-key: ${MINIO_ACCESS_KEY:}
+  secret-key: ${MINIO_SECRET_KEY:}
   bucket: ${MINIO_BUCKET:nexhire-files}

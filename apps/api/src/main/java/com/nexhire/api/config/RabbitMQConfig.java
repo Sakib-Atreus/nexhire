@@ -1,5 +1,7 @@
 package com.nexhire.api.config;
 
+import org.springframework.amqp.rabbit.config.ContainerCustomizer;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -50,6 +52,19 @@ public class RabbitMQConfig {
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
+    }
+
+    /**
+     * Keep the app running when RabbitMQ is unreachable or rejects our credentials:
+     * listeners log the problem and retry every 30s instead of failing startup.
+     */
+    @Bean
+    public ContainerCustomizer<SimpleMessageListenerContainer> resilientListenerCustomizer() {
+        return container -> {
+            container.setPossibleAuthenticationFailureFatal(false);
+            container.setMissingQueuesFatal(false);
+            container.setRecoveryInterval(30_000L);
+        };
     }
 
     @Bean
