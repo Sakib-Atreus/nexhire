@@ -45,6 +45,8 @@ spring:
 
 server:
   port: 8080
+  # Use X-Forwarded-Proto/Host from Render's proxy so generated URLs (e.g. the calendar feed) are https.
+  forward-headers-strategy: framework
   servlet:
     context-path: /api
 
@@ -84,6 +86,11 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:3000}
   mail:
     from: ${MAIL_FROM:NexHire <no-reply@nexhire.local>}
+
+# Built-in interview video rooms (Daily.co). Leave DAILY_API_KEY unset to use pasted meeting links only.
+video:
+  daily:
+    api-key: ${DAILY_API_KEY:}
 
 # First administrator, created on startup only while no admin exists (see AdminBootstrap).
 admin:

@@ -19,6 +19,7 @@ import { buttonClasses } from '@/components/ui/Button';
 import { EmptyState, ErrorState, Skeleton, Spinner } from '@/components/ui/States';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { UpcomingInterviewsCard } from '@/components/interviews/UpcomingInterviewsCard';
+import { CalendarWidget } from '@/components/calendar/CalendarWidget';
 import { PipelineBars, statsToCounts, type StatusCounts } from '@/components/dashboard/PipelineBars';
 import { getProfileCompleteness } from '@/components/profile/completeness';
 import { useMyEducation, useMyExperience } from '@/hooks/useCandidate';
@@ -106,6 +107,8 @@ function CandidateDashboard() {
         <StatCard label="Offers & hires" value={apps.isError ? null : apps.data ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={scopeHint} />
         <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" />
       </div>
+
+      <CalendarWidget recruiter={false} />
 
       <section aria-labelledby="recommended-heading">
         <div className="mb-3 flex items-end justify-between gap-3">
@@ -229,6 +232,8 @@ function RecruiterDashboard() {
         <StatCard label="Awaiting review" value={stats.isError ? null : stats.data?.pending} icon={Inbox} tone="bg-amber-50 text-amber-600" hint="New, not yet reviewed" />
         <StatCard label="Hired" value={stats.isError ? null : stats.data ? (stats.data.hired ?? 0) : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={stats.data ? `${pluralize(stats.data.offered, 'offer')} pending` : undefined} />
       </div>
+
+      <CalendarWidget recruiter />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 overflow-hidden">

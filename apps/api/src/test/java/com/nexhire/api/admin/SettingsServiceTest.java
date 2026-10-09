@@ -27,6 +27,7 @@ class SettingsServiceTest {
 
     @Mock private SiteSettingRepository repository;
     @Mock private AuditService auditService;
+    @Mock private com.nexhire.api.modules.video.VideoService videoService;
     @Spy private ObjectMapper objectMapper = new ObjectMapper();
     @InjectMocks private SettingsService settingsService;
 

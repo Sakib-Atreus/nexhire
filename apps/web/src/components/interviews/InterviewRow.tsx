@@ -205,6 +205,7 @@ export function InterviewRow({ interview: i, viewer, onAction }: {
                   <span className="sr-only"> with {i.candidateName}</span>
                 </Link>
               )}
+              {scheduled && <AddToCalendarButton interview={i} />}
               <Link href={`/jobs/${i.jobId}/applicants`} className={buttonClasses('secondary', 'sm')}>
                 <KanbanSquare className="w-3.5 h-3.5" aria-hidden /> Open in pipeline
               </Link>

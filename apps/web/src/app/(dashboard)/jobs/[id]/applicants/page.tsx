@@ -85,6 +85,11 @@ export default function ApplicantsPage() {
   const [minRating, setMinRating] = useState<RatingFilter>(0);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | ''>('');
   const [openId, setOpenId] = useState<string | null>(null);
+  // Deep link from the calendar / notifications: ?application={id} opens that applicant.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('application');
+    if (id) setOpenId(id);
+  }, []);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<ApplicationStatus>('REVIEWING');
   const [pending, setPending] = useState<PendingMove | null>(null);

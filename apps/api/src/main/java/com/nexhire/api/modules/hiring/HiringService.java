@@ -41,6 +41,9 @@ public class HiringService {
     private static final int SERIES_DAYS = 30;
     private static final int MAX_INTERVIEW_MINUTES = 480;
     private static final long FOLLOW_UP_AFTER_HOURS = 48;
+    /** Video rooms open 15 minutes before the interview and close an hour after its scheduled end. */
+    private static final long ROOM_OPENS_MINUTES_BEFORE = 15;
+    private static final long ROOM_CLOSES_MINUTES_AFTER = 60;
     private static final Set<ApplicationStatus> BEFORE_INTERVIEW =
         EnumSet.of(ApplicationStatus.PENDING, ApplicationStatus.REVIEWING, ApplicationStatus.SHORTLISTED);
 
@@ -55,6 +58,7 @@ public class HiringService {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final TimelineService timelineService;
+    private final com.nexhire.api.modules.video.VideoService videoService;
 
     // ─── Private notes ──────────────────────────────────────────────────────
 
@@ -139,6 +143,9 @@ public class HiringService {
         if (request.type() == null) throw new BadRequestException("Choose the interview type");
         if (request.scheduledAt().isBefore(Instant.now())) throw new BadRequestException("Choose a time in the future");
         int duration = request.durationMinutes() != null ? request.durationMinutes() : 45;
+        boolean wantsRoom = Boolean.TRUE.equals(request.createVideoRoom());
+        if (wantsRoom && request.type() != InterviewType.VIDEO) throw new BadRequestException("Video rooms are only for video interviews");
+        if (wantsRoom && !videoService.isEnabled()) throw new BadRequestException("Video calls aren't set up on this site; add a meeting link instead");
         if (!Boolean.TRUE.equals(request.allowConflicts())) {
             List<InterviewConflictDTO> clashes = findConflicts(app, request.scheduledAt(), duration, null, user);
             if (!clashes.isEmpty()) throw new InterviewConflictException(clashes);
@@ -153,6 +160,8 @@ public class HiringService {
             .message(blank(request.message()))
             .createdBy(user.getId())
             .build());
+        // If the provider fails, the exception rolls back the interview too, so nothing half-created remains.
+        if (wantsRoom) attachVideoRoom(saved);
 
         timelineService.record(app.getId(), ApplicationEventType.INTERVIEW_SCHEDULED,
             null, null, typeLabel(saved.getType()) + " interview · " + saved.getDurationMinutes() + " min", user);
@@ -211,6 +220,23 @@ public class HiringService {
         if (request.message() != null) interview.setMessage(blank(request.message()));
         if (request.status() != null) interview.setStatus(request.status());
         boolean completed = request.status() == InterviewStatus.COMPLETED;
+        if (Boolean.TRUE.equals(request.createVideoRoom()) && interview.getVideoRoomName() == null
+            && interview.getType() == InterviewType.VIDEO && interview.getStatus() == InterviewStatus.SCHEDULED) {
+            if (!videoService.isEnabled()) throw new BadRequestException("Video calls aren't set up on this site");
+            attachVideoRoom(interview);
+        } else if (interview.getVideoRoomName() != null) {
+            if (cancelled || interview.getType() != InterviewType.VIDEO) {
+                videoService.deleteRoom(interview.getVideoRoomName());
+                interview.setVideoProvider(null);
+                interview.setVideoRoomName(null);
+                interview.setVideoRoomUrl(null);
+            } else if (timeChanged) {
+                Instant end = interview.getScheduledAt().plus(interview.getDurationMinutes(), ChronoUnit.MINUTES);
+                videoService.updateWindow(interview.getVideoRoomName(),
+                    interview.getScheduledAt().minus(ROOM_OPENS_MINUTES_BEFORE, ChronoUnit.MINUTES),
+                    end.plus(ROOM_CLOSES_MINUTES_AFTER, ChronoUnit.MINUTES));
+            }
+        }
         Interview saved = interviewRepository.save(interview);
         if (cancelled) {
             timelineService.record(app.getId(), ApplicationEventType.INTERVIEW_CANCELLED, null, null, null, user);
@@ -341,6 +367,57 @@ public class HiringService {
         } catch (Exception e) {
             throw new IllegalStateException("Could not store proposed times", e);
         }
+    }
+
+    /**
+     * Join details for an interview's built-in video room: the candidate or the hiring team, from 15 minutes
+     * before the start until an hour after the scheduled end. The hiring team joins as room owners.
+     */
+    public VideoJoinDTO joinVideo(UUID interviewId, User user) {
+        Interview interview = interviewRepository.findById(interviewId)
+            .orElseThrow(() -> new ResourceNotFoundException("Interview", "id", interviewId));
+        Application app = applicationService.getParticipating(interview.getApplication().getId(), user);
+        if (interview.getVideoRoomName() == null) throw new BadRequestException("This interview doesn't have a NexHire video room");
+        if (interview.getStatus() != InterviewStatus.SCHEDULED) throw new BadRequestException("This interview is no longer scheduled");
+        Instant now = Instant.now();
+        Instant opens = interview.getScheduledAt().minus(ROOM_OPENS_MINUTES_BEFORE, ChronoUnit.MINUTES);
+        Instant closes = interview.getScheduledAt().plus(interview.getDurationMinutes() + ROOM_CLOSES_MINUTES_AFTER, ChronoUnit.MINUTES);
+        if (now.isBefore(opens)) throw new BadRequestException("The video room opens 15 minutes before the interview");
+        if (now.isAfter(closes)) throw new BadRequestException("This video room has closed");
+
+        boolean candidate = app.getCandidate().getId().equals(user.getId());
+        String userName = candidate ? user.getFullName() : user.getFullName() + " (" + app.getJob().getCompanyName() + ")";
+        String token = videoService.createToken(interview.getVideoRoomName(), userName, !candidate, closes);
+        return new VideoJoinDTO(interview.getId(), interview.getVideoRoomUrl(), token, !candidate, userName,
+            app.getJob().getTitle(), app.getJob().getCompanyName(), app.getCandidate().getFullName(),
+            interview.getScheduledAt(), interview.getDurationMinutes());
+    }
+
+    private void attachVideoRoom(Interview interview) {
+        Instant end = interview.getScheduledAt().plus(interview.getDurationMinutes(), ChronoUnit.MINUTES);
+        String name = "nexhire-" + interview.getId().toString().replace("-", "");
+        com.nexhire.api.modules.video.VideoRoom room = videoService.createRoom(name,
+            interview.getScheduledAt().minus(ROOM_OPENS_MINUTES_BEFORE, ChronoUnit.MINUTES),
+            end.plus(ROOM_CLOSES_MINUTES_AFTER, ChronoUnit.MINUTES));
+        interview.setVideoProvider(com.nexhire.api.modules.video.VideoService.PROVIDER);
+        interview.setVideoRoomName(room.name());
+        interview.setVideoRoomUrl(room.url());
+        interviewRepository.save(interview);
+    }
+
+    /**
+     * Interviews (any status) starting in [from, to) for the calendar: a candidate's own,
+     * or every interview on jobs a recruiter manages. Range is capped at 100 days.
+     */
+    public List<InterviewDTO> calendar(User user, Instant from, Instant to) {
+        if (from == null || to == null || !to.isAfter(from)) throw new BadRequestException("Choose a valid date range");
+        if (ChronoUnit.DAYS.between(from, to) > 100) throw new BadRequestException("Choose a range of 100 days or less");
+        List<Interview> list = switch (user.getRole()) {
+            case CANDIDATE -> interviewRepository.forCandidateBetween(user.getId(), from, to);
+            case RECRUITER -> interviewRepository.forRecruiterBetween(user.getId(), JobAccess.companyOrNone(user), from, to);
+            default -> List.of();
+        };
+        return list.stream().map(this::toDTO).toList();
     }
 
     /** Upcoming scheduled interviews: a candidate's own, or every interview on jobs a recruiter manages. */
@@ -486,6 +563,7 @@ public class HiringService {
         return new InterviewDTO(i.getId(), a.getId(), j.getId(), j.getTitle(), j.getCompanyName(),
             a.getCandidate().getId(), a.getCandidate().getFullName(), i.getScheduledAt(), i.getDurationMinutes(),
             i.getType(), i.getLocation(), i.getMessage(), i.getStatus(), i.getCreatedAt(),
-            i.getResponse(), i.getResponseNote(), proposedTimes(i), i.getRespondedAt(), i.getInvitedAt(), needsFollowUp);
+            i.getResponse(), i.getResponseNote(), proposedTimes(i), i.getRespondedAt(), i.getInvitedAt(), needsFollowUp,
+            i.getVideoRoomName() != null);
     }
 }

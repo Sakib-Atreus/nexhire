@@ -16,8 +16,10 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 - **Quick apply** — apply in one click with your saved resume
 - **Company profiles** — browse the company directory and each company's open roles; "Verified employer" badges
 - **One place for every application** — progress tracker (Applied → Review → Shortlist → Interview → Offer → Hired), a timeline of every update with messages from the hiring team, withdraw, cover letter and screening questions
-- **Interview invitations** — accept, request another time (suggest up to 3 times) or decline; warnings when an invitation overlaps your other interviews; add confirmed interviews to your calendar (.ics)
+- **Interview invitations** — accept, request another time (suggest up to 3 times) or decline; warnings when an invitation overlaps your other interviews; add interviews to Google Calendar, Outlook or Apple Calendar
 - **Messages** — two-way conversation with the hiring team on each application
+- **Calendar** — month, week, day and agenda views of your interviews, colour-coded by status, plus a calendar card on the dashboard
+- **Video interviews** — join the interview in the browser from NexHire; the private room opens 15 minutes before the start
 - **Profile** — avatar, headline, bio, skills, portfolio links and an "Open to work" toggle
 
 ### For recruiters and hiring teams
@@ -26,6 +28,8 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 - **Hiring pipeline board** — drag applicants between stages (works with mouse, touch and keyboard), or use list view with bulk actions
 - **Applicant panel** — the candidate's full profile (experience, education, resume), private 1–5 ratings and notes (never visible to candidates), an activity timeline, messages with reusable templates and placeholders such as `{{firstName}}`, and an optional message to the candidate with each stage change
 - **Interview scheduling** — video, phone or on-site; warns about clashes with *your own* interviews; the candidate confirms or proposes another time, and one click accepts their suggestion; unanswered invitations are flagged after 48 hours with a one-click reminder
+- **Team calendar** — every interview across the jobs you manage, colour-coded by the candidate's response, with a job filter and a dashboard calendar card
+- **Built-in video rooms** — choose "NexHire video room" when scheduling a video interview: a private Daily.co room, joined with a personal link, that follows reschedules and is deleted on cancellation (or paste your own Zoom/Meet/Teams link)
 - **Analytics** — per-job funnel (views → applications → interviewed → offered → hired), daily applications and status breakdown
 
 ### For administrators
@@ -41,7 +45,8 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 - **Event-driven job alerts** — publishing a job emits a RabbitMQ event that is matched against saved searches
 - **JWT authentication** — access + refresh tokens, email verification and password reset
 - **File storage** — resumes and avatars in S3-compatible storage (MinIO locally, Backblaze B2 in production)
-- **Light and dark mode** — Light / Dark / System theme from the user menu (and a toggle on the home and sign-in pages); remembered per browser, applied before the page paints so there's no flash
+- **Calendar sync** — a private iCal link per user keeps interviews up to date in Google Calendar, Outlook or Apple Calendar (moves and cancellations included); the link can be reset at any time
+- **Light and dark mode** — a sun/moon toggle in the top bar on every page (Light / Dark / System in the user menu); remembered per browser, applied before the page paints so there's no flash
 - **Swagger UI** — interactive API docs at `/api/swagger-ui.html`
 
 ---
@@ -86,6 +91,8 @@ nexhire/
 │   │       ├── companies/        # Company profiles and recruiter teams
 │   │       ├── applications/     # Applying and the hiring pipeline
 │   │       ├── hiring/           # Interviews, notes, ratings, messages, templates, analytics
+│   │       ├── calendar/         # Interview calendar range + private iCal feed
+│   │       ├── video/            # Daily.co video rooms and join tokens
 │   │       ├── notifications/    # SSE stream, RabbitMQ producer/consumer
 │   │       ├── admin/            # Admin panel, reports, audit log, site settings
 │   │       └── files/            # Uploads to MinIO / Backblaze B2
@@ -210,7 +217,8 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 | `MINIO_ENDPOINT`, `MINIO_PUBLIC_URL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` | File storage (Backblaze B2 in production). If the keys are missing the API still runs, but uploads are disabled. |
 | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | SMTP for emails (e.g. Brevo: `smtp-relay.brevo.com`, port `587`). Without `SPRING_MAIL_HOST`, emails are only written to the log. |
 | `MAIL_FROM` | Sender, e.g. `NexHire <no-reply@yourdomain.com>` (must be a sender your SMTP provider allows) |
-| `APP_BASE_URL` | Frontend URL used in email links, e.g. `https://your-app.vercel.app` |
+| `APP_BASE_URL` | Frontend URL used in email and calendar links, e.g. `https://your-app.vercel.app` |
+| `DAILY_API_KEY` | Turns on built-in video rooms for video interviews ([Daily.co](https://dashboard.daily.co) → Developers → API key; the free plan includes 10,000 participant-minutes a month). Without it, recruiters paste their own meeting links. |
 
 ### Optional
 
@@ -320,6 +328,8 @@ npm run type-check    # TypeScript validation
 3. The recruiter is notified. Choosing one of the candidate's suggested times confirms the interview immediately; any other new time goes back to the candidate to confirm.
 4. Invitations with no answer 48 hours after being sent are flagged so the recruiter can send a reminder.
 
+**Calendar and video:** `/calendar` shows interviews for the visible range (recruiters: every interview on the jobs they manage). Each user can subscribe to a private iCal feed (`/api/calendar/feed/{token}.ics`); calendar apps refresh it every few hours, so reschedules and cancellations appear on their own. Resetting the link invalidates the old one. When `DAILY_API_KEY` is set, a video interview can use a private Daily.co room named after the interview. It can be joined from 15 minutes before the start until an hour after the scheduled end, only with a personal token issued to the candidate or the hiring team (who join as hosts). Reschedules move the room's window, and cancelling deletes it.
+
 **Job alerts:** when a job becomes open and visible (published, a draft published, reopened or un-hidden), the API publishes a `job.published` event to RabbitMQ (after the database commit). A consumer matches it against active alerts: *instant* alerts notify immediately, *daily* alerts are collected and sent as one digest at 08:00 UTC. Each job is sent to each alert at most once. If RabbitMQ is unavailable, matching runs directly.
 
 **Recommendations:** each open job gets a 0–100 score — 60% skills (profile skills found in the job's tags), 20% headline words in the title, 10% location or remote, 10% recency. Jobs already applied to are excluded, and only jobs with a skill or title match are shown.
@@ -425,11 +435,16 @@ All endpoints are under `/api`. "Team" means the job's recruiter, recruiters on 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | GET | `/applications/{id}/interviews` | Team / candidate | Interviews for an application |
-| POST | `/applications/{id}/interviews` | Team | Schedule (returns 409 with clashes unless `allowConflicts: true`) |
+| POST | `/applications/{id}/interviews` | Team | Schedule (returns 409 with clashes unless `allowConflicts: true`; `createVideoRoom: true` for a built-in video room) |
 | GET | `/applications/{id}/interviews/conflicts` | Team | Your own interviews that would clash (`start`, `durationMinutes`, `excludeInterviewId`) |
 | PATCH | `/interviews/{id}` | Team | Reschedule, complete or cancel |
 | POST | `/interviews/{id}/respond` | Candidate | `ACCEPTED`, `DECLINED` or `NEW_TIME_REQUESTED` with `proposedTimes` (1–3) |
 | GET | `/interviews/upcoming` | Any | Your upcoming interviews (recruiters: across jobs you manage) |
+| GET | `/interviews/calendar?from=&to=` | Any | Interviews of any status starting in the range (ISO instants, at most 100 days) |
+| GET | `/interviews/{id}/video` | Team / candidate | Room URL and a personal join token (from 15 min before the start until 1 h after the end) |
+| GET | `/calendar/feed` | Any | Your private iCal subscription URL (created on first use) |
+| POST | `/calendar/feed/reset` | Any | Replace the subscription URL; the old one stops working |
+| GET | `/calendar/feed/{token}.ics` | Public (secret link) | iCal feed: past 30 days and next ~5 months |
 | GET / POST | `/message-templates` | RECRUITER/ADMIN | Your message templates |
 | PUT / DELETE | `/message-templates/{id}` | Owner | Edit / delete a template |
 
@@ -450,7 +465,7 @@ All endpoints are under `/api`. "Team" means the job's recruiter, recruiters on 
 | GET | `/admin/audit` | ADMIN | Audit log (`action`, `actor`, `targetType`, `targetId`) |
 | PUT | `/admin/settings/announcement` | ADMIN | Site-wide banner |
 | PUT | `/admin/settings/{categories\|skills}` | ADMIN | Job categories / suggested skills |
-| GET | `/settings/public` | No | Banner, categories and skills |
+| GET | `/settings/public` | No | Banner, categories, skills and whether video rooms are available (`videoEnabled`) |
 
 ### Files, notifications and health
 
@@ -540,6 +555,7 @@ Flyway runs all migrations automatically on API startup.
 | V12 | Companies and teams (created from existing jobs), job openings, applicant ratings, interviews, private notes, messages, message templates |
 | V13 | Interview responses (accept / new time / decline) and follow-up tracking |
 | V14 | Candidate profiles (location, saved resume, public profile, experience, education), job alerts, application timeline (history backfilled for existing applications) |
+| V15 | Private calendar feed tokens and built-in video rooms for interviews |
 
 **Connect to the database directly:**
 ```bash
@@ -599,6 +615,7 @@ The public board shows only **open**, **non-hidden** jobs. Drafts, closed or fil
 - **Email needs an SMTP provider.** Set the `SPRING_MAIL_*`, `MAIL_FROM` and `APP_BASE_URL` variables; until then, password-reset, verification and job-alert emails are only written to the API log. Messages and interview invitations are in-app notifications.
 - **No CI pipeline yet** — run `./mvnw test` and `npm run type-check` before pushing.
 - **Interview clash checks** cover the recruiter who schedules the interview, not every teammate attending.
+- **Calendar subscriptions refresh on the calendar app's schedule** (Google Calendar can take up to ~12 hours); use "Add to calendar" for an instant one-off copy.
 
 ---
 

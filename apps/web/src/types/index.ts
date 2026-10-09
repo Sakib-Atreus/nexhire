@@ -256,6 +256,8 @@ export interface PublicSettings {
   announcement: Announcement;
   categories: string[];
   skills: string[];
+  /** Built-in video rooms are available for video interviews. */
+  videoEnabled: boolean;
 }
 
 // ─── Companies & hiring tools ────────────────────────────────────────────────
@@ -341,6 +343,23 @@ export interface Interview {
   invitedAt: string;
   /** Scheduled, unanswered 48h after the invite, and still upcoming: the recruiter should follow up. */
   needsFollowUp: boolean;
+  /** Has a built-in NexHire video room (join from 15 minutes before the start). */
+  hasVideoRoom: boolean;
+}
+
+/** Personal join details for an interview's NexHire video room. */
+export interface VideoJoin {
+  interviewId: string;
+  roomUrl: string;
+  token: string;
+  /** Hiring team members join as room owners (can mute or remove participants). */
+  owner: boolean;
+  userName: string;
+  jobTitle: string;
+  companyName: string;
+  candidateName: string;
+  scheduledAt: string;
+  durationMinutes: number;
 }
 
 export interface InterviewInput {
@@ -352,6 +371,8 @@ export interface InterviewInput {
   status?: InterviewStatus;
   /** Save even though it overlaps other interviews (after showing the clash warning). */
   allowConflicts?: boolean;
+  /** VIDEO interviews: create a built-in NexHire video room instead of pasting a link. */
+  createVideoRoom?: boolean;
 }
 
 /**

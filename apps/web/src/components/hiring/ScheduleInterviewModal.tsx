@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
-import { AlertTriangle, Info, MapPin, Phone, Video } from 'lucide-react';
+import { AlertTriangle, Info, Link2, MapPin, Phone, ShieldCheck, Video } from 'lucide-react';
 import type { Interview, InterviewConflict, InterviewType } from '@/types';
 import { getInterviewConflicts, useInterviewConflicts, useScheduleInterview, useUpdateInterview } from '@/hooks/useHiring';
 import { INTERVIEW_TYPE_LABELS } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/format';
+import { usePublicSettings } from '@/hooks/useSettings';
 import { toast } from '@/store/toastStore';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -79,11 +80,13 @@ function initialState(interview?: Interview) {
       type: interview.type,
       location: interview.location ?? '',
       message: interview.message ?? '',
+      /** null = default (built-in room when video calls are available). */
+      useRoom: null as boolean | null,
     };
   }
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  return { date: toDateInput(tomorrow), time: '10:00', duration: 30, type: 'VIDEO' as InterviewType, location: '', message: '' };
+  return { date: toDateInput(tomorrow), time: '10:00', duration: 30, type: 'VIDEO' as InterviewType, location: '', message: '', useRoom: null as boolean | null };
 }
 
 /**
@@ -98,6 +101,8 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
   interview?: Interview;
 }) {
   const schedule = useScheduleInterview(applicationId);
+  const { data: settings } = usePublicSettings();
+  const videoEnabled = !!settings?.videoEnabled;
   const update = useUpdateInterview();
   const formId = useId();
   const [form, setForm] = useState(() => initialState(interview));
@@ -133,6 +138,10 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
 
   const pending = schedule.isPending || update.isPending;
   const loc = LOCATION_FIELD[form.type];
+  const hasRoom = !!interview?.hasVideoRoom && form.type === 'VIDEO';
+  // Built-in room: new VIDEO interviews (or ones without a room yet) when the site has video calls set up.
+  const wantsRoom = form.type === 'VIDEO' && !hasRoom && videoEnabled && (form.useRoom ?? !interview?.location);
+  const showLocation = !(form.type === 'VIDEO' && (hasRoom || wantsRoom));
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const firstName = firstNameOf(candidateName);
 
@@ -154,9 +163,10 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
       scheduledAt: when.toISOString(),
       durationMinutes: form.duration,
       type: form.type,
-      location: form.location.trim() || undefined,
+      location: showLocation ? form.location.trim() || undefined : undefined,
       message: form.message.trim() || undefined,
       allowConflicts,
+      createVideoRoom: wantsRoom || undefined,
     };
     const opts = {
       onSuccess: () => {
@@ -234,11 +244,53 @@ export function ScheduleInterviewModal({ open, onClose, applicationId, candidate
           </div>
         </fieldset>
 
-        <FormField label={loc.label}>
-          {(id) => (
-            <Input id={id} type={loc.type} value={form.location} placeholder={loc.placeholder} onChange={(e) => set('location', e.target.value)} />
-          )}
-        </FormField>
+        {form.type === 'VIDEO' && hasRoom && (
+          <div className="flex items-start gap-3 rounded-lg bg-primary-50 px-3.5 py-3 text-sm ring-1 ring-inset ring-primary-200">
+            <Video className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-600" aria-hidden />
+            <p className="text-primary-800">
+              <span className="font-semibold">NexHire video room is ready.</span> It opens 15 minutes before the interview and moves
+              automatically if you change the time.
+            </p>
+          </div>
+        )}
+
+        {form.type === 'VIDEO' && !hasRoom && videoEnabled && (
+          <fieldset>
+            <legend className="mb-1.5 block text-sm font-medium text-fg-secondary">Where to meet</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                { room: true, title: 'NexHire video room', hint: 'Private room, nothing to install. Opens 15 min before.', icon: ShieldCheck },
+                { room: false, title: 'My own meeting link', hint: 'Zoom, Google Meet, Teams…', icon: Link2 },
+              ].map(({ room, title, hint, icon: Icon }) => (
+                <label
+                  key={title}
+                  className={cn(
+                    'flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary-500/40',
+                    wantsRoom === room ? 'border-primary-500 bg-primary-50' : 'border-line-strong hover:bg-muted'
+                  )}
+                >
+                  <input type="radio" name={`${formId}-room`} checked={wantsRoom === room} onChange={() => set('useRoom', room)} className="sr-only" />
+                  <Icon className={cn('mt-0.5 h-4 w-4 flex-shrink-0', wantsRoom === room ? 'text-primary-600' : 'text-fg-subtle')} aria-hidden />
+                  <span className="min-w-0">
+                    <span className={cn('block text-sm font-medium', wantsRoom === room ? 'text-primary-700' : 'text-fg-secondary')}>
+                      {title}
+                      {room && <span className="ml-1.5 rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary-700">Recommended</span>}
+                    </span>
+                    <span className="block text-xs text-fg-muted">{hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
+        {showLocation && (
+          <FormField label={loc.label}>
+            {(id) => (
+              <Input id={id} type={loc.type} value={form.location} placeholder={loc.placeholder} onChange={(e) => set('location', e.target.value)} />
+            )}
+          </FormField>
+        )}
 
         <FormField label="Message to candidate" hint="Included in the invitation the candidate receives.">
           {(id) => (

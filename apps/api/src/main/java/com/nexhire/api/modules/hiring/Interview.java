@@ -73,6 +73,16 @@ public class Interview {
     @Column(name = "created_by")
     private UUID createdBy;
 
+    /** Built-in video room (e.g. "DAILY"); null when using an external link. */
+    @Column(name = "video_provider", length = 20)
+    private String videoProvider;
+
+    @Column(name = "video_room_name", length = 128)
+    private String videoRoomName;
+
+    @Column(name = "video_room_url", length = 500)
+    private String videoRoomUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

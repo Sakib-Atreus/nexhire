@@ -7,6 +7,7 @@ import com.nexhire.api.modules.applications.ApplicationStatus;
 import com.nexhire.api.modules.companies.Company;
 import com.nexhire.api.modules.hiring.*;
 import com.nexhire.api.modules.hiring.dto.InterviewConflictDTO;
+import com.nexhire.api.modules.hiring.dto.InterviewDTO;
 import com.nexhire.api.modules.hiring.dto.InterviewRequest;
 import com.nexhire.api.modules.hiring.dto.RespondToInterviewRequest;
 import com.nexhire.api.modules.jobs.Job;
@@ -46,6 +47,7 @@ class InterviewConflictTest {
     @Mock private InterviewRepository interviewRepository;
     @Mock private MessageTemplateRepository templateRepository;
     @Mock private NotificationService notificationService;
+    @Mock private com.nexhire.api.modules.video.VideoService videoService;
     @Mock private com.nexhire.api.modules.timeline.TimelineService timelineService;
     @Spy private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules();
     @InjectMocks private HiringService hiringService;
@@ -83,7 +85,7 @@ class InterviewConflictTest {
     }
 
     private InterviewRequest at(Instant when, int minutes, Boolean allow) {
-        return new InterviewRequest(when, minutes, InterviewType.VIDEO, null, null, null, allow);
+        return new InterviewRequest(when, minutes, InterviewType.VIDEO, null, null, null, allow, null);
     }
 
     @Test
@@ -99,6 +101,33 @@ class InterviewConflictTest {
                 assertThat(c.who()).isEqualTo("YOU");
                 assertThat(c.label()).contains("Dev Test");
             });
+        verify(interviewRepository, never()).save(any());
+    }
+
+    @Test
+    void videoRoom_isCreatedWithAJoinWindowAroundTheInterview() {
+        when(videoService.isEnabled()).thenReturn(true);
+        when(videoService.createRoom(any(), any(), any()))
+            .thenAnswer(inv -> new com.nexhire.api.modules.video.VideoRoom(inv.getArgument(0), "https://x.daily.co/" + inv.getArgument(0)));
+        InterviewRequest req = new InterviewRequest(tenAm, 45, InterviewType.VIDEO, null, null, null, true, true);
+
+        InterviewDTO dto = hiringService.schedule(app.getId(), req, recruiter);
+
+        assertThat(dto.hasVideoRoom()).isTrue();
+        verify(videoService).createRoom(org.mockito.ArgumentMatchers.startsWith("nexhire-"),
+            eq(tenAm.minus(15, ChronoUnit.MINUTES)), eq(tenAm.plus(45 + 60, ChronoUnit.MINUTES)));
+    }
+
+    @Test
+    void videoRoom_isRejectedForPhoneInterviewsOrWhenVideoIsOff() {
+        InterviewRequest phone = new InterviewRequest(tenAm, 45, InterviewType.PHONE, null, null, null, true, true);
+        assertThatThrownBy(() -> hiringService.schedule(app.getId(), phone, recruiter))
+            .hasMessageContaining("only for video interviews");
+
+        when(videoService.isEnabled()).thenReturn(false);
+        InterviewRequest video = new InterviewRequest(tenAm, 45, InterviewType.VIDEO, null, null, null, true, true);
+        assertThatThrownBy(() -> hiringService.schedule(app.getId(), video, recruiter))
+            .hasMessageContaining("aren't set up");
         verify(interviewRepository, never()).save(any());
     }
 

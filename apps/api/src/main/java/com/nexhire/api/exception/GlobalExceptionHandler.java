@@ -66,6 +66,28 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    /** Framework request errors (wrong method, unknown path, missing or malformed parameters/body) keep their 4xx status. */
+    @ExceptionHandler({
+        org.springframework.web.HttpRequestMethodNotSupportedException.class,
+        org.springframework.web.servlet.resource.NoResourceFoundException.class,
+        org.springframework.web.bind.MissingServletRequestParameterException.class,
+        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+        org.springframework.http.converter.HttpMessageNotReadableException.class
+    })
+    public ResponseEntity<ApiError> handleBadRequestShape(Exception ex, WebRequest request) {
+        HttpStatus status = ex instanceof org.springframework.web.ErrorResponse er
+            ? HttpStatus.resolve(er.getStatusCode().value()) : HttpStatus.BAD_REQUEST;
+        if (status == null) status = HttpStatus.BAD_REQUEST;
+        String message = switch (ex) {
+            case org.springframework.web.HttpRequestMethodNotSupportedException e -> "Method " + e.getMethod() + " is not supported here";
+            case org.springframework.web.servlet.resource.NoResourceFoundException e -> "Not found";
+            case org.springframework.web.bind.MissingServletRequestParameterException e -> "Missing parameter '" + e.getParameterName() + "'";
+            case org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e -> "Invalid value for '" + e.getName() + "'";
+            default -> "Malformed request body";
+        };
+        return ResponseEntity.status(status).body(new ApiError(status.value(), message, request.getDescription(false)));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneral(Exception ex, WebRequest request) {
         log.error("Unhandled exception", ex);

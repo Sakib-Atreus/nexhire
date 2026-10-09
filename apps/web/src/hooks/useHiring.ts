@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import type {
   Application, ApplicationMessage, ApplicationNote, Interview, InterviewConflict, InterviewInput, InterviewResponse, Job, JobAnalytics,
-  MessageTemplate,
+  MessageTemplate, VideoJoin,
 } from '@/types';
 
 // Hiring-team tools for one application. Notes and rating are private to the hiring team;
@@ -149,6 +149,46 @@ export function useUpcomingInterviews(enabled = true) {
     queryKey: ['interviews', 'upcoming'],
     queryFn: () => api.get<Interview[]>('/interviews/upcoming').then((r) => r.data),
     enabled,
+  });
+}
+
+/** Interviews (any status) starting in [from, to), for the calendar. Range is at most 100 days. */
+export function useCalendarInterviews(from: string, to: string, enabled = true) {
+  return useQuery({
+    queryKey: ['interviews', 'calendar', from, to],
+    queryFn: () => api.get<Interview[]>('/interviews/calendar', { params: { from, to } }).then((r) => r.data),
+    enabled,
+    placeholderData: (prev) => prev,
+  });
+}
+
+/** Private ICS subscription link for the signed-in user (created on first use). */
+export function useCalendarFeed(enabled = true) {
+  return useQuery({
+    queryKey: ['calendar-feed'],
+    queryFn: () => api.get<{ url: string }>('/calendar/feed').then((r) => r.data.url),
+    enabled,
+    staleTime: Infinity,
+  });
+}
+
+/** Replace the subscription link; the old one stops working. */
+export function useResetCalendarFeed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ url: string }>('/calendar/feed/reset').then((r) => r.data.url),
+    onSuccess: (url) => qc.setQueryData(['calendar-feed'], url),
+  });
+}
+
+/** Room URL + personal meeting token. Fetched only when joining (tokens are short-lived). */
+export function useVideoJoin(interviewId: string) {
+  return useQuery({
+    queryKey: ['interviews', interviewId, 'video'],
+    queryFn: () => api.get<VideoJoin>(`/interviews/${interviewId}/video`).then((r) => r.data),
+    retry: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 }
 

@@ -6,5 +6,7 @@ import java.util.List;
 public record PublicSettingsDTO(
     Announcement announcement,
     List<String> categories,
-    List<String> skills
+    List<String> skills,
+    /** Built-in video rooms are available for video interviews. */
+    boolean videoEnabled
 ) {}

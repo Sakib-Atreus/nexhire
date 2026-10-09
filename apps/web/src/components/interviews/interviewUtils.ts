@@ -159,15 +159,88 @@ function fold(line: string): string {
   return parts.join('\r\n ');
 }
 
-export function buildIcs(i: Interview, typeLabel: string): string {
-  const start = new Date(i.scheduledAt);
-  const end = new Date(start.getTime() + i.durationMinutes * 60_000);
+/** Interview end as a Date. */
+export function interviewEnd(i: Pick<Interview, 'scheduledAt' | 'durationMinutes'>): Date {
+  return new Date(new Date(i.scheduledAt).getTime() + i.durationMinutes * 60_000);
+}
+
+// ─── Built-in video rooms ────────────────────────────────────────────────────
+
+/** Rooms open 15 minutes before the start and close an hour after the scheduled end (matches the API). */
+export const ROOM_OPENS_MINUTES_BEFORE = 15;
+export const ROOM_CLOSES_MINUTES_AFTER = 60;
+
+export type VideoRoomState = 'early' | 'open' | 'closed';
+
+export function videoRoomState(i: Pick<Interview, 'scheduledAt' | 'durationMinutes'>, now = Date.now()): VideoRoomState {
+  const opens = new Date(i.scheduledAt).getTime() - ROOM_OPENS_MINUTES_BEFORE * 60_000;
+  const closes = interviewEnd(i).getTime() + ROOM_CLOSES_MINUTES_AFTER * 60_000;
+  if (now < opens) return 'early';
+  return now > closes ? 'closed' : 'open';
+}
+
+/** When the room opens, as an ISO instant. */
+export function videoRoomOpensAt(i: Pick<Interview, 'scheduledAt'>): string {
+  return new Date(new Date(i.scheduledAt).getTime() - ROOM_OPENS_MINUTES_BEFORE * 60_000).toISOString();
+}
+
+export const callPath = (id: string) => `/interviews/${id}/call`;
+
+// ─── Calendar export (.ics, Google, Outlook) ────────────────────────────────
+
+interface CalendarDetails {
+  title: string;
+  location: string;
+  description: string;
+  url?: string;
+}
+
+/** Title, location and description used by every "Add to calendar" option. */
+export function calendarDetails(i: Interview, typeLabel: string): CalendarDetails {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const callUrl = i.hasVideoRoom ? `${origin}${callPath(i.id)}` : undefined;
+  const location = i.hasVideoRoom ? 'NexHire video call' : i.location?.trim() ?? '';
   const description = [
-    `${typeLabel} interview for ${i.jobTitle} at ${i.companyName}.`,
-    i.location ? `Location: ${i.location}` : '',
+    `${typeLabel} interview for ${i.jobTitle} at ${i.companyName} (${formatDuration(i.durationMinutes)}).`,
+    callUrl ? `Join from NexHire: ${callUrl}` : i.location ? `Location: ${i.location}` : '',
     i.message ? `\n${i.message}` : '',
   ].filter(Boolean).join('\n');
+  return {
+    title: `Interview: ${i.jobTitle} at ${i.companyName}`,
+    location,
+    description,
+    url: callUrl ?? (isHttpUrl(i.location) ? i.location.trim() : undefined),
+  };
+}
 
+export function googleCalendarUrl(i: Interview, typeLabel: string): string {
+  const d = calendarDetails(i, typeLabel);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: d.title,
+    dates: `${icsDate(new Date(i.scheduledAt))}/${icsDate(interviewEnd(i))}`,
+    details: d.description,
+    location: d.location,
+  });
+  return `https://calendar.google.com/calendar/render?${params}`;
+}
+
+export function outlookCalendarUrl(i: Interview, typeLabel: string): string {
+  const d = calendarDetails(i, typeLabel);
+  const params = new URLSearchParams({
+    path: '/calendar/action/compose',
+    rru: 'addevent',
+    subject: d.title,
+    startdt: new Date(i.scheduledAt).toISOString(),
+    enddt: interviewEnd(i).toISOString(),
+    body: d.description,
+    location: d.location,
+  });
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${params}`;
+}
+
+export function buildIcs(i: Interview, typeLabel: string): string {
+  const d = calendarDetails(i, typeLabel);
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -175,14 +248,15 @@ export function buildIcs(i: Interview, typeLabel: string): string {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:interview-${i.id}@nexhire`,
+    // Same UID as the subscription feed, so calendars that have both don't show the interview twice.
+    `UID:${i.id}@nexhire`,
     `DTSTAMP:${icsDate(new Date())}`,
-    `DTSTART:${icsDate(start)}`,
-    `DTEND:${icsDate(end)}`,
-    `SUMMARY:${icsEscape(`Interview: ${i.jobTitle} at ${i.companyName}`)}`,
-    i.location ? `LOCATION:${icsEscape(i.location)}` : '',
-    `DESCRIPTION:${icsEscape(description)}`,
-    isHttpUrl(i.location) ? `URL:${i.location.trim()}` : '',
+    `DTSTART:${icsDate(new Date(i.scheduledAt))}`,
+    `DTEND:${icsDate(interviewEnd(i))}`,
+    `SUMMARY:${icsEscape(d.title)}`,
+    d.location ? `LOCATION:${icsEscape(d.location)}` : '',
+    `DESCRIPTION:${icsEscape(d.description)}`,
+    d.url ? `URL:${d.url}` : '',
     'STATUS:CONFIRMED',
     'END:VEVENT',
     'END:VCALENDAR',

@@ -27,5 +27,7 @@ public record InterviewDTO(
     Instant respondedAt,
     Instant invitedAt,
     /** Scheduled, still awaiting a reply 48h after the invite, and not yet past. */
-    boolean needsFollowUp
+    boolean needsFollowUp,
+    /** Has a built-in NexHire video room; join via GET /interviews/{id}/video. */
+    boolean hasVideoRoom
 ) {}

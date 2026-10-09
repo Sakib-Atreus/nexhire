@@ -121,6 +121,12 @@ public class HiringController {
         return ResponseEntity.ok(hiringService.respond(interviewId, request, user));
     }
 
+    @GetMapping("/interviews/{interviewId}/video")
+    @Operation(summary = "Join details (room URL + personal token) for the interview's NexHire video room")
+    public ResponseEntity<VideoJoinDTO> joinVideo(@PathVariable UUID interviewId, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(hiringService.joinVideo(interviewId, user));
+    }
+
     @GetMapping("/interviews/upcoming")
     @Operation(summary = "Upcoming interviews for the signed-in candidate or recruiter")
     public ResponseEntity<List<InterviewDTO>> upcoming(@AuthenticationPrincipal User user) {

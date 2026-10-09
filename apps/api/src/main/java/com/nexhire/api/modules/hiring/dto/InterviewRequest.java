@@ -17,5 +17,7 @@ public record InterviewRequest(
     @Size(max = 2000) String message,
     InterviewStatus status,
     /** Save even if it overlaps other interviews (after the user has seen the clash warning). */
-    Boolean allowConflicts
+    Boolean allowConflicts,
+    /** VIDEO interviews: create a built-in NexHire video room (needs video calls to be set up). */
+    Boolean createVideoRoom
 ) {}

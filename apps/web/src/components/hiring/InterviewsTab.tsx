@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { formatLongDateTime } from '@/components/pipeline/stages';
 import { ConflictWarning, ScheduleInterviewModal, firstNameOf, slotLabel } from './ScheduleInterviewModal';
+import { JoinButton } from '@/components/interviews/InterviewParts';
 
 const TYPE_ICONS: Record<InterviewType, LucideIcon> = { VIDEO: Video, PHONE: Phone, ONSITE: MapPin };
 const URL_RE = /(https?:\/\/[^\s]+)/;
@@ -319,7 +320,15 @@ export function InterviewsTab({ applicationId, candidateName, readOnly, onSendRe
                     onRemind={onSendReminder ? () => onSendReminder(reminderMessage(iv)) : undefined}
                   />
                 )}
-                {iv.location?.trim() && (
+                {iv.hasVideoRoom && iv.status === 'SCHEDULED' && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm text-fg-secondary">
+                      <Video className="w-3.5 h-3.5 text-primary-600" aria-hidden /> NexHire video room
+                    </span>
+                    <JoinButton interview={iv} />
+                  </div>
+                )}
+                {iv.location?.trim() && !iv.hasVideoRoom && (
                   <p className="mt-2 text-sm text-fg-secondary break-words">
                     <span className="text-fg-muted">{iv.type === 'VIDEO' ? 'Link: ' : iv.type === 'PHONE' ? 'Phone: ' : 'Address: '}</span>
                     <Location interview={iv} />

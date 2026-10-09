@@ -33,9 +33,10 @@ public class SettingsService {
     private final SiteSettingRepository repository;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final com.nexhire.api.modules.video.VideoService videoService;
 
     public PublicSettingsDTO getPublic() {
-        return new PublicSettingsDTO(getAnnouncement(), getList(CATEGORIES), getList(SKILLS));
+        return new PublicSettingsDTO(getAnnouncement(), getList(CATEGORIES), getList(SKILLS), videoService.isEnabled());
     }
 
     public Announcement getAnnouncement() {

@@ -11,7 +11,7 @@ import { buttonClasses } from '@/components/ui/Button';
 import { ROLE_LABELS } from '@/lib/constants';
 import { cn } from '@/lib/cn';
 import { BrandMark } from './BrandMark';
-import { PUBLIC_NAV, SIDEBAR_NAV, isNavActive, type NavItem } from './nav';
+import { PUBLIC_NAV, SIDEBAR_SECTIONS, isNavActive, type NavItem, type NavSection } from './nav';
 
 function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
   const Icon = item.icon;
@@ -47,7 +47,7 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
   const pathname = usePathname();
   const { data: unread } = useUnreadCount(!guest);
 
-  const nav = guest || !user ? PUBLIC_NAV : SIDEBAR_NAV[user.role];
+  const sections: NavSection[] = guest || !user ? [{ items: PUBLIC_NAV }] : SIDEBAR_SECTIONS[user.role];
 
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-surface border-r border-line fixed top-0 left-0 z-30">
@@ -55,14 +55,24 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
         <BrandMark href="/" />
       </div>
 
-      <nav aria-label="Main" className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {nav.map((item) => (
-          <NavLink
-            key={item.href}
-            item={item}
-            active={isNavActive(item.href, pathname)}
-            badge={item.href === '/notifications' ? unread : undefined}
-          />
+      <nav aria-label="Main" className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {sections.map((section, i) => (
+          <div key={section.title ?? i}>
+            {section.title && (
+              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-fg-faint">{section.title}</p>
+            )}
+            <ul className="space-y-0.5">
+              {section.items.map((item) => (
+                <li key={item.href}>
+                  <NavLink
+                    item={item}
+                    active={isNavActive(item.href, pathname)}
+                    badge={item.href === '/notifications' ? unread : undefined}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
       </nav>
 

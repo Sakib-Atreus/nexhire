@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { buttonClasses } from '@/components/ui/Button';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { ErrorState, Skeleton } from '@/components/ui/States';
-import { InterviewTypeIcon, useTimeZoneAbbr } from './InterviewParts';
+import { InterviewTypeIcon, JoinButton, useTimeZoneAbbr } from './InterviewParts';
 import { CANDIDATE_RESPONSE_LABELS, CANDIDATE_RESPONSE_STYLES, canRespond } from './InterviewResponsePanel';
 import { dayHeading, formatDuration, formatTime } from './interviewUtils';
 
@@ -86,6 +86,7 @@ export function UpcomingInterviewsCard({ viewer }: { viewer: 'CANDIDATE' | 'RECR
                     )}
                   </span>
                 </Link>
+                {!askRespond && i.hasVideoRoom && <JoinButton interview={i} />}
                 {askRespond && (
                   <Link href={href} className={buttonClasses('primary', 'sm', 'flex-shrink-0')}>
                     Respond<span className="sr-only"> to the {i.jobTitle} interview invitation</span>

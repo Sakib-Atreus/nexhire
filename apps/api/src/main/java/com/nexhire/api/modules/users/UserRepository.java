@@ -22,6 +22,8 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     boolean existsByProfileSlug(String profileSlug);
 
+    Optional<User> findByCalendarTokenAndEnabledTrue(String calendarToken);
+
     Optional<User> findByProfileSlugAndPublicProfileTrueAndEnabledTrue(String profileSlug);
 
     Page<User> findByRole(Role role, Pageable pageable);

@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Bell, BellRing, Bookmark, Briefcase, Building2, CalendarClock, FileText, Flag, LayoutDashboard, MessageSquareText, PlusCircle,
-  ScrollText, Search, Settings, User2, Users,
+  Bell, BellRing, Bookmark, Briefcase, Building2, CalendarClock, CalendarDays, CirclePlus, CircleUserRound, Compass, FileText, Flag,
+  LayoutDashboard, MessageSquareText, ScrollText, Settings, ShieldCheck, Users,
 } from 'lucide-react';
 import type { Role } from '@/types';
 
@@ -13,56 +13,69 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-const DASHBOARD: NavItem = { href: '/dashboard', label: 'Dashboard', short: 'Home', icon: LayoutDashboard };
-const BROWSE: NavItem = { href: '/jobs', label: 'Browse jobs', short: 'Jobs', icon: Search };
-const NOTIFICATIONS: NavItem = { href: '/notifications', label: 'Notifications', short: 'Alerts', icon: Bell };
-const PROFILE: NavItem = { href: '/profile', label: 'Profile', icon: User2 };
-const ADMIN_OVERVIEW: NavItem = { href: '/admin', label: 'Overview', icon: LayoutDashboard };
+export interface NavSection {
+  /** Small heading above the group; omitted for the first group. */
+  title?: string;
+  items: NavItem[];
+}
 
-export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
+const DASHBOARD: NavItem = { href: '/dashboard', label: 'Dashboard', short: 'Home', icon: LayoutDashboard };
+const CALENDAR: NavItem = { href: '/calendar', label: 'Calendar', icon: CalendarDays };
+const INTERVIEWS: NavItem = { href: '/interviews', label: 'Interviews', icon: CalendarClock };
+const BROWSE: NavItem = { href: '/jobs', label: 'Browse jobs', short: 'Jobs', icon: Compass };
+const COMPANIES: NavItem = { href: '/companies', label: 'Companies', icon: Building2 };
+const NOTIFICATIONS: NavItem = { href: '/notifications', label: 'Notifications', short: 'Inbox', icon: Bell };
+const PROFILE: NavItem = { href: '/profile', label: 'Profile', icon: CircleUserRound };
+const ADMIN_OVERVIEW: NavItem = { href: '/admin', label: 'Overview', icon: ShieldCheck };
+
+const APPLICATIONS: NavItem = { href: '/applications', label: 'Applications', short: 'Applied', icon: FileText };
+const SAVED: NavItem = { href: '/jobs/saved', label: 'Saved jobs', short: 'Saved', icon: Bookmark };
+const MY_JOBS: NavItem = { href: '/jobs/my', label: 'My jobs', icon: Briefcase };
+const POST_JOB: NavItem = { href: '/jobs/create', label: 'Post a job', short: 'Post', icon: CirclePlus };
+const ADMIN_USERS: NavItem = { href: '/admin/users', label: 'Users', icon: Users };
+const ADMIN_JOBS: NavItem = { href: '/admin/jobs', label: 'Jobs', icon: Briefcase };
+const ADMIN_REPORTS: NavItem = { href: '/admin/reports', label: 'Reports', icon: Flag };
+
+/** Sidebar groups per role, in the order people use them: overview → daily work → setup → account. */
+export const SIDEBAR_SECTIONS: Record<Role, NavSection[]> = {
   CANDIDATE: [
-    DASHBOARD,
-    BROWSE,
-    { href: '/jobs/saved', label: 'Saved jobs', short: 'Saved', icon: Bookmark },
-    { href: '/applications', label: 'Applications', short: 'Applied', icon: FileText },
-    { href: '/interviews', label: 'Interviews', icon: CalendarClock },
-    { href: '/alerts', label: 'Job alerts', short: 'Alerts', icon: BellRing },
-    { href: '/companies', label: 'Companies', icon: Building2 },
-    NOTIFICATIONS,
-    PROFILE,
+    { items: [DASHBOARD, CALENDAR, NOTIFICATIONS] },
+    { title: 'Job search', items: [BROWSE, SAVED, { href: '/alerts', label: 'Job alerts', short: 'Alerts', icon: BellRing }, COMPANIES] },
+    { title: 'My hiring', items: [APPLICATIONS, INTERVIEWS] },
+    { title: 'Account', items: [PROFILE] },
   ],
   RECRUITER: [
-    DASHBOARD,
-    { href: '/jobs/my', label: 'My jobs', icon: Briefcase },
-    { href: '/jobs/create', label: 'Post a job', short: 'Post job', icon: PlusCircle },
-    { href: '/interviews', label: 'Interviews', icon: CalendarClock },
-    { href: '/company', label: 'Company', icon: Building2 },
-    { href: '/templates', label: 'Message templates', short: 'Templates', icon: MessageSquareText },
-    NOTIFICATIONS,
-    PROFILE,
+    { items: [DASHBOARD, CALENDAR, NOTIFICATIONS] },
+    { title: 'Hiring', items: [MY_JOBS, POST_JOB, INTERVIEWS] },
+    { title: 'Workspace', items: [
+      { href: '/company', label: 'Company', icon: Building2 },
+      { href: '/templates', label: 'Message templates', short: 'Templates', icon: MessageSquareText },
+    ] },
+    { title: 'Account', items: [PROFILE] },
   ],
   ADMIN: [
-    ADMIN_OVERVIEW,
-    { href: '/admin/users', label: 'Users', icon: Users },
-    { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
-    { href: '/admin/companies', label: 'Companies', icon: Building2 },
-    { href: '/admin/reports', label: 'Reports', icon: Flag },
-    { href: '/admin/audit', label: 'Audit log', short: 'Audit', icon: ScrollText },
-    { href: '/admin/settings', label: 'Site settings', short: 'Settings', icon: Settings },
-    NOTIFICATIONS,
-    PROFILE,
+    { items: [ADMIN_OVERVIEW, NOTIFICATIONS] },
+    { title: 'Manage', items: [ADMIN_USERS, ADMIN_JOBS, { href: '/admin/companies', label: 'Companies', icon: Building2 }] },
+    { title: 'Trust & safety', items: [ADMIN_REPORTS, { href: '/admin/audit', label: 'Audit log', short: 'Audit', icon: ScrollText }] },
+    { title: 'Platform', items: [{ href: '/admin/settings', label: 'Site settings', short: 'Settings', icon: Settings }, PROFILE] },
   ],
 };
 
-/** At most five role-specific tabs for the mobile bottom bar (sign-out lives in the avatar menu). */
-export const MOBILE_NAV: Record<Role, NavItem[]> = {
-  CANDIDATE: [DASHBOARD, BROWSE, SIDEBAR_NAV.CANDIDATE[3], SIDEBAR_NAV.CANDIDATE[2], PROFILE],
-  // Notifications stay reachable from the bell in the top bar.
-  RECRUITER: [DASHBOARD, SIDEBAR_NAV.RECRUITER[1], SIDEBAR_NAV.RECRUITER[2], SIDEBAR_NAV.RECRUITER[3], PROFILE],
-  ADMIN: [ADMIN_OVERVIEW, SIDEBAR_NAV.ADMIN[1], SIDEBAR_NAV.ADMIN[2], SIDEBAR_NAV.ADMIN[4], PROFILE],
+/** Flat list of every sidebar link for a role. */
+export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
+  CANDIDATE: SIDEBAR_SECTIONS.CANDIDATE.flatMap((s) => s.items),
+  RECRUITER: SIDEBAR_SECTIONS.RECRUITER.flatMap((s) => s.items),
+  ADMIN: SIDEBAR_SECTIONS.ADMIN.flatMap((s) => s.items),
 };
 
-export const PUBLIC_NAV: NavItem[] = [BROWSE, { href: '/companies', label: 'Companies', icon: Building2 }];
+/** Four main tabs for the mobile bottom bar; a fifth "More" tab opens every other page. */
+export const MOBILE_NAV: Record<Role, NavItem[]> = {
+  CANDIDATE: [DASHBOARD, BROWSE, APPLICATIONS, CALENDAR],
+  RECRUITER: [DASHBOARD, MY_JOBS, POST_JOB, CALENDAR],
+  ADMIN: [ADMIN_OVERVIEW, ADMIN_USERS, ADMIN_JOBS, ADMIN_REPORTS],
+};
+
+export const PUBLIC_NAV: NavItem[] = [BROWSE, COMPANIES];
 
 /** Pages signed-out visitors may view: job listing/detail and the company directory/profiles. */
 export function isPublicPath(pathname: string): boolean {
@@ -124,11 +137,13 @@ export function getBreadcrumbs(pathname: string, role?: Role): Crumb[] {
     '/company': [{ label: 'Company' }],
     '/templates': [{ label: 'Message templates' }],
     '/interviews': [{ label: 'Interviews' }],
+    '/calendar': [{ label: 'Calendar' }],
     '/alerts': [{ label: 'Job alerts' }],
     '/alerts/unsubscribe': [{ label: 'Job alerts' }, { label: 'Unsubscribe' }],
   };
   const clean = pathname.replace(/\/$/, '') || '/';
   if (exact[clean]) return exact[clean];
+  if (/^\/interviews\/[^/]+\/call$/.test(clean)) return [{ label: 'Interviews', href: '/interviews' }, { label: 'Video call' }];
   if (/^\/p\/[^/]+$/.test(clean)) return [{ label: 'Profile' }];
   if (/^\/companies\/[^/]+$/.test(clean)) return [{ label: 'Companies', href: '/companies' }, { label: 'Company profile' }];
   if (/^\/jobs\/[^/]+\/analytics$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Analytics' }];

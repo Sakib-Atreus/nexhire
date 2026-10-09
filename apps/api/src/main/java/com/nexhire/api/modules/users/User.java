@@ -103,6 +103,10 @@ public class User implements UserDetails {
     @Column(name = "profile_slug", unique = true, length = 80)
     private String profileSlug;
 
+    /** Secret for the personal calendar feed; null until first requested. */
+    @Column(name = "calendar_token", unique = true, length = 64)
+    private String calendarToken;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
