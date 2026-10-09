@@ -142,10 +142,16 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 
 ## License
 
-This project is open source under the [MIT License](LICENSE) © 2026 Md. Sakib Mia. You are free to use, modify and distribute it, as long as the original copyright notice is kept.
+This project is open source under the [MIT License](LICENSE).
+
+**Copyright © 2026 Md. Sakib Mia**
 
 ## Contact
 
-**Sakib Mia** — [GitHub @Sakib-Atreus](https://github.com/Sakib-Atreus) · [sakibmia0718@gmail.com](mailto:sakibmia0718@gmail.com)
+**Md. Sakib Mia**
 
-Found a bug or have an idea? [Open an issue](https://github.com/Sakib-Atreus/nexhire/issues).
+| | |
+|---|---|
+| GitHub | [@Sakib-Atreus](https://github.com/Sakib-Atreus) |
+| Email | [sakibmia0718@gmail.com](mailto:sakibmia0718@gmail.com) |
+| Issues | [Report a bug or request a feature](https://github.com/Sakib-Atreus/nexhire/issues) |
