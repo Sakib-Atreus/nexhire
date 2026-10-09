@@ -154,4 +154,5 @@ This project is open source under the [MIT License](LICENSE).
 |---|---|
 | GitHub | [@Sakib-Atreus](https://github.com/Sakib-Atreus) |
 | Email | [sakibmia0718@gmail.com](mailto:sakibmia0718@gmail.com) |
-| Issues | [Report a bug or request a feature](https://github.com/Sakib-Atreus/nexhire/issues) |
+
+Found a bug or have an idea? [Open an issue](https://github.com/Sakib-Atreus/nexhire/issues).
