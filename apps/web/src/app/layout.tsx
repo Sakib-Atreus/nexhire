@@ -7,7 +7,7 @@ import { THEME_INIT_SCRIPT } from '@/lib/theme';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'NexHire — Job Portal',
+  title: 'NexHire - Job Portal',
   description: 'Find your next career opportunity',
   icons: {
     icon: '/icon.svg',
