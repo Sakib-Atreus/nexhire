@@ -65,9 +65,16 @@ const config: Config = {
       },
       keyframes: {
         'toast-in': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        // Slow drift for the dark-mode hero glows.
+        drift: {
+          '0%, 100%': { transform: 'translate3d(0, 0, 0) scale(1)' },
+          '50%': { transform: 'translate3d(-4%, 6%, 0) scale(1.08)' },
+        },
       },
       animation: {
         'toast-in': 'toast-in 0.2s ease-out',
+        drift: 'drift 16s ease-in-out infinite',
+        'drift-slow': 'drift 24s ease-in-out infinite reverse',
       },
     },
   },

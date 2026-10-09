@@ -126,7 +126,14 @@ export default function CalendarPage() {
           hint={recruiter ? 'Invites not answered yet' : 'Accept, decline or suggest a time'}
         />
         {recruiter ? (
-          <StatCard label="Need attention" value={stats?.attention} icon={AlertTriangle} tone="bg-amber-50 text-amber-700" hint="New times, declines, follow-ups" />
+          <StatCard
+            label="Need attention"
+            value={stats?.attention}
+            icon={AlertTriangle}
+            // Warning colour only when something actually needs attention; otherwise the normal card colour.
+            tone={stats?.attention ? 'bg-amber-50 text-amber-700' : undefined}
+            hint="New times, declines, follow-ups"
+          />
         ) : (
           <StatCard label="Confirmed" value={stats?.attention} icon={CalendarCheck2} tone="bg-emerald-50 text-emerald-700" hint="Upcoming and confirmed" />
         )}

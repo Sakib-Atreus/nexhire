@@ -19,6 +19,7 @@ import { buttonClasses } from '@/components/ui/Button';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { HeroSearch } from '@/components/marketing/HeroSearch';
+import { HeroGlow } from '@/components/marketing/HeroGlow';
 import { LatestJobs, OpenRolesCount } from '@/components/marketing/LatestJobs';
 import { useMounted } from '@/components/marketing/useMounted';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
@@ -94,20 +95,23 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-primary-950 via-primary-900 to-primary-700 text-white">
+        <section className="relative overflow-hidden bg-gradient-to-br from-primary-950 via-primary-900 to-primary-700 text-white dark:from-[#070a1f] dark:via-primary-950 dark:to-[#2a2380]">
+          <HeroGlow />
           <div
-            className="absolute inset-0 opacity-[0.07]"
+            className="absolute inset-0 opacity-[0.07] dark:opacity-[0.1]"
             style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '28px 28px' }}
             aria-hidden
           />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-28">
             <div className="max-w-3xl">
-              <OpenRolesCount className="inline-flex items-center gap-2 rounded-full border border-surface/20 bg-surface/10 px-3 py-1 text-sm font-medium text-primary-50 mb-6" />
+              <OpenRolesCount className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium text-primary-50 mb-6 backdrop-blur dark:border-white/15 dark:shadow-[0_0_24px_-6px_rgba(129,140,248,0.6)]" />
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
                 Find work you care about.
-                <span className="block text-primary-200">Hire people who fit.</span>
+                <span className="block text-primary-200 dark:bg-gradient-to-r dark:from-[#c7d2fe] dark:via-[#7dd3fc] dark:to-[#f0abfc] dark:bg-clip-text dark:text-transparent">
+                  Hire people who fit.
+                </span>
               </h1>
-              <p className="mt-6 text-base sm:text-lg text-primary-100 max-w-xl leading-relaxed">
+              <p className="mt-6 text-base sm:text-lg text-primary-100 max-w-xl leading-relaxed dark:text-slate-300">
                 NexHire is where job seekers discover open roles and track every application, and where
                 recruiters post jobs and manage applicants from first review to offer.
               </p>
