@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Camera, CheckCircle2, Circle, LinkIcon, Plus, Trash2 } from 'lucide-react';
+import { Camera, LinkIcon, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useMe, useUpdateProfile } from '@/hooks/useProfile';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { SkillsInput } from '@/components/ui/SkillsInput';
@@ -14,7 +14,12 @@ import { FormField, Input, Textarea } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Skeleton } from '@/components/ui/States';
 import { Toggle } from '@/components/ui/Toggle';
-import { getProfileCompleteness } from '@/components/profile/completeness';
+import { CompletenessCard } from '@/components/profile/CompletenessCard';
+import { EducationEditor } from '@/components/profile/EducationEditor';
+import { ExperienceEditor } from '@/components/profile/ExperienceEditor';
+import { PublicProfileCard } from '@/components/profile/PublicProfileCard';
+import { ResumeCard } from '@/components/profile/ResumeCard';
+import { cn } from '@/lib/cn';
 import { ROLE_LABELS, ROLE_STYLES } from '@/lib/constants';
 import { formatMonthYear, getErrorMessage } from '@/lib/format';
 import { toast } from '@/store/toastStore';
@@ -24,6 +29,7 @@ interface ProfileForm {
   firstName: string;
   lastName: string;
   phone: string;
+  location: string;
   headline: string;
   bio: string;
   skills: string[];
@@ -38,6 +44,7 @@ function toForm(user: User): ProfileForm {
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
     phone: user.phone ?? '',
+    location: user.location ?? '',
     headline: user.headline ?? '',
     bio: user.bio ?? '',
     skills: user.skills ?? [],
@@ -130,7 +137,7 @@ export default function ProfilePage() {
     register, handleSubmit, reset, watch, setValue, control,
     formState: { errors, isDirty },
   } = useForm<ProfileForm>({
-    defaultValues: { firstName: '', lastName: '', phone: '', headline: '', bio: '', skills: [], portfolioLinks: [], openToWork: false },
+    defaultValues: { firstName: '', lastName: '', phone: '', location: '', headline: '', bio: '', skills: [], portfolioLinks: [], openToWork: false },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'portfolioLinks' });
 
@@ -147,6 +154,7 @@ export default function ProfilePage() {
       firstName: v.firstName.trim(),
       lastName: v.lastName.trim(),
       phone: v.phone.trim(),
+      location: v.location.trim(),
       headline: v.headline.trim(),
       bio: v.bio.trim(),
     };
@@ -174,15 +182,6 @@ export default function ProfilePage() {
 
   if (isLoading || !user) return <ProfileSkeleton />;
 
-  // Live completeness reflects unsaved edits too, so the meter responds as the form is filled in.
-  const completeness = getProfileCompleteness({
-    avatarUrl: user.avatarUrl,
-    headline: values.headline,
-    bio: values.bio,
-    skills: values.skills,
-    phone: values.phone,
-    portfolioLinks: values.portfolioLinks?.map((p) => p.url),
-  });
   const portfolioError = errors.portfolioLinks?.find?.((e) => e?.url)?.url?.message;
 
   return (
@@ -192,8 +191,7 @@ export default function ProfilePage() {
         description={isCandidate ? 'Recruiters see this information when you apply for a job.' : 'Your name and details as candidates and teammates see them.'}
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Left column */}
           <div className="space-y-6">
             <Card className="p-6">
@@ -202,6 +200,11 @@ export default function ProfilePage() {
                 <p className="font-semibold text-fg">{user.fullName}</p>
                 <p className="text-sm text-fg-muted break-all">{user.email}</p>
                 {user.headline && <p className="mt-1 text-sm text-fg-secondary">{user.headline}</p>}
+                {user.location && (
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-fg-muted">
+                    <MapPin className="w-3.5 h-3.5" aria-hidden />{user.location}
+                  </p>
+                )}
               </div>
               <dl className="mt-5 pt-5 border-t border-line-subtle space-y-2.5 text-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -226,34 +229,24 @@ export default function ProfilePage() {
             </Card>
 
             {isCandidate && (
-              <Card className="p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold text-fg">Profile strength</h2>
-                  <span className="text-sm font-semibold text-primary-700 tabular-nums">{completeness.percent}%</span>
-                </div>
-                <div
-                  className="mt-3 h-2 rounded-full bg-subtle overflow-hidden"
-                  role="progressbar"
-                  aria-label="Profile completeness"
-                  aria-valuenow={completeness.percent}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                >
-                  <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${completeness.percent}%` }} />
-                </div>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {completeness.items.map((item) => (
-                    <li key={item.key} className={item.done ? 'flex items-center gap-2 text-fg-muted' : 'flex items-center gap-2 text-fg-soft'}>
-                      {item.done
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" aria-hidden />
-                        : <Circle className="w-4 h-4 text-fg-faint flex-shrink-0" aria-hidden />}
-                      {item.label}
-                      <span className="sr-only">{item.done ? '— complete' : '— missing'}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
+              // Live values so the meter responds to unsaved edits too.
+              <CompletenessCard
+                fields={{
+                  avatarUrl: user.avatarUrl,
+                  resumeUrl: user.resumeUrl,
+                  headline: values.headline,
+                  location: values.location,
+                  bio: values.bio,
+                  skills: values.skills,
+                  phone: values.phone,
+                  portfolioLinks: values.portfolioLinks?.map((p) => p.url),
+                }}
+              />
             )}
+
+            {isCandidate && <ResumeCard user={user} />}
+
+            {isCandidate && <PublicProfileCard user={user} />}
 
             {isCandidate && (
               <Card className="p-5">
@@ -273,8 +266,8 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Right column */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Main column. Experience and education save on their own; everything else saves with this form. */}
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="lg:col-span-2 space-y-6 min-w-0">
             <Card>
               <CardHeader title="Basic information" />
               <div className="p-5 space-y-5">
@@ -293,9 +286,14 @@ export default function ProfilePage() {
                   </FormField>
                 </div>
 
-                <FormField label="Phone" hint="Only shared with recruiters you apply to.">
-                  {(id) => <Input id={id} type="tel" autoComplete="tel" placeholder="+1 555 000 0000" {...register('phone')} />}
-                </FormField>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="Location" hint="City and country, or Remote.">
+                    {(id) => <Input id={id} autoComplete="address-level2" maxLength={150} placeholder="Dhaka, Bangladesh" {...register('location')} />}
+                  </FormField>
+                  <FormField label="Phone" hint={isCandidate ? 'Only shared with recruiters you apply to.' : undefined}>
+                    {(id) => <Input id={id} type="tel" autoComplete="tel" placeholder="+1 555 000 0000" {...register('phone')} />}
+                  </FormField>
+                </div>
 
                 <FormField label="Headline" hint={isCandidate ? 'Your current role or the role you want, e.g. "Senior React Developer".' : 'Your title, e.g. "Talent Partner at Acme".'}>
                   {(id) => <Input id={id} maxLength={120} {...register('headline')} />}
@@ -327,6 +325,10 @@ export default function ProfilePage() {
                 </div>
               </Card>
             )}
+
+            {isCandidate && <ExperienceEditor />}
+
+            {isCandidate && <EducationEditor />}
 
             {isCandidate && (
               <Card>
@@ -374,8 +376,13 @@ export default function ProfilePage() {
               </Card>
             )}
 
-            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
-              {isDirty && <p className="text-sm text-fg-muted sm:mr-auto">You have unsaved changes.</p>}
+            <div
+              className={cn(
+                'flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3',
+                isDirty && 'sticky bottom-20 lg:bottom-4 z-10 rounded-xl border border-line bg-surface/95 p-3 shadow-lg backdrop-blur'
+              )}
+            >
+              {isDirty && <p className="text-sm text-fg-muted sm:mr-auto sm:pl-1">You have unsaved changes.</p>}
               <Button variant="secondary" onClick={() => reset(toForm(user))} disabled={!isDirty || isPending}>
                 Discard
               </Button>
@@ -383,9 +390,8 @@ export default function ProfilePage() {
                 Save changes
               </Button>
             </div>
-          </div>
-        </div>
-      </form>
+          </form>
+      </div>
     </div>
   );
 }

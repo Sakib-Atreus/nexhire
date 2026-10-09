@@ -49,6 +49,7 @@ public class JobService {
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
     private final JobAccess jobAccess;
+    private final com.nexhire.api.modules.alerts.JobPublishedPublisher jobPublishedPublisher;
     private final com.nexhire.api.modules.companies.CompanyRepository companyRepository;
 
     public Page<JobDTO> search(String keyword, String location, String companyName, JobType jobType, ExperienceLevel experienceLevel,
@@ -129,7 +130,9 @@ public class JobService {
             });
         }
 
-        return toDTO(jobRepository.save(job), null);
+        Job saved = jobRepository.save(job);
+        if (saved.getStatus() == JobStatus.OPEN) jobPublishedPublisher.jobPublished(saved.getId());
+        return toDTO(saved, null);
     }
 
     @Transactional
@@ -140,6 +143,7 @@ public class JobService {
         if (!jobAccess.canManage(job, currentUser)) {
             throw new ForbiddenException("You do not have permission to update this job");
         }
+        boolean wasLive = job.getStatus() == JobStatus.OPEN && !job.isHidden();
 
         BigDecimal effectiveMin = request.salaryMin() != null ? request.salaryMin() : job.getSalaryMin();
         BigDecimal effectiveMax = request.salaryMax() != null ? request.salaryMax() : job.getSalaryMax();
@@ -169,7 +173,9 @@ public class JobService {
         if (request.tags() != null) job.setTags(request.tags());
         if (request.deadline() != null) job.setDeadline(request.deadline());
 
-        return toDTO(jobRepository.save(job), null);
+        Job saved = jobRepository.save(job);
+        if (!wasLive && saved.getStatus() == JobStatus.OPEN && !saved.isHidden()) jobPublishedPublisher.jobPublished(saved.getId());
+        return toDTO(saved, null);
     }
 
     @Transactional
@@ -353,6 +359,7 @@ public class JobService {
             .orElseThrow(() -> new ResourceNotFoundException("Job", "id", id));
         String label = job.getTitle() + " · " + job.getCompanyName();
         String reason = request.reason() == null || request.reason().isBlank() ? null : request.reason().trim();
+        boolean wasLive = job.getStatus() == JobStatus.OPEN && !job.isHidden();
 
         if (request.hidden() != null && request.hidden() != job.isHidden()) {
             job.setHidden(request.hidden());
@@ -375,7 +382,9 @@ public class JobService {
             auditService.record(admin, AuditAction.JOB_STATUS_CHANGED, AuditService.TARGET_JOB, id, label,
                 previous + " → " + request.status() + (reason != null ? " (" + reason + ")" : ""));
         }
-        return toDTO(jobRepository.save(job), null, (int) applicationRepository.countByJobId(id));
+        Job saved = jobRepository.save(job);
+        if (!wasLive && saved.getStatus() == JobStatus.OPEN && !saved.isHidden()) jobPublishedPublisher.jobPublished(saved.getId());
+        return toDTO(saved, null, (int) applicationRepository.countByJobId(id));
     }
 
     public long countByRecruiter(UUID recruiterId) {

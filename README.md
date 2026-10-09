@@ -10,8 +10,12 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 
 ### For job seekers
 - **Job search** — keyword, location, category, job type and experience level filters; featured jobs first; save jobs for later
+- **Recommended jobs** — open roles ranked by how well they match your skills, headline and location, with the matching skills shown
+- **Job alerts** — save a search and get notified (in-app and by email) when a matching job is posted, instantly or as a daily digest; one-click unsubscribe
+- **Full profile** — work experience, education, location, a saved resume, and an optional public profile page (`/p/your-name`) to share
+- **Quick apply** — apply in one click with your saved resume
 - **Company profiles** — browse the company directory and each company's open roles; "Verified employer" badges
-- **One place for every application** — progress tracker (Applied → Review → Shortlist → Interview → Offer → Hired), withdraw, cover letter and screening questions
+- **One place for every application** — progress tracker (Applied → Review → Shortlist → Interview → Offer → Hired), a timeline of every update with messages from the hiring team, withdraw, cover letter and screening questions
 - **Interview invitations** — accept, request another time (suggest up to 3 times) or decline; warnings when an invitation overlaps your other interviews; add confirmed interviews to your calendar (.ics)
 - **Messages** — two-way conversation with the hiring team on each application
 - **Profile** — avatar, headline, bio, skills, portfolio links and an "Open to work" toggle
@@ -20,7 +24,7 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 - **Company teams** — create a company profile, add teammates by email; everyone on the team shares the company's jobs and applicants
 - **Job posting** — publish or save as draft, duplicate a job, set the number of openings (the job closes as *Filled* automatically once that many people are hired), screening questions, salary in any currency
 - **Hiring pipeline board** — drag applicants between stages (works with mouse, touch and keyboard), or use list view with bulk actions
-- **Applicant panel** — private 1–5 ratings and notes (never visible to candidates), messages with reusable templates and placeholders such as `{{firstName}}`
+- **Applicant panel** — the candidate's full profile (experience, education, resume), private 1–5 ratings and notes (never visible to candidates), an activity timeline, messages with reusable templates and placeholders such as `{{firstName}}`, and an optional message to the candidate with each stage change
 - **Interview scheduling** — video, phone or on-site; warns about clashes with *your own* interviews; the candidate confirms or proposes another time, and one click accepts their suggestion; unanswered invitations are flagged after 48 hours with a one-click reminder
 - **Analytics** — per-job funnel (views → applications → interviewed → offered → hired), daily applications and status breakdown
 
@@ -33,6 +37,8 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 ### Platform
 - **Role-based access** — Job seeker, Recruiter and Administrator roles; sign-up is limited to job seekers and recruiters, and the first administrator is created from environment variables
 - **Real-time notifications** — Server-Sent Events push updates instantly; RabbitMQ delivers them, with a direct fallback so nothing is lost if the broker is down
+- **Email** — password reset, email verification and job alerts via any SMTP provider (Brevo, Resend, SendGrid, …); without SMTP settings emails are logged instead
+- **Event-driven job alerts** — publishing a job emits a RabbitMQ event that is matched against saved searches
 - **JWT authentication** — access + refresh tokens, email verification and password reset
 - **File storage** — resumes and avatars in S3-compatible storage (MinIO locally, Backblaze B2 in production)
 - **Light and dark mode** — Light / Dark / System theme from the user menu (and a toggle on the home and sign-in pages); remembered per browser, applied before the page paints so there's no flash
@@ -202,6 +208,9 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 | `SPRING_RABBITMQ_HOST`, `SPRING_RABBITMQ_PORT`, `SPRING_RABBITMQ_USERNAME`, `SPRING_RABBITMQ_PASSWORD`, `SPRING_RABBITMQ_VIRTUAL_HOST`, `SPRING_RABBITMQ_SSL_ENABLED` | Message broker. For CloudAMQP use port `5671` and SSL `true`. If unset or wrong, the API still runs and delivers notifications directly. |
 | `SPRING_RABBITMQ_ADDRESSES` | Alternative to the separate RabbitMQ variables: `amqps://user:pass@host/vhost`. **Takes priority** over host/port/username/password when set — remove it if it points to an old broker. |
 | `MINIO_ENDPOINT`, `MINIO_PUBLIC_URL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` | File storage (Backblaze B2 in production). If the keys are missing the API still runs, but uploads are disabled. |
+| `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | SMTP for emails (e.g. Brevo: `smtp-relay.brevo.com`, port `587`). Without `SPRING_MAIL_HOST`, emails are only written to the log. |
+| `MAIL_FROM` | Sender, e.g. `NexHire <no-reply@yourdomain.com>` (must be a sender your SMTP provider allows) |
+| `APP_BASE_URL` | Frontend URL used in email links, e.g. `https://your-app.vercel.app` |
 
 ### Optional
 
@@ -311,6 +320,10 @@ npm run type-check    # TypeScript validation
 3. The recruiter is notified. Choosing one of the candidate's suggested times confirms the interview immediately; any other new time goes back to the candidate to confirm.
 4. Invitations with no answer 48 hours after being sent are flagged so the recruiter can send a reminder.
 
+**Job alerts:** when a job becomes open and visible (published, a draft published, reopened or un-hidden), the API publishes a `job.published` event to RabbitMQ (after the database commit). A consumer matches it against active alerts: *instant* alerts notify immediately, *daily* alerts are collected and sent as one digest at 08:00 UTC. Each job is sent to each alert at most once. If RabbitMQ is unavailable, matching runs directly.
+
+**Recommendations:** each open job gets a 0–100 score — 60% skills (profile skills found in the job's tags), 20% headline words in the title, 10% location or remote, 10% recency. Jobs already applied to are excluded, and only jobs with a skill or title match are shown.
+
 **Company teams:** recruiters on the same company team share all of the company's jobs, applicants, interviews and analytics. Jobs are always posted under the company's name and logo. The owner manages the team; ownership can be transferred.
 
 ---
@@ -390,6 +403,22 @@ All endpoints are under `/api`. "Team" means the job's recruiter, recruiters on 
 | GET / POST | `/applications/{id}/notes` | Team | Private notes |
 | DELETE | `/applications/notes/{noteId}` | Author/ADMIN | Delete a note |
 | GET / POST | `/applications/{id}/messages` | Team / candidate | Conversation; the team may use `{{firstName}}`, `{{candidateName}}`, `{{jobTitle}}`, `{{companyName}}`, `{{recruiterName}}` |
+
+### Profiles, recommendations and job alerts
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET / PUT | `/users/me/experience` | Any | Your work experience (PUT replaces the ordered list, max 30) |
+| GET / PUT | `/users/me/education` | Any | Your education (PUT replaces the ordered list, max 30) |
+| GET | `/profiles/{slug}` | No | Public candidate profile (only if made public; no contact details or resume) |
+| GET | `/applications/{id}/candidate-profile` | Team | Applicant's full profile incl. contact details and resume |
+| GET | `/applications/{id}/timeline` | Team / candidate | Application history: stage changes (with the team's message), interviews, responses |
+| GET | `/jobs/recommended` | CANDIDATE | Open jobs ranked by profile match (`size`) |
+| GET / POST | `/job-alerts` | CANDIDATE | Your job alerts (max 10; `INSTANT` or `DAILY`) |
+| PUT / DELETE | `/job-alerts/{id}` | CANDIDATE | Edit / delete an alert |
+| POST | `/job-alerts/unsubscribe` | No | One-click unsubscribe with the token from an alert email |
+
+`PATCH /users/me` also accepts `location`, `resumeUrl` + `resumeFileName` (saved resume; `""` removes it) and `publicProfile`.
 
 ### Interviews and templates
 
@@ -510,6 +539,7 @@ Flyway runs all migrations automatically on API startup.
 | V11 | Admin panel: verified recruiters, featured/hidden jobs, categories, job reports, audit log, site settings |
 | V12 | Companies and teams (created from existing jobs), job openings, applicant ratings, interviews, private notes, messages, message templates |
 | V13 | Interview responses (accept / new time / decline) and follow-up tracking |
+| V14 | Candidate profiles (location, saved resume, public profile, experience, education), job alerts, application timeline (history backfilled for existing applications) |
 
 **Connect to the database directly:**
 ```bash
@@ -566,7 +596,7 @@ The public board shows only **open**, **non-hidden** jobs. Drafts, closed or fil
 
 ## Known Limitations
 
-- **Emails are not sent yet.** Password-reset and email-verification tokens are written to the API log instead of emailed. Messages and interview invitations reach users through in-app notifications only.
+- **Email needs an SMTP provider.** Set the `SPRING_MAIL_*`, `MAIL_FROM` and `APP_BASE_URL` variables; until then, password-reset, verification and job-alert emails are only written to the API log. Messages and interview invitations are in-app notifications.
 - **No CI pipeline yet** — run `./mvnw test` and `npm run type-check` before pushing.
 - **Interview clash checks** cover the recruiter who schedules the interview, not every teammate attending.
 

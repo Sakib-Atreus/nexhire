@@ -68,6 +68,20 @@ public class UserService implements UserDetailsService {
         if (request.headline() != null) user.setHeadline(request.headline());
         if (request.portfolioLinks() != null) user.setPortfolioLinks(toJsonString(request.portfolioLinks()));
         if (request.openToWork() != null) user.setOpenToWork(request.openToWork());
+        if (request.location() != null) user.setLocation(blankToNull(request.location()));
+        if (request.resumeUrl() != null) {
+            String url = blankToNull(request.resumeUrl());
+            if (url != null && !url.matches("(?i)^https?://\\S+$")) {
+                throw new com.nexhire.api.exception.BadRequestException("Resume must be a full URL starting with https://");
+            }
+            user.setResumeUrl(url);
+            user.setResumeFileName(url == null ? null : blankToNull(request.resumeFileName()));
+            user.setResumeUpdatedAt(url == null ? null : java.time.Instant.now());
+        }
+        if (request.publicProfile() != null) {
+            user.setPublicProfile(request.publicProfile());
+            if (request.publicProfile() && user.getProfileSlug() == null) user.setProfileSlug(newProfileSlug(user));
+        }
 
         return toDTO(userRepository.save(user));
     }
@@ -144,7 +158,13 @@ public class UserService implements UserDetailsService {
             parseJsonList(user.getPortfolioLinks()),
             user.isEnabled(),
             user.isOpenToWork(),
-            user.isVerified()
+            user.isVerified(),
+            user.getLocation(),
+            user.getResumeUrl(),
+            user.getResumeFileName(),
+            user.getResumeUpdatedAt(),
+            user.isPublicProfile(),
+            user.getProfileSlug()
         );
     }
 
@@ -164,5 +184,22 @@ public class UserService implements UserDetailsService {
         } catch (Exception e) {
             return "[]";
         }
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    /** "ayesha-khan-3f9a2c": readable name plus a random suffix so profiles can't be enumerated. */
+    private String newProfileSlug(User user) {
+        String base = java.text.Normalizer.normalize(user.getFullName(), java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "").toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+        if (base.isEmpty()) base = "profile";
+        if (base.length() > 60) base = base.substring(0, 60);
+        String slug;
+        do {
+            slug = base + "-" + UUID.randomUUID().toString().substring(0, 6);
+        } while (userRepository.existsByProfileSlug(slug));
+        return slug;
     }
 }

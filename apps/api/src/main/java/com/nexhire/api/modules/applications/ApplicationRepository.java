@@ -51,6 +51,9 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     long countByCandidateId(UUID candidateId);
 
+    @Query("SELECT a.job.id FROM Application a WHERE a.candidate.id = :candidateId")
+    java.util.List<UUID> findJobIdsByCandidateId(@Param("candidateId") UUID candidateId);
+
     long countByAppliedAtAfter(java.time.Instant since);
 
     java.util.List<Application> findTop5ByCandidateIdOrderByAppliedAtDesc(UUID candidateId);

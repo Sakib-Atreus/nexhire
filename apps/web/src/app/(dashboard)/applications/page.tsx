@@ -109,7 +109,7 @@ function ApplicationCard({ app, onWithdraw, activityOpen, onToggleActivity, high
             aria-controls={activityId}
           >
             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', activityOpen && 'rotate-180')} aria-hidden />
-            Messages &amp; interviews
+            Timeline, messages &amp; interviews
           </Button>
           {app.coverLetter && (
             <Button

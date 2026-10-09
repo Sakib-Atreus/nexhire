@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight, Bookmark, Briefcase, CheckCircle2, Circle, Clock, FileText, Inbox, Plus, Search,
-  Send, Trophy, Users,
+  Send, Sparkles, Trophy, Users,
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
@@ -21,6 +21,8 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { UpcomingInterviewsCard } from '@/components/interviews/UpcomingInterviewsCard';
 import { PipelineBars, statsToCounts, type StatusCounts } from '@/components/dashboard/PipelineBars';
 import { getProfileCompleteness } from '@/components/profile/completeness';
+import { useMyEducation, useMyExperience } from '@/hooks/useCandidate';
+import { RecommendedJobs } from '@/components/recommendations/RecommendedJobs';
 import {
   APPLICATION_STATUS_LABELS, APPLICATION_STATUS_ORDER, APPLICATION_STATUS_STYLES, JOB_STATUS_LABELS, JOB_STATUS_STYLES,
 } from '@/lib/constants';
@@ -89,7 +91,11 @@ function CandidateDashboard() {
     {} as StatusCounts
   );
   const inProgress = counts.PENDING + counts.REVIEWING + counts.SHORTLISTED + counts.INTERVIEWED;
-  const completeness = me.data ? getProfileCompleteness(me.data) : null;
+  const experience = useMyExperience();
+  const education = useMyEducation();
+  const completeness = me.data
+    ? getProfileCompleteness({ ...me.data, experienceCount: experience.data?.length, educationCount: education.data?.length })
+    : null;
   const scopeHint = partial ? `In your ${RECENT_WINDOW} latest` : undefined;
 
   return (
@@ -100,6 +106,19 @@ function CandidateDashboard() {
         <StatCard label="Offers & hires" value={apps.isError ? null : apps.data ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={scopeHint} />
         <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" />
       </div>
+
+      <section aria-labelledby="recommended-heading">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h2 id="recommended-heading" className="flex items-center gap-1.5 text-base font-semibold text-fg">
+              <Sparkles className="w-4 h-4 text-primary-600" aria-hidden /> Recommended for you
+            </h2>
+            <p className="text-xs text-fg-muted mt-0.5">Open jobs that match your profile&apos;s skills and headline</p>
+          </div>
+          <ViewAll href="/jobs?tab=for-you" label="See all" />
+        </div>
+        <RecommendedJobs size={6} grid />
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 overflow-hidden">

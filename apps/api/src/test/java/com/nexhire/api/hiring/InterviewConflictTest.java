@@ -46,6 +46,7 @@ class InterviewConflictTest {
     @Mock private InterviewRepository interviewRepository;
     @Mock private MessageTemplateRepository templateRepository;
     @Mock private NotificationService notificationService;
+    @Mock private com.nexhire.api.modules.timeline.TimelineService timelineService;
     @Spy private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules();
     @InjectMocks private HiringService hiringService;
 

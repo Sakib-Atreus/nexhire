@@ -19,8 +19,9 @@ export function useMoveApplication(jobId: string) {
 
   return useMutation({
     mutationKey: MOVE_KEY,
-    mutationFn: ({ app, status }: { app: Application; status: ApplicationStatus }) =>
-      api.patch<Application>(`/applications/${app.id}/status`, { status }).then((r) => r.data),
+    /** `notes` is an optional message to the candidate, shown on their application timeline. */
+    mutationFn: ({ app, status, notes }: { app: Application; status: ApplicationStatus; notes?: string }) =>
+      api.patch<Application>(`/applications/${app.id}/status`, { status, notes: notes?.trim() || undefined }).then((r) => r.data),
     onMutate: async ({ app, status }) => {
       await qc.cancelQueries({ queryKey: listKey });
       const previous = qc.getQueryData<Page<Application>>(listKey);

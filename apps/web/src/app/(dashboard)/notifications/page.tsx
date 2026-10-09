@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import { Archive, Bell, Briefcase, CalendarCheck, CalendarClock, Check, CheckCheck, Info, MessageSquare, RefreshCw, Settings, UserPlus } from 'lucide-react';
+import { Archive, Bell, BellRing, Briefcase, CalendarCheck, CalendarClock, Check, CheckCheck, Info, MessageSquare, RefreshCw, Settings, UserPlus } from 'lucide-react';
 import { useMarkAllRead, useMarkRead, useNotifications } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/store/authStore';
 import { Button, buttonClasses } from '@/components/ui/Button';
@@ -26,6 +26,7 @@ const TYPE_ICONS: Record<NotificationType, { icon: LucideIcon; tone: string }> =
   INTERVIEW_UPDATED: { icon: CalendarClock, tone: 'bg-amber-50 text-amber-600' },
   MESSAGE_RECEIVED: { icon: MessageSquare, tone: 'bg-sky-50 text-sky-600' },
   INTERVIEW_RESPONSE: { icon: CalendarCheck, tone: 'bg-emerald-50 text-emerald-600' },
+  JOB_ALERT: { icon: BellRing, tone: 'bg-primary-50 text-primary-600' },
 };
 
 /**
@@ -37,6 +38,7 @@ const TYPE_ICONS: Record<NotificationType, { icon: LucideIcon; tone: string }> =
  */
 function targetFor(n: Notification, role?: Role): { href: string; label: string } | null {
   if (n.referenceType === 'JOB' && n.referenceId) return { href: `/jobs/${n.referenceId}`, label: 'View job' };
+  if (n.referenceType === 'ALERT') return { href: '/alerts', label: 'View job alerts' };
   if (n.referenceType === 'APPLICATION' || n.type === 'APPLICATION_RECEIVED' || n.type === 'APPLICATION_STATUS_CHANGED') {
     if (role === 'CANDIDATE') {
       return n.referenceId

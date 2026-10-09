@@ -39,6 +39,7 @@ public class AuthService {
     private final UserService userService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final com.nexhire.api.modules.mail.MailService mailService;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -115,9 +116,13 @@ public class AuthService {
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
             passwordResetTokenRepository.save(resetToken);
-            log.info("PASSWORD_RESET_TOKEN for {}: {}", user.getEmail(), token);
+            mailService.send(user.getEmail(), "Reset your NexHire password", "Reset your password",
+                java.util.List.of("Hi " + user.getFirstName() + ",",
+                    "We received a request to reset your NexHire password. This link is valid for 1 hour.",
+                    "If you didn't ask for this, you can ignore this email — your password won't change."),
+                "Choose a new password", mailService.link("/reset-password?token=" + token));
         });
-        return new MessageResponse("If an account exists for this email, reset instructions have been logged");
+        return new MessageResponse("If an account exists for this email, we've sent a link to reset the password");
     }
 
     @Transactional
@@ -145,7 +150,10 @@ public class AuthService {
             .expiresAt(Instant.now().plusSeconds(86400))
             .build();
         emailVerificationTokenRepository.save(verifyToken);
-        log.info("EMAIL_VERIFICATION_TOKEN for {}: {}", user.getEmail(), token);
+        mailService.send(user.getEmail(), "Confirm your email for NexHire", "Confirm your email address",
+            java.util.List.of("Hi " + user.getFirstName() + ",",
+                "Welcome to NexHire! Please confirm your email address. This link is valid for 24 hours."),
+            "Confirm email", mailService.link("/verify-email?token=" + token));
     }
 
     @Transactional

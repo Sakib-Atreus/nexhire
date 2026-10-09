@@ -83,6 +83,26 @@ public class User implements UserDetails {
     @Column(name = "company_id")
     private UUID companyId;
 
+    private String location;
+
+    /** Saved resume used for quick apply. */
+    @Column(name = "resume_url", length = 500)
+    private String resumeUrl;
+
+    @Column(name = "resume_file_name")
+    private String resumeFileName;
+
+    @Column(name = "resume_updated_at")
+    private Instant resumeUpdatedAt;
+
+    /** Opt-in public profile at /p/{profileSlug}. */
+    @Builder.Default
+    @Column(name = "public_profile", nullable = false)
+    private boolean publicProfile = false;
+
+    @Column(name = "profile_slug", unique = true, length = 80)
+    private String profileSlug;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

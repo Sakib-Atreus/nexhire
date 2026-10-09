@@ -1,5 +1,10 @@
 package com.nexhire.api.modules.hiring;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nexhire.api.modules.timeline.TimelineService;
+import com.nexhire.api.modules.timeline.ApplicationEventDTO;
+import com.nexhire.api.modules.timeline.ApplicationEventType;
 import com.nexhire.api.exception.BadRequestException;
 import com.nexhire.api.exception.ForbiddenException;
 import com.nexhire.api.exception.ResourceNotFoundException;
@@ -48,7 +53,8 @@ public class HiringService {
     private final InterviewRepository interviewRepository;
     private final MessageTemplateRepository templateRepository;
     private final NotificationService notificationService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
+    private final TimelineService timelineService;
 
     // ─── Private notes ──────────────────────────────────────────────────────
 
@@ -76,6 +82,14 @@ public class HiringService {
             throw new ForbiddenException("You can only delete your own notes");
         }
         noteRepository.delete(note);
+    }
+
+    // ─── Timeline ───────────────────────────────────────────────────────────
+
+    public List<ApplicationEventDTO> timeline(UUID applicationId, User user) {
+        Application app = applicationService.getParticipating(applicationId, user);
+        boolean candidateView = app.getCandidate().getId().equals(user.getId());
+        return timelineService.events(applicationId, candidateView);
     }
 
     // ─── Messages ───────────────────────────────────────────────────────────
@@ -140,8 +154,12 @@ public class HiringService {
             .createdBy(user.getId())
             .build());
 
+        timelineService.record(app.getId(), ApplicationEventType.INTERVIEW_SCHEDULED,
+            null, null, typeLabel(saved.getType()) + " interview · " + saved.getDurationMinutes() + " min", user);
         // Scheduling an interview moves the applicant to the Interview stage.
         if (BEFORE_INTERVIEW.contains(app.getStatus())) {
+            timelineService.record(app.getId(), ApplicationEventType.STATUS_CHANGED,
+                app.getStatus(), ApplicationStatus.INTERVIEWED, null, user);
             app.setStatus(ApplicationStatus.INTERVIEWED);
             applicationRepository.save(app);
         }
@@ -192,7 +210,16 @@ public class HiringService {
         if (request.location() != null) interview.setLocation(blank(request.location()));
         if (request.message() != null) interview.setMessage(blank(request.message()));
         if (request.status() != null) interview.setStatus(request.status());
+        boolean completed = request.status() == InterviewStatus.COMPLETED;
         Interview saved = interviewRepository.save(interview);
+        if (cancelled) {
+            timelineService.record(app.getId(), ApplicationEventType.INTERVIEW_CANCELLED, null, null, null, user);
+        } else if (completed) {
+            timelineService.record(app.getId(), ApplicationEventType.INTERVIEW_COMPLETED, null, null, null, user);
+        } else if (rescheduled) {
+            timelineService.record(app.getId(), ApplicationEventType.INTERVIEW_RESCHEDULED, null, null,
+                pickedCandidateTime ? "Confirmed one of the candidate's suggested times" : null, user);
+        }
 
         if (cancelled || (rescheduled && saved.getStatus() == InterviewStatus.SCHEDULED)) {
             String title = cancelled ? "Interview cancelled" : pickedCandidateTime ? "Interview time confirmed" : "Interview rescheduled";
@@ -279,6 +306,11 @@ public class HiringService {
         interview.setProposedTimes(proposed.isEmpty() ? null : toJson(proposed));
         interview.setRespondedAt(Instant.now());
         Interview saved = interviewRepository.save(interview);
+        timelineService.record(app.getId(), switch (request.response()) {
+            case ACCEPTED -> ApplicationEventType.INTERVIEW_ACCEPTED;
+            case DECLINED -> ApplicationEventType.INTERVIEW_DECLINED;
+            default -> ApplicationEventType.INTERVIEW_NEW_TIME_REQUESTED;
+        }, null, null, saved.getResponseNote(), user);
 
         String who = app.getCandidate().getFullName();
         String what = switch (request.response()) {
@@ -297,7 +329,7 @@ public class HiringService {
     private List<Instant> proposedTimes(Interview i) {
         if (i.getProposedTimes() == null || i.getProposedTimes().isBlank()) return List.of();
         try {
-            return objectMapper.readValue(i.getProposedTimes(), new com.fasterxml.jackson.core.type.TypeReference<List<Instant>>() {});
+            return objectMapper.readValue(i.getProposedTimes(), new TypeReference<List<Instant>>() {});
         } catch (Exception e) {
             return List.of();
         }

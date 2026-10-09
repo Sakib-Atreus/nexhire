@@ -13,5 +13,10 @@ public record UpdateUserRequest(
     List<String> skills,
     String headline,
     List<String> portfolioLinks,
-    Boolean openToWork
+    Boolean openToWork,
+    @Size(max = 255) String location,
+    /** Saved resume for quick apply; "" removes it. */
+    @Size(max = 500) String resumeUrl,
+    @Size(max = 255) String resumeFileName,
+    Boolean publicProfile
 ) {}

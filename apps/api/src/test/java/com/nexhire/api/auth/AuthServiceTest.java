@@ -39,6 +39,7 @@ class AuthServiceTest {
     @Mock private UserService userService;
     @Mock private PasswordResetTokenRepository passwordResetTokenRepository;
     @Mock private EmailVerificationTokenRepository emailVerificationTokenRepository;
+    @Mock private com.nexhire.api.modules.mail.MailService mailService;
 
     @InjectMocks
     private AuthService authService;

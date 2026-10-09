@@ -106,6 +106,9 @@ public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificatio
 
     long countByCompanyIdAndStatusAndHiddenFalse(UUID companyId, JobStatus status);
 
+    /** Candidate pool for recommendations: newest open, visible jobs. */
+    java.util.List<Job> findTop300ByStatusAndHiddenFalseOrderByCreatedAtDesc(JobStatus status);
+
     java.util.List<Job> findTop50ByCompanyIdAndStatusAndHiddenFalseOrderByFeaturedDescCreatedAtDesc(UUID companyId, JobStatus status);
 
     /** Jobs a recruiter manages: their own, plus every job of their company (pass JobAccess.NO_COMPANY when none). */

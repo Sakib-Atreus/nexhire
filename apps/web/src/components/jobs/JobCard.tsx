@@ -14,10 +14,17 @@ import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { Skeleton } from '@/components/ui/States';
 import { VerifiedIcon } from '@/components/companies/VerifiedBadge';
 import { FeaturedBadge } from '@/components/admin/jobs/JobFlagBadges';
+import { MatchBadge } from '@/components/recommendations/MatchBadge';
 
 const MAX_TAGS = 3;
 
-export function JobCard({ job }: { job: Job }) {
+export function JobCard({ job, matchScore, matchedSkills }: {
+  job: Job;
+  /** 0–100; shows a "78% match" badge (recommendations). */
+  matchScore?: number;
+  /** Profile skills found in this job; shown as "Matches your skills: …". */
+  matchedSkills?: string[];
+}) {
   const { user } = useAuthStore();
   const { mutate: saveJob, isPending: isSaving } = useSaveJob();
   const { mutate: unsaveJob, isPending: isUnsaving } = useUnsaveJob();
@@ -59,6 +66,7 @@ export function JobCard({ job }: { job: Job }) {
             </h3>
             <Badge tone={EXPERIENCE_STYLES[job.experienceLevel]}>{EXPERIENCE_LABELS[job.experienceLevel]}</Badge>
             {job.featured && <FeaturedBadge />}
+            {typeof matchScore === 'number' && <MatchBadge score={matchScore} />}
           </div>
           <p className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-fg-tertiary">
             {job.companySlug ? (
@@ -98,6 +106,12 @@ export function JobCard({ job }: { job: Job }) {
               </li>
             )}
           </ul>
+
+          {!!matchedSkills?.length && (
+            <p className="mt-2 text-sm text-emerald-700 break-words">
+              <span className="font-medium">Matches your skills:</span> {matchedSkills.join(', ')}
+            </p>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             {tags.length > 0 ? (

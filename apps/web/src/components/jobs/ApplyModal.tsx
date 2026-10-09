@@ -1,21 +1,29 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, ChevronDown, ExternalLink, FileText, Lightbulb, Zap } from 'lucide-react';
 import type { Job } from '@/types';
 import { useApply } from '@/hooks/useApplications';
+import { useMe, useUpdateProfile } from '@/hooks/useProfile';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input, Textarea } from '@/components/ui/Field';
 import { FileUpload } from '@/components/ui/FileUpload';
-import { getErrorMessage } from '@/lib/format';
+import { getErrorMessage, timeAgo } from '@/lib/format';
 import { toast } from '@/store/toastStore';
 import { cn } from '@/lib/cn';
 
 const COVER_LETTER_MAX = 5000;
 const ANSWER_MAX = 1500;
 
-type ResumeMode = 'upload' | 'url';
+type ResumeMode = 'saved' | 'upload' | 'url';
+
+const MODE_LABELS: Record<ResumeMode, string> = {
+  saved: 'Saved resume',
+  upload: 'Upload a different file',
+  url: 'Paste a link',
+};
 
 interface Errors {
   resume?: string;
@@ -33,6 +41,17 @@ function composeCoverLetter(coverLetter: string, questions: string[], answers: s
   return parts.length ? parts.join('\n\n---\n\n') : undefined;
 }
 
+/** Best-effort file name for a pasted resume link ("resume.pdf"), falling back to the host. */
+function fileNameFromUrl(value: string): string {
+  try {
+    const u = new URL(value);
+    const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() ?? '');
+    return (last || u.hostname).slice(0, 255);
+  } catch {
+    return 'Resume link';
+  }
+}
+
 function isValidUrl(value: string) {
   try {
     const u = new URL(value);
@@ -46,11 +65,28 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
   const questions = (job.screeningQuestions ?? []).map((q) => q.trim()).filter(Boolean);
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeUrl, setResumeUrl] = useState('');
-  const [mode, setMode] = useState<ResumeMode>('upload');
+  const [uploadedName, setUploadedName] = useState('');
+  // null = not chosen yet: defaults to the saved resume when the profile has one.
+  const [chosenMode, setChosenMode] = useState<ResumeMode | null>(null);
+  const [saveChoice, setSaveChoice] = useState<boolean | null>(null);
   const [answers, setAnswers] = useState<string[]>(() => questions.map(() => ''));
   const [errors, setErrors] = useState<Errors>({});
+  const [showCoverLetter, setShowCoverLetter] = useState(false);
   const { mutate: apply, isPending, error, reset } = useApply();
+  const { data: me, isLoading: meLoading } = useMe();
+  const updateProfile = useUpdateProfile();
   const tabsId = useId();
+  const saveId = useId();
+
+  const savedUrl = me?.resumeUrl?.trim() || '';
+  const savedName = me?.resumeFileName?.trim() || 'My resume';
+  const hasSaved = !!savedUrl;
+  const mode: ResumeMode = chosenMode ?? (hasSaved ? 'saved' : 'upload');
+  const modes: ResumeMode[] = hasSaved ? ['saved', 'upload', 'url'] : ['upload', 'url'];
+  // "Save to profile" defaults on only when there is nothing saved yet.
+  const saveToProfile = saveChoice ?? !hasSaved;
+  const quickApply = hasSaved && questions.length === 0;
+  const coverLetterOpen = !quickApply || showCoverLetter || coverLetter.length > 0;
 
   // Modal re-runs its focus effect when onClose changes, so keep this callback stable.
   const pendingRef = useRef(isPending);
@@ -64,10 +100,13 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
     if (open) reset();
   }, [open, reset]);
 
-  const handleSubmit = () => {
+  const handleSubmit = (opts?: { quick?: boolean }) => {
+    const useSaved = !!opts?.quick || mode === 'saved';
     const next: Errors = {};
-    const url = resumeUrl.trim();
-    if (!url) {
+    const url = useSaved ? savedUrl : resumeUrl.trim();
+    if (useSaved && !url) {
+      next.resume = 'Your saved resume is unavailable. Upload a file or paste a link instead.';
+    } else if (!url) {
       next.resume = mode === 'upload' ? 'Upload your resume to continue.' : 'Paste a link to your resume to continue.';
     } else if (mode === 'url' && !isValidUrl(url)) {
       next.resume = 'Enter a full link starting with https://';
@@ -81,11 +120,22 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
     setErrors(next);
     if (next.resume || next.answers) return;
 
+    const shouldSave = !useSaved && saveToProfile;
+    const fileName = mode === 'upload' ? uploadedName || 'Resume' : fileNameFromUrl(url);
     apply(
       { jobId: job.id, resumeUrl: url, coverLetter: composeCoverLetter(coverLetter, questions, answers) },
       {
         onSuccess: () => {
           toast.success('Application submitted', `${job.companyName} will be notified. You can track progress in My applications.`);
+          if (shouldSave) {
+            updateProfile.mutate(
+              { resumeUrl: url, resumeFileName: fileName },
+              {
+                onSuccess: () => toast.success('Resume saved to your profile', 'Next time you can apply in one click.'),
+                onError: (err) => toast.error('Could not save your resume', getErrorMessage(err)),
+              }
+            );
+          }
           onClose();
         },
       }
@@ -104,8 +154,9 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
   };
 
   const switchMode = (m: ResumeMode) => {
-    setMode(m);
+    setChosenMode(m);
     setResumeUrl('');
+    setUploadedName('');
     setErrors((p) => ({ ...p, resume: undefined }));
   };
 
@@ -119,7 +170,7 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={isPending}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={isPending}>
+          <Button variant={quickApply && mode === 'saved' ? 'secondary' : 'primary'} onClick={() => handleSubmit()} loading={isPending}>
             {isPending ? 'Submitting…' : 'Submit application'}
           </Button>
         </>
@@ -133,13 +184,36 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
         }}
         noValidate
       >
+        {/* Quick apply */}
+        {quickApply && (
+          <div className="rounded-xl border border-primary-200 bg-primary-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 gap-3">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-white">
+                  <Zap className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-fg">Quick apply</p>
+                  <p className="text-xs text-fg-tertiary break-words">
+                    Send <span className="font-medium text-fg-secondary">{savedName}</span> to {job.companyName} in one click.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => handleSubmit({ quick: true })} loading={isPending} className="sm:flex-shrink-0">
+                {!isPending && <Zap className="h-3.5 w-3.5" aria-hidden />}
+                Apply with saved resume
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Resume */}
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium text-fg-secondary">
             Resume<span className="text-rose-500 ml-0.5" aria-hidden>*</span>
           </legend>
-          <div role="tablist" aria-label="How to provide your resume" className="inline-flex rounded-lg bg-subtle p-1">
-            {(['upload', 'url'] as const).map((m) => (
+          <div role="tablist" aria-label="How to provide your resume" className="flex flex-wrap gap-1 rounded-lg bg-subtle p-1 w-fit max-w-full">
+            {modes.map((m) => (
               <button
                 key={m}
                 type="button"
@@ -153,13 +227,35 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
                   mode === m ? 'bg-surface text-fg shadow-sm' : 'text-fg-tertiary hover:text-fg'
                 )}
               >
-                {m === 'upload' ? 'Upload file' : 'Paste a link'}
+                {m === 'upload' && !hasSaved ? 'Upload file' : MODE_LABELS[m]}
               </button>
             ))}
           </div>
           <div id={`${tabsId}-panel`} role="tabpanel" aria-labelledby={`${tabsId}-${mode}`}>
-            {mode === 'upload' ? (
+            {mode === 'saved' ? (
+              <div className="flex items-center gap-3 rounded-lg border border-line bg-surface p-3">
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                  <FileText className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-fg">Use my saved resume · {savedName}</p>
+                  {me?.resumeUpdatedAt && (
+                    <p className="text-xs text-fg-muted">Updated {timeAgo(me.resumeUpdatedAt)}</p>
+                  )}
+                </div>
+                <a
+                  href={savedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex flex-shrink-0 items-center gap-1 text-sm font-medium text-primary-600 hover:underline"
+                >
+                  View <ExternalLink className="h-3 w-3" aria-hidden />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              </div>
+            ) : mode === 'upload' ? (
               <FileUpload
+                onFileSelected={(file) => setUploadedName(file.name)}
                 onUpload={(url) => {
                   setResumeUrl(url);
                   setErrors((p) => ({ ...p, resume: undefined }));
@@ -184,6 +280,30 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
             )}
           </div>
           {errors.resume && <p className="text-xs text-rose-600" role="alert">{errors.resume}</p>}
+          {mode !== 'saved' && !meLoading && (
+            <label htmlFor={saveId} className="flex cursor-pointer items-start gap-2 pt-1 text-sm text-fg-secondary select-none">
+              <input
+                id={saveId}
+                type="checkbox"
+                checked={saveToProfile}
+                onChange={(e) => setSaveChoice(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-line-strong text-primary-600 focus:ring-primary-500"
+              />
+              <span>
+                Save this resume to my profile for next time
+                {hasSaved && <span className="block text-xs text-fg-muted">Replaces {savedName}.</span>}
+              </span>
+            </label>
+          )}
+          {!hasSaved && !meLoading && (
+            <p className="flex items-center gap-1.5 text-xs text-fg-muted">
+              <Lightbulb className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" aria-hidden />
+              <span>
+                <Link href="/profile" className="font-medium text-primary-600 hover:underline">Save a resume in your profile</Link>{' '}
+                to apply in one click.
+              </span>
+            </p>
+          )}
         </fieldset>
 
         {/* Screening questions */}
@@ -212,6 +332,11 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
         )}
 
         {/* Cover letter */}
+        {!coverLetterOpen ? (
+          <Button variant="ghost" size="sm" onClick={() => setShowCoverLetter(true)} aria-expanded={false} className="-ml-2">
+            <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Add a cover letter (optional)
+          </Button>
+        ) : (
         <FormField
           label="Cover letter (optional)"
           hint={`${coverLetter.length.toLocaleString('en-US')} / ${COVER_LETTER_MAX.toLocaleString('en-US')} characters`}
@@ -228,6 +353,7 @@ export function ApplyModal({ job, open, onClose }: { job: Job; open: boolean; on
             />
           )}
         </FormField>
+        )}
 
         {error && (
           <div role="alert" className="flex gap-2.5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">

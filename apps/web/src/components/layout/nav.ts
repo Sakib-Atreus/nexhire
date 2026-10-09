@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Bell, Bookmark, Briefcase, Building2, CalendarClock, FileText, Flag, LayoutDashboard, MessageSquareText, PlusCircle,
+  Bell, BellRing, Bookmark, Briefcase, Building2, CalendarClock, FileText, Flag, LayoutDashboard, MessageSquareText, PlusCircle,
   ScrollText, Search, Settings, User2, Users,
 } from 'lucide-react';
 import type { Role } from '@/types';
@@ -26,6 +26,7 @@ export const SIDEBAR_NAV: Record<Role, NavItem[]> = {
     { href: '/jobs/saved', label: 'Saved jobs', short: 'Saved', icon: Bookmark },
     { href: '/applications', label: 'Applications', short: 'Applied', icon: FileText },
     { href: '/interviews', label: 'Interviews', icon: CalendarClock },
+    { href: '/alerts', label: 'Job alerts', short: 'Alerts', icon: BellRing },
     { href: '/companies', label: 'Companies', icon: Building2 },
     NOTIFICATIONS,
     PROFILE,
@@ -67,6 +68,8 @@ export const PUBLIC_NAV: NavItem[] = [BROWSE, { href: '/companies', label: 'Comp
 export function isPublicPath(pathname: string): boolean {
   if (pathname === '/jobs' || pathname === '/jobs/') return true;
   if (pathname === '/companies' || pathname.startsWith('/companies/')) return true;
+  // Public candidate profiles and the email unsubscribe link.
+  if (pathname.startsWith('/p/') || pathname.startsWith('/alerts/unsubscribe')) return true;
   const m = /^\/jobs\/([^/]+)\/?$/.exec(pathname);
   return !!m && !['my', 'saved', 'create'].includes(m[1]);
 }
@@ -121,9 +124,12 @@ export function getBreadcrumbs(pathname: string, role?: Role): Crumb[] {
     '/company': [{ label: 'Company' }],
     '/templates': [{ label: 'Message templates' }],
     '/interviews': [{ label: 'Interviews' }],
+    '/alerts': [{ label: 'Job alerts' }],
+    '/alerts/unsubscribe': [{ label: 'Job alerts' }, { label: 'Unsubscribe' }],
   };
   const clean = pathname.replace(/\/$/, '') || '/';
   if (exact[clean]) return exact[clean];
+  if (/^\/p\/[^/]+$/.test(clean)) return [{ label: 'Profile' }];
   if (/^\/companies\/[^/]+$/.test(clean)) return [{ label: 'Companies', href: '/companies' }, { label: 'Company profile' }];
   if (/^\/jobs\/[^/]+\/analytics$/.test(clean)) return [{ label: 'My jobs', href: '/jobs/my' }, { label: 'Analytics' }];
   if (/^\/admin\/users\/[^/]+$/.test(clean)) return [{ label: 'Users', href: '/admin/users' }, { label: 'User details' }];

@@ -28,6 +28,7 @@ import { ReportJobModal } from '@/components/jobs/ReportJobModal';
 import { FeaturedBadge } from '@/components/admin/jobs/JobFlagBadges';
 import { JobModerationCard } from '@/components/admin/jobs/JobModerationCard';
 import { AboutCompanyCard } from '@/components/companies/AboutCompanyCard';
+import { SkillMatchCard } from '@/components/recommendations/SkillMatchCard';
 
 // ---------- Helpers ----------
 
@@ -564,6 +565,7 @@ export default function JobDetailPage() {
             )}
           </Card>
 
+          {isCandidate && <SkillMatchCard tags={tags} className="lg:hidden" />}
           <AboutCompanyCard job={job} className="lg:hidden" />
 
           {canReport && <ReportJobControl job={job} signedIn={!!user} />}
@@ -580,6 +582,7 @@ export default function JobDetailPage() {
             applicationLoading={isCandidate && applicationLoading}
             onApply={openApply}
           />
+          {isCandidate && <SkillMatchCard tags={tags} />}
           <AboutCompanyCard job={job} />
           {isAdmin && <JobModerationCard job={job} />}
         </aside>

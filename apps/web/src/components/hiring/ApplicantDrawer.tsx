@@ -15,19 +15,24 @@ import { OverviewTab } from './OverviewTab';
 import { NotesTab } from './NotesTab';
 import { MessagesTab, type MessageDraft } from './MessagesTab';
 import { InterviewsTab } from './InterviewsTab';
+import { ProfileTab } from './ProfileTab';
+import { ActivityTab } from './ActivityTab';
+import { StageChangeModal } from './StageChangeModal';
 
-type Tab = 'overview' | 'notes' | 'messages' | 'interviews';
+type Tab = 'overview' | 'profile' | 'activity' | 'notes' | 'messages' | 'interviews';
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Applicant details for the hiring team: right-side panel on desktop, full-screen sheet on mobile.
  * Escape closes it (unless a nested dialog or menu has focus); focus is trapped and restored.
+ * Stage changes from the drawer go through StageChangeModal (confirmation + optional message to the candidate).
  */
-export function ApplicantDrawer({ app, onClose, onMove }: {
+export function ApplicantDrawer({ app, onClose }: {
   app: Application | null;
   onClose: () => void;
-  onMove: (app: Application, status: ApplicationStatus) => void;
+  /** @deprecated No longer used: the drawer moves applicants itself so it can attach a message. */
+  onMove?: (app: Application, status: ApplicationStatus) => void;
 }) {
   const open = !!app;
   const panelRef = useRef<HTMLDivElement>(null);
@@ -38,12 +43,14 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
   const tabsId = useId();
   const [tab, setTab] = useState<Tab>('overview');
   const [messageDraft, setMessageDraft] = useState<MessageDraft | null>(null);
+  const [targetStatus, setTargetStatus] = useState<ApplicationStatus | null>(null);
 
   // Reset to Overview when switching applicants.
   const appId = app?.id;
   useEffect(() => {
     setTab('overview');
     setMessageDraft(null);
+    setTargetStatus(null);
   }, [appId]);
 
   /** Open the Messages tab with the composer pre-filled (e.g. an interview reminder). */
@@ -94,6 +101,8 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
   const withdrawn = app.status === 'WITHDRAWN';
   const tabs: { id: Tab; label: string; count?: number | null }[] = [
     { id: 'overview', label: 'Overview' },
+    { id: 'profile', label: 'Profile' },
+    { id: 'activity', label: 'Activity' },
     { id: 'notes', label: 'Notes', count: app.noteCount },
     { id: 'messages', label: 'Messages', count: app.messageCount },
     { id: 'interviews', label: 'Interviews' },
@@ -157,7 +166,10 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
                 <Select
                   id={`${titleId}-status`}
                   value={app.status}
-                  onChange={(e) => onMove(app, e.target.value as ApplicationStatus)}
+                  onChange={(e) => {
+                    const next = e.target.value as ApplicationStatus;
+                    if (next !== app.status) setTargetStatus(next);
+                  }}
                   className="h-8 text-sm w-auto py-0"
                 >
                   {MOVE_TARGETS.map((t) => <option key={t.status} value={t.status}>{t.label}</option>)}
@@ -214,6 +226,8 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
           className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 focus:outline-none"
         >
           {tab === 'overview' && <OverviewTab app={app} />}
+          {tab === 'profile' && <ProfileTab applicationId={app.id} />}
+          {tab === 'activity' && <ActivityTab applicationId={app.id} />}
           {tab === 'notes' && <NotesTab applicationId={app.id} candidateName={app.candidateName} />}
           {tab === 'messages' && <MessagesTab applicationId={app.id} candidateName={app.candidateName} draft={messageDraft} onDraftUsed={() => setMessageDraft(null)} />}
           {tab === 'interviews' && (
@@ -221,6 +235,7 @@ export function ApplicantDrawer({ app, onClose, onMove }: {
           )}
         </div>
       </div>
+      <StageChangeModal app={app} status={targetStatus} onClose={() => setTargetStatus(null)} />
     </div>
   );
 }

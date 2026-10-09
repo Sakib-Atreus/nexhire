@@ -16,6 +16,10 @@ public class RabbitMQConfig {
     public static final String NOTIFICATION_EXCHANGE = "nexhire.exchange";
     public static final String NOTIFICATION_ROUTING_KEY = "notification.send";
 
+    /** Jobs that became open and visible; consumed to match job alerts. */
+    public static final String JOB_ALERT_QUEUE = "nexhire.job-alerts";
+    public static final String JOB_PUBLISHED_ROUTING_KEY = "job.published";
+
     public static final String DLQ_QUEUE = "nexhire.notifications.dlq";
     public static final String DLQ_EXCHANGE = "nexhire.exchange.dlq";
 
@@ -47,6 +51,16 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(notificationQueue())
             .to(notificationExchange())
             .with(NOTIFICATION_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue jobAlertQueue() {
+        return QueueBuilder.durable(JOB_ALERT_QUEUE).build();
+    }
+
+    @Bean
+    public Binding jobAlertBinding() {
+        return BindingBuilder.bind(jobAlertQueue()).to(notificationExchange()).with(JOB_PUBLISHED_ROUTING_KEY);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package com.nexhire.api.modules.hiring;
 
+import com.nexhire.api.modules.timeline.ApplicationEventDTO;
 import com.nexhire.api.modules.applications.ApplicationService;
 import com.nexhire.api.modules.applications.dto.ApplicationDTO;
 import com.nexhire.api.modules.hiring.dto.*;
@@ -51,6 +52,12 @@ public class HiringController {
     @Operation(summary = "Set (1–5) or clear (null) the private rating")
     public ResponseEntity<ApplicationDTO> rate(@PathVariable UUID id, @RequestBody RatingRequest request, @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(applicationService.rate(id, request.rating(), user));
+    }
+
+    @GetMapping("/applications/{id}/timeline")
+    @Operation(summary = "Application history: stage changes (with the team's message), interviews and responses")
+    public ResponseEntity<List<ApplicationEventDTO>> timeline(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(hiringService.timeline(id, user));
     }
 
     // Messages (candidate and hiring team)

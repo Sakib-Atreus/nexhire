@@ -18,6 +18,8 @@ import com.nexhire.api.modules.jobs.JobAccess;
 import com.nexhire.api.modules.jobs.JobRepository;
 import com.nexhire.api.modules.jobs.JobStatus;
 import com.nexhire.api.modules.notifications.NotificationService;
+import com.nexhire.api.modules.timeline.ApplicationEventType;
+import com.nexhire.api.modules.timeline.TimelineService;
 import com.nexhire.api.modules.users.Role;
 import com.nexhire.api.modules.users.User;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ public class ApplicationService {
     private final InterviewRepository interviewRepository;
     private final ApplicationNoteRepository noteRepository;
     private final ApplicationMessageRepository messageRepository;
+    private final TimelineService timelineService;
 
     @Transactional
     public ApplicationDTO apply(ApplyJobRequest request, User candidate) {
@@ -66,6 +69,7 @@ public class ApplicationService {
             .build();
 
         Application saved = applicationRepository.save(application);
+        timelineService.record(saved.getId(), ApplicationEventType.APPLIED, null, ApplicationStatus.PENDING, null, candidate);
 
         notificationService.notifyApplicationReceived(saved);
 
@@ -118,7 +122,13 @@ public class ApplicationService {
         if (request.notes() != null) application.setNotes(request.notes());
 
         Application saved = applicationRepository.save(application);
-        if (previous != saved.getStatus()) notificationService.notifyApplicationStatusChanged(saved);
+        if (previous != saved.getStatus()) {
+            // request.notes is the hiring team's message to the candidate shown on the timeline.
+            timelineService.record(saved.getId(),
+                saved.getStatus() == ApplicationStatus.WITHDRAWN ? ApplicationEventType.WITHDRAWN : ApplicationEventType.STATUS_CHANGED,
+                previous, saved.getStatus(), isOwner ? null : request.notes(), currentUser);
+            notificationService.notifyApplicationStatusChanged(saved);
+        }
         if (saved.getStatus() == ApplicationStatus.HIRED) closeIfFilled(saved.getJob());
 
         return isOwner ? toCandidateDTO(saved) : toDTO(saved);
@@ -137,6 +147,8 @@ public class ApplicationService {
             .filter(app -> app.getStatus() != ApplicationStatus.WITHDRAWN && app.getStatus() != request.status())
             .toList();
         changed.forEach(app -> {
+            timelineService.record(app.getId(), ApplicationEventType.STATUS_CHANGED, app.getStatus(), request.status(),
+                request.notes(), currentUser);
             app.setStatus(request.status());
             if (request.notes() != null) app.setNotes(request.notes());
         });

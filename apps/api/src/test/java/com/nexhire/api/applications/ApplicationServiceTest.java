@@ -38,6 +38,7 @@ class ApplicationServiceTest {
     @Mock private com.nexhire.api.modules.hiring.InterviewRepository interviewRepository;
     @Mock private com.nexhire.api.modules.hiring.ApplicationNoteRepository noteRepository;
     @Mock private com.nexhire.api.modules.hiring.ApplicationMessageRepository messageRepository;
+    @Mock private com.nexhire.api.modules.timeline.TimelineService timelineService;
     @org.mockito.Spy private com.nexhire.api.modules.jobs.JobAccess jobAccess = new com.nexhire.api.modules.jobs.JobAccess();
     @InjectMocks private ApplicationService applicationService;
 

@@ -52,6 +52,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/settings/public").permitAll()
                 .requestMatchers(HttpMethod.GET, "/companies", "/companies/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/profiles/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/job-alerts/unsubscribe").permitAll()
                 .requestMatchers(HttpMethod.GET, "/jobs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
                 .anyRequest().authenticated()

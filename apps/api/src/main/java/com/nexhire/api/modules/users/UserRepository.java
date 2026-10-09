@@ -20,6 +20,10 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     boolean existsByEmail(String email);
 
+    boolean existsByProfileSlug(String profileSlug);
+
+    Optional<User> findByProfileSlugAndPublicProfileTrueAndEnabledTrue(String profileSlug);
+
     Page<User> findByRole(Role role, Pageable pageable);
 
     boolean existsByRole(Role role);

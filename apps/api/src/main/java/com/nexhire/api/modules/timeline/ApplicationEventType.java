@@ -1,0 +1,14 @@
+package com.nexhire.api.modules.timeline;
+
+public enum ApplicationEventType {
+    APPLIED,
+    STATUS_CHANGED,
+    WITHDRAWN,
+    INTERVIEW_SCHEDULED,
+    INTERVIEW_RESCHEDULED,
+    INTERVIEW_CANCELLED,
+    INTERVIEW_COMPLETED,
+    INTERVIEW_ACCEPTED,
+    INTERVIEW_NEW_TIME_REQUESTED,
+    INTERVIEW_DECLINED
+}

@@ -37,6 +37,7 @@ class JobServiceTest {
     @Mock private NotificationService notificationService;
     @Mock private ApplicationRepository applicationRepository;
     @Mock private AuditService auditService;
+    @Mock private com.nexhire.api.modules.alerts.JobPublishedPublisher jobPublishedPublisher;
     @Mock private com.nexhire.api.modules.companies.CompanyRepository companyRepository;
     @Spy private com.nexhire.api.modules.jobs.JobAccess jobAccess = new com.nexhire.api.modules.jobs.JobAccess();
     @Spy private ObjectMapper objectMapper = new ObjectMapper();

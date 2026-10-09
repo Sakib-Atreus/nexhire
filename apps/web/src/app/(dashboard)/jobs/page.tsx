@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, MapPin, Building2, SlidersHorizontal, X, SearchX } from 'lucide-react';
+import { Search, MapPin, Building2, SlidersHorizontal, X, SearchX, Sparkles, List } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import { usePublicSettings } from '@/hooks/useSettings';
 import { JobCard, JobCardSkeleton } from '@/components/jobs/JobCard';
@@ -15,6 +15,9 @@ import { Pagination } from '@/components/ui/Pagination';
 import { EXPERIENCE_LABELS, EXPERIENCE_OPTIONS, JOB_TYPE_LABELS, JOB_TYPE_OPTIONS } from '@/lib/constants';
 import { pluralize } from '@/lib/format';
 import { cn } from '@/lib/cn';
+import { useAuthStore } from '@/store/authStore';
+import { RecommendedJobs } from '@/components/recommendations/RecommendedJobs';
+import { SaveSearchButton } from '@/components/alerts/SaveSearchButton';
 import type { ExperienceLevel, JobType } from '@/types';
 
 const DEBOUNCE_MS = 350;
@@ -54,10 +57,21 @@ function JobsPageFallback() {
   );
 }
 
+type Tab = 'all' | 'for-you';
+const TABS: { id: Tab; label: string; icon: typeof List }[] = [
+  { id: 'all', label: 'All jobs', icon: List },
+  { id: 'for-you', label: 'For you', icon: Sparkles },
+];
+
 function JobsBrowser() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isCandidate = useAuthStore((s) => s.user?.role === 'CANDIDATE');
+
+  // "For you" (recommendations) is candidate-only; anyone else always sees all jobs.
+  const [tabState, setTab] = useState<Tab>(() => (searchParams.get('tab') === 'for-you' ? 'for-you' : 'all'));
+  const tab: Tab = isCandidate ? tabState : 'all';
 
   // Initial state comes from the URL so links like /jobs?keyword=react work and are shareable.
   const [keyword, setKeyword] = useState(() => searchParams.get('keyword') ?? '');
@@ -96,19 +110,20 @@ function JobsBrowser() {
   // Keep the URL in sync (replace, so typing doesn't flood browser history).
   useEffect(() => {
     const params = new URLSearchParams();
+    if (tab === 'for-you') params.set('tab', 'for-you');
     if (debouncedKeyword) params.set('keyword', debouncedKeyword);
     if (debouncedLocation) params.set('location', debouncedLocation);
     if (debouncedCompany) params.set('company', debouncedCompany);
     if (jobType) params.set('type', jobType);
     if (level) params.set('level', level);
     if (category) params.set('category', category);
-    if (page > 0) params.set('page', String(page + 1));
+    if (page > 0 && tab === 'all') params.set('page', String(page + 1));
     const qs = params.toString();
     const next = qs ? `${pathname}?${qs}` : pathname;
     if (next !== `${pathname}${window.location.search}`) {
       router.replace(next, { scroll: false });
     }
-  }, [debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, category, page, pathname, router]);
+  }, [tab, debouncedKeyword, debouncedLocation, debouncedCompany, jobType, level, category, page, pathname, router]);
 
   const query = useMemo(
     () => ({
@@ -141,6 +156,23 @@ function JobsBrowser() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const alertFilters = {
+    keyword: keyword.trim(),
+    location: location.trim(),
+    category,
+    jobType: jobType || null,
+    experienceLevel: level || null,
+  };
+  const alertNote = company.trim() ? "The company filter isn't saved with alerts; the other filters are." : undefined;
+
+  const onTabKey = (e: KeyboardEvent, i: number) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+    setTab(next.id);
+    document.getElementById(`jobs-tab-${next.id}`)?.focus();
+  };
+
   const jobs = data?.content ?? [];
   const total = data?.totalElements ?? 0;
 
@@ -148,6 +180,45 @@ function JobsBrowser() {
     <div>
       <PageHeader title="Find jobs" description="Search open roles and filter by location, job type and experience level." />
 
+      {isCandidate && (
+        <div role="tablist" aria-label="Job lists" className="mb-4 inline-flex gap-1 rounded-lg bg-subtle p-1">
+          {TABS.map((t, i) => {
+            const selected = t.id === tab;
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                id={`jobs-tab-${t.id}`}
+                aria-selected={selected}
+                aria-controls="jobs-panel"
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setTab(t.id)}
+                onKeyDown={(e) => onTabKey(e, i)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                  selected ? 'bg-surface text-fg shadow-sm' : 'text-fg-tertiary hover:text-fg'
+                )}
+              >
+                <Icon className="w-4 h-4" aria-hidden />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === 'for-you' ? (
+        <div id="jobs-panel" role="tabpanel" aria-labelledby="jobs-tab-for-you">
+          <p className="mb-3 text-sm text-fg-muted">
+            Open jobs ranked by how well they match the skills, headline and location on your profile. Jobs you&apos;ve applied to are left out.
+          </p>
+          <RecommendedJobs size={20} />
+        </div>
+      ) : (
+      <div id="jobs-panel" role={isCandidate ? 'tabpanel' : undefined} aria-labelledby={isCandidate ? 'jobs-tab-all' : undefined}>
       {/* Filter bar */}
       <div className="lg:sticky lg:top-16 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-4 lg:pt-3 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
         <Card className="p-3">
@@ -248,18 +319,19 @@ function JobsBrowser() {
 
       {/* Results summary */}
       {!isLoading && !isError && (
-        <div className="flex items-center justify-between gap-3 mb-3 min-h-8">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-3 min-h-8">
           <p className="text-sm text-fg-tertiary" aria-live="polite">
             <span className="font-semibold text-fg">{pluralize(total, 'job')}</span>
             {hasFilters ? ' match your search' : ' open now'}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {isPlaceholderData && <Spinner className="w-4 h-4" />}
             {hasFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="w-3.5 h-3.5" aria-hidden /> Clear filters
               </Button>
             )}
+            <SaveSearchButton filters={alertFilters} unsupportedNote={alertNote} />
           </div>
         </div>
       )}
@@ -292,6 +364,8 @@ function JobsBrowser() {
           </div>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onChange={goToPage} />
         </>
+      )}
+      </div>
       )}
     </div>
   );

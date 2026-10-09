@@ -1,4 +1,4 @@
-import type { ApplicationStatus, AuditAction, ExperienceLevel, InterviewResponse, InterviewStatus, InterviewType, JobStatus, JobType, ReportReason, ReportStatus, Role } from '@/types';
+import type { AlertFrequency, ApplicationEventType, ApplicationStatus, AuditAction, ExperienceLevel, InterviewResponse, InterviewStatus, InterviewType, JobStatus, JobType, ReportReason, ReportStatus, Role } from '@/types';
 
 // Human-readable labels and badge styles for every enum the API returns.
 // Never render a raw enum value (e.g. "FULL_TIME") in the UI — use these maps.
@@ -242,4 +242,23 @@ export const INTERVIEW_RESPONSE_STYLES: Record<InterviewResponse, string> = {
   ACCEPTED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   NEW_TIME_REQUESTED: 'bg-amber-50 text-amber-800 ring-amber-600/20',
   DECLINED: 'bg-rose-50 text-rose-700 ring-rose-600/20',
+};
+
+export const ALERT_FREQUENCY_LABELS: Record<AlertFrequency, string> = {
+  INSTANT: 'As soon as a job is posted',
+  DAILY: 'Daily digest (8:00 UTC)',
+};
+
+/** Timeline wording; STATUS_CHANGED uses APPLICATION_STATUS_LABELS[toStatus] instead. */
+export const APPLICATION_EVENT_LABELS: Record<ApplicationEventType, string> = {
+  APPLIED: 'Application submitted',
+  STATUS_CHANGED: 'Status updated',
+  WITHDRAWN: 'Application withdrawn',
+  INTERVIEW_SCHEDULED: 'Interview scheduled',
+  INTERVIEW_RESCHEDULED: 'Interview time changed',
+  INTERVIEW_CANCELLED: 'Interview cancelled',
+  INTERVIEW_COMPLETED: 'Interview completed',
+  INTERVIEW_ACCEPTED: 'Interview confirmed',
+  INTERVIEW_NEW_TIME_REQUESTED: 'Another interview time requested',
+  INTERVIEW_DECLINED: 'Interview declined',
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { CalendarClock, MessagesSquare, Send } from 'lucide-react';
+import { CalendarClock, History, MessagesSquare, Send } from 'lucide-react';
 import type { Application, ApplicationMessage, Interview } from '@/types';
 import { useApplicationInterviews, useApplicationMessages, useSendMessage } from '@/hooks/useHiring';
 import { INTERVIEW_STATUS_LABELS, INTERVIEW_STATUS_STYLES, INTERVIEW_TYPE_LABELS } from '@/lib/constants';
@@ -16,6 +16,7 @@ import {
   AddToCalendarButton, InterviewLocation, InterviewTypeIcon, JoinButton,
 } from '@/components/interviews/InterviewParts';
 import { InterviewResponsePanel } from '@/components/interviews/InterviewResponsePanel';
+import { ApplicationTimeline } from '@/components/timeline/ApplicationTimeline';
 import { formatInterviewWhen, isHttpUrl } from '@/components/interviews/interviewUtils';
 
 const MESSAGE_MAX = 5000;
@@ -223,11 +224,27 @@ function MessagesSection({ application }: { application: Application }) {
   );
 }
 
-/** Interviews + message thread for one application. Mount only when the panel is open (queries run on mount). */
+// ─── Timeline ────────────────────────────────────────────────────────────────
+
+function TimelineSection({ application }: { application: Application }) {
+  return (
+    <section aria-label="Timeline" className="min-w-0">
+      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-fg">
+        <History className="w-4 h-4 text-fg-subtle" aria-hidden /> Timeline
+      </h3>
+      <ApplicationTimeline className="mt-3" applicationId={application.id} audience="candidate" companyName={application.companyName} />
+    </section>
+  );
+}
+
+/** Timeline, interviews and message thread for one application. Mount only when the panel is open (queries run on mount). */
 export function ApplicationActivityPanel({ application, id }: { application: Application; id?: string }) {
   return (
     <div id={id} className="mt-3 grid grid-cols-1 gap-6 rounded-xl border border-line bg-surface p-4 sm:p-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-      <InterviewsSection applicationId={application.id} />
+      <div className="min-w-0 space-y-6">
+        <TimelineSection application={application} />
+        <InterviewsSection applicationId={application.id} />
+      </div>
       <MessagesSection application={application} />
     </div>
   );

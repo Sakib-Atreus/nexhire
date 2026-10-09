@@ -23,5 +23,12 @@ public record UserDTO(
     List<String> portfolioLinks,
     boolean enabled,
     boolean openToWork,
-    boolean verified
+    boolean verified,
+    String location,
+    String resumeUrl,
+    String resumeFileName,
+    Instant resumeUpdatedAt,
+    boolean publicProfile,
+    /** Public profile path: /p/{profileSlug} (null until first enabled). */
+    String profileSlug
 ) {}

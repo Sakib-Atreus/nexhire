@@ -23,7 +23,8 @@ export type NotificationType =
   | 'INTERVIEW_SCHEDULED'
   | 'INTERVIEW_UPDATED'
   | 'MESSAGE_RECEIVED'
-  | 'INTERVIEW_RESPONSE';
+  | 'INTERVIEW_RESPONSE'
+  | 'JOB_ALERT';
 
 export interface User {
   id: string;
@@ -44,6 +45,14 @@ export interface User {
   openToWork?: boolean;
   /** Recruiter verified by an admin. */
   verified?: boolean;
+  location?: string | null;
+  /** Saved resume used for quick apply. */
+  resumeUrl?: string | null;
+  resumeFileName?: string | null;
+  resumeUpdatedAt?: string | null;
+  /** Opt-in public profile at /p/{profileSlug}. */
+  publicProfile?: boolean;
+  profileSlug?: string | null;
 }
 
 export interface AuthResponse {
@@ -402,4 +411,107 @@ export interface JobAnalytics {
   averageRating: number | null;
   daysOpen: number;
   applicationsPerDay: DailyCount[];
+}
+
+// ─── Candidate experience (Phase 3) ──────────────────────────────────────────
+
+/** A role on the profile. Dates are YYYY-MM-DD (day is ignored in the UI); endDate null = current role. */
+export interface WorkExperience {
+  id?: string;
+  title: string;
+  company: string;
+  location?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  description?: string | null;
+}
+
+export interface Education {
+  id?: string;
+  school: string;
+  degree?: string | null;
+  fieldOfStudy?: string | null;
+  startYear?: number | null;
+  endYear?: number | null;
+  description?: string | null;
+}
+
+/**
+ * A candidate's profile: public (/p/{slug}) or for a hiring team they applied to.
+ * email, phone and resumeUrl are only present for the hiring team.
+ */
+export interface CandidateProfile {
+  id: string;
+  fullName: string;
+  headline?: string | null;
+  location?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  skills: string[];
+  portfolioLinks: string[];
+  openToWork: boolean;
+  experience: WorkExperience[];
+  education: Education[];
+  memberSince: string;
+  email?: string | null;
+  phone?: string | null;
+  resumeUrl?: string | null;
+  /** Set when the profile is public. */
+  profileSlug?: string | null;
+}
+
+export type AlertFrequency = 'INSTANT' | 'DAILY';
+
+export interface JobAlert {
+  id: string;
+  name: string;
+  keyword?: string | null;
+  location?: string | null;
+  category?: string | null;
+  jobType?: JobType | null;
+  experienceLevel?: ExperienceLevel | null;
+  frequency: AlertFrequency;
+  active: boolean;
+  emailEnabled: boolean;
+  /** Open jobs matching right now. */
+  currentMatches: number;
+  lastSentAt?: string | null;
+  createdAt: string;
+}
+
+/** Create/update body. At least one of keyword, location, category, jobType, experienceLevel is required. */
+export interface JobAlertInput {
+  name?: string;
+  keyword?: string;
+  location?: string;
+  category?: string;
+  jobType?: JobType | null;
+  experienceLevel?: ExperienceLevel | null;
+  frequency?: AlertFrequency;
+  active?: boolean;
+  emailEnabled?: boolean;
+}
+
+export interface RecommendedJob {
+  job: Job;
+  /** 0–100 */
+  matchScore: number;
+  /** Profile skills found in the job's tags (as written on the profile). */
+  matchedSkills: string[];
+}
+
+export type ApplicationEventType =
+  | 'APPLIED' | 'STATUS_CHANGED' | 'WITHDRAWN'
+  | 'INTERVIEW_SCHEDULED' | 'INTERVIEW_RESCHEDULED' | 'INTERVIEW_CANCELLED' | 'INTERVIEW_COMPLETED'
+  | 'INTERVIEW_ACCEPTED' | 'INTERVIEW_NEW_TIME_REQUESTED' | 'INTERVIEW_DECLINED';
+
+export interface ApplicationEvent {
+  id: string;
+  type: ApplicationEventType;
+  fromStatus?: ApplicationStatus | null;
+  toStatus?: ApplicationStatus | null;
+  /** For STATUS_CHANGED: the hiring team's message to the candidate. Otherwise context (e.g. interview type). */
+  note?: string | null;
+  actorName?: string | null;
+  createdAt: string;
 }

@@ -26,6 +26,7 @@ import java.util.UUID;
 public class JobController {
 
     private final JobService jobService;
+    private final RecommendationService recommendationService;
 
     @GetMapping
     @Operation(summary = "Search and list open jobs")
@@ -45,6 +46,16 @@ public class JobController {
         UUID userId = currentUser != null ? currentUser.getId() : null;
         return ResponseEntity.ok(jobService.search(keyword, location, companyName, jobType, experienceLevel,
             salaryMin, salaryMax, category, featured, pageable, userId));
+    }
+
+    @GetMapping("/recommended")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Open jobs ranked by how well they match your profile (skills, headline, location)")
+    public ResponseEntity<java.util.List<com.nexhire.api.modules.jobs.dto.RecommendedJobDTO>> recommended(
+        @RequestParam(defaultValue = "10") int size,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        return ResponseEntity.ok(recommendationService.recommend(currentUser, size));
     }
 
     @GetMapping("/saved")
