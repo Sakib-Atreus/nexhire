@@ -56,9 +56,8 @@ public class JobService {
                                BigDecimal salaryMin, BigDecimal salaryMax, String category, boolean featuredOnly,
                                Pageable pageable, UUID currentUserId) {
         String cat = category == null || category.isBlank() ? null : category.trim();
-        return jobRepository.searchExtended(JobStatus.OPEN, keyword, location, companyName, jobType, experienceLevel,
-                salaryMin, salaryMax, cat, featuredOnly, pageable)
-            .map(j -> toDTO(j, currentUserId));
+        return toDTOs(jobRepository.searchExtended(JobStatus.OPEN, keyword, location, companyName, jobType, experienceLevel,
+                salaryMin, salaryMax, cat, featuredOnly, pageable), currentUserId, false);
     }
 
     public Page<JobDTO> getAll(Pageable pageable) {
@@ -90,8 +89,7 @@ public class JobService {
 
     /** "My jobs": the recruiter's own jobs plus every job of their company team. */
     public Page<JobDTO> getByRecruiter(User recruiter, Pageable pageable) {
-        return jobRepository.findManagedBy(recruiter.getId(), JobAccess.companyOrNone(recruiter), pageable)
-            .map(j -> toDTO(j, null, (int) applicationRepository.countByJobId(j.getId())));
+        return toDTOs(jobRepository.findManagedBy(recruiter.getId(), JobAccess.companyOrNone(recruiter), pageable), null, true);
     }
 
     @Transactional
@@ -211,7 +209,8 @@ public class JobService {
     }
 
     public Page<JobDTO> getSavedJobs(UUID userId, Pageable pageable) {
-        return savedJobRepository.findByUserId(userId, pageable).map(sj -> toDTO(sj.getJob(), userId));
+        // Every job on this page is saved by definition.
+        return savedJobRepository.findByUserId(userId, pageable).map(sj -> toDTO(sj.getJob(), null, null, false, true));
     }
 
     @Scheduled(cron = "0 0 * * * *")
@@ -234,8 +233,26 @@ public class JobService {
         return toDTO(job, currentUserId, applicationCount, false);
     }
 
+    /**
+     * DTOs for a page of jobs: the viewer's saved flags and (optionally) application counts are loaded in
+     * one query each for the whole page, instead of one query per job.
+     */
+    public Page<JobDTO> toDTOs(Page<Job> page, UUID currentUserId, boolean withCounts) {
+        List<UUID> ids = page.getContent().stream().map(Job::getId).toList();
+        java.util.Set<UUID> saved = currentUserId != null && !ids.isEmpty() ? savedJobRepository.savedAmong(currentUserId, ids) : java.util.Set.of();
+        java.util.Map<UUID, Long> counts = new java.util.HashMap<>();
+        if (withCounts && !ids.isEmpty()) {
+            for (Object[] r : applicationRepository.countByJobIds(ids)) counts.put((UUID) r[0], (Long) r[1]);
+        }
+        return page.map(j -> toDTO(j, null, withCounts ? counts.getOrDefault(j.getId(), 0L).intValue() : null, false, saved.contains(j.getId())));
+    }
+
     private JobDTO toDTO(Job job, UUID currentUserId, Integer applicationCount, boolean canManage) {
         boolean saved = currentUserId != null && savedJobRepository.existsByUserIdAndJobId(currentUserId, job.getId());
+        return toDTO(job, null, applicationCount, canManage, saved);
+    }
+
+    private JobDTO toDTO(Job job, UUID ignored, Integer applicationCount, boolean canManage, boolean saved) {
         return new JobDTO(
             job.getId(),
             job.getTitle(),
@@ -348,8 +365,7 @@ public class JobService {
             return cb.and(p.toArray(Predicate[]::new));
         };
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
-        return jobRepository.findAll(spec, sorted)
-            .map(j -> toDTO(j, null, (int) applicationRepository.countByJobId(j.getId())));
+        return toDTOs(jobRepository.findAll(spec, sorted), null, true);
     }
 
     /** Hide/unhide, feature/unfeature or change the status of any job, recording each change. */
@@ -392,9 +408,8 @@ public class JobService {
     }
 
     public List<JobDTO> recentByRecruiter(UUID recruiterId) {
-        return jobRepository.findTop5ByRecruiterIdOrderByCreatedAtDesc(recruiterId).stream()
-            .map(j -> toDTO(j, null, (int) applicationRepository.countByJobId(j.getId())))
-            .toList();
+        List<Job> jobs = jobRepository.findTop5ByRecruiterIdOrderByCreatedAtDesc(recruiterId);
+        return toDTOs(new org.springframework.data.domain.PageImpl<>(jobs), null, true).getContent();
     }
 
     private static String blankToNull(String s) {

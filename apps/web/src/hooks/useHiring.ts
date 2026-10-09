@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
+import { patchApplication } from '@/lib/queryCache';
 import type {
   Application, ApplicationMessage, ApplicationNote, Interview, InterviewConflict, InterviewInput, InterviewResponse, Job, JobAnalytics,
   MessageTemplate, VideoJoin,
@@ -17,7 +18,7 @@ export function useRateApplication() {
   return useMutation({
     mutationFn: ({ id, rating }: { id: string; rating: number | null }) =>
       api.patch<Application>(`/applications/${id}/rating`, { rating }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+    onSuccess: (app) => patchApplication(qc, app.id, (a) => ({ ...a, rating: app.rating })),
   });
 }
 
@@ -33,7 +34,10 @@ export function useAddNote(applicationId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: string) => api.post<ApplicationNote>(`/applications/${applicationId}/notes`, { body }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['applications', applicationId, 'notes'] });
+      patchApplication(qc, applicationId, (a) => ({ ...a, noteCount: (a.noteCount ?? 0) + 1 }));
+    },
   });
 }
 
@@ -42,7 +46,11 @@ export function useDeleteNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (noteId: string) => api.delete(`/applications/notes/${noteId}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+    onSuccess: () => {
+      // Refresh open note lists now; list counts update the next time those lists load.
+      qc.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'applications' && q.queryKey[2] === 'notes' });
+      qc.invalidateQueries({ queryKey: ['applications'], refetchType: 'none' });
+    },
   });
 }
 
@@ -53,7 +61,8 @@ export function useApplicationMessages(applicationId: string, enabled = true) {
     queryKey: ['applications', applicationId, 'messages'],
     queryFn: () => api.get<ApplicationMessage[]>(`/applications/${applicationId}/messages`).then((r) => r.data),
     enabled: enabled && !!applicationId,
-    refetchInterval: 30_000,
+    // New messages also arrive as notifications; this is a fallback while the conversation is open.
+    refetchInterval: 60_000,
   });
 }
 
@@ -63,7 +72,11 @@ export function useSendMessage(applicationId: string) {
   return useMutation({
     mutationFn: (body: string) =>
       api.post<ApplicationMessage>(`/applications/${applicationId}/messages`, { body }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['applications', applicationId, 'messages'] });
+      qc.invalidateQueries({ queryKey: ['applications', applicationId, 'timeline'] });
+      patchApplication(qc, applicationId, (a) => ({ ...a, messageCount: (a.messageCount ?? 0) + 1 }));
+    },
   });
 }
 

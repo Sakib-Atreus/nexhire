@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/axios';
+import { patchJob } from '@/lib/queryCache';
 import type { ExperienceLevel, Job, JobStatus, JobType, Page } from '@/types';
 
 /** Body accepted by POST /jobs and PATCH /jobs/{id}. */
@@ -107,7 +108,10 @@ export function useSaveJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (jobId: string) => api.post<Job>('/jobs/' + jobId + '/save').then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+    onSuccess: (_job, jobId) => {
+      patchJob(qc, jobId, (j) => ({ ...j, isSaved: true }));
+      qc.invalidateQueries({ queryKey: ['jobs', 'saved'] });
+    },
   });
 }
 
@@ -115,6 +119,9 @@ export function useUnsaveJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (jobId: string) => api.delete('/jobs/' + jobId + '/save'),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+    onSuccess: (_res, jobId) => {
+      patchJob(qc, jobId, (j) => ({ ...j, isSaved: false }));
+      qc.invalidateQueries({ queryKey: ['jobs', 'saved'] });
+    },
   });
 }

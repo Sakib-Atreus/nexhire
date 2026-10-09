@@ -7,7 +7,7 @@ import type { Interview } from '@/types';
 import { useCalendarInterviews } from '@/hooks/useHiring';
 import { cn } from '@/lib/cn';
 import { Card } from '@/components/ui/Card';
-import { Skeleton } from '@/components/ui/States';
+import { ErrorState, Skeleton } from '@/components/ui/States';
 import { InterviewTypeIcon, JoinButton } from '@/components/interviews/InterviewParts';
 import { dayHeading, formatDuration, formatTime, localDayKey } from '@/components/interviews/interviewUtils';
 import { eventTone } from './eventTone';
@@ -34,7 +34,7 @@ export function CalendarWidget({ recruiter, className }: { recruiter: boolean; c
   const grid = useMemo(() => monthGrid(month), [month]);
   const from = grid[0].toISOString();
   const to = new Date(grid[41].getFullYear(), grid[41].getMonth(), grid[41].getDate() + 1).toISOString();
-  const { data, isLoading } = useCalendarInterviews(from, to);
+  const { data, isLoading, isError, error, refetch, isRefetching } = useCalendarInterviews(from, to);
 
   const byDay = useMemo(() => {
     const m = new Map<string, Interview[]>();
@@ -110,7 +110,7 @@ export function CalendarWidget({ recruiter, className }: { recruiter: boolean; c
                     'relative mx-auto flex h-9 w-9 flex-col items-center justify-center rounded-lg text-xs tabular-nums transition-colors',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                     isSel ? 'bg-primary-600 font-semibold text-white' : isToday ? 'bg-primary-50 font-semibold text-primary-700' : 'hover:bg-subtle',
-                    !isSel && !isToday && (inMonth ? 'text-fg-secondary' : 'text-fg-faint')
+                    !isSel && !isToday && (inMonth ? 'text-fg-secondary' : 'text-fg-subtle')
                   )}
                 >
                   {d.getDate()}
@@ -133,7 +133,9 @@ export function CalendarWidget({ recruiter, className }: { recruiter: boolean; c
             {selectedDate ? dayHeading(selectedDate.toISOString()) : ''}
             {dayItems.length > 0 && <span className="ml-1.5 font-medium normal-case tracking-normal text-fg-muted">· {dayItems.length} interview{dayItems.length > 1 ? 's' : ''}</span>}
           </p>
-          {isLoading ? (
+          {isError ? (
+            <ErrorState className="py-6" title="Couldn't load your calendar" error={error} onRetry={() => refetch()} retrying={isRefetching} />
+          ) : isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-14 w-full" />
               <Skeleton className="h-14 w-full" />

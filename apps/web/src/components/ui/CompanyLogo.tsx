@@ -25,11 +25,13 @@ export function CompanyLogo({ name, src, size = 'md', className }: {
   size?: keyof typeof SIZES;
   className?: string;
 }) {
-  const [failed, setFailed] = useState(false);
+  // Remember which URL failed, so a new URL (e.g. after an upload) is tried again.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = !!src && failedSrc === src;
   const base = cn('rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-line', SIZES[size], className);
   if (src && !failed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={`${name} logo`} className={cn(base, 'object-cover bg-surface')} onError={() => setFailed(true)} />;
+    return <img src={src} alt={`${name} logo`} loading="lazy" decoding="async" className={cn(base, 'object-cover bg-surface')} onError={() => setFailedSrc(src)} />;
   }
   return (
     <span className={cn(base, 'font-bold', tint(name))} aria-hidden>

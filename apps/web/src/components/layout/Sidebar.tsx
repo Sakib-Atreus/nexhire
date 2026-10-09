@@ -59,7 +59,7 @@ export function Sidebar({ guest = false }: { guest?: boolean }) {
         {sections.map((section, i) => (
           <div key={section.title ?? i}>
             {section.title && (
-              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-fg-faint">{section.title}</p>
+              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">{section.title}</p>
             )}
             <ul className="space-y-0.5">
               {section.items.map((item) => (

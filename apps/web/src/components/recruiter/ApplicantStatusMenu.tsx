@@ -110,7 +110,7 @@ export function ApplicantStatusMenu({ app, onMove, size = 'sm', className }: {
         aria-controls={open ? menuId : undefined}
         aria-label={`Move ${app.candidateName} to another stage`}
         className={size === 'xs'
-          ? 'inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-fg-tertiary hover:bg-subtle hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
+          ? 'inline-flex flex-shrink-0 items-center gap-1 h-7 px-2 rounded-md text-xs font-medium whitespace-nowrap text-fg-tertiary hover:bg-subtle hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
           : buttonClasses('secondary', 'sm')}
       >
         Move to

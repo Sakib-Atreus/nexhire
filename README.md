@@ -226,6 +226,7 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 |---|---|
 | `JWT_EXPIRATION` | `86400000` (1 day, ms) |
 | `JWT_REFRESH_EXPIRATION` | `604800000` (7 days, ms) |
+| `DB_POOL_SIZE` | `8` database connections (keep it within your Postgres plan's limit; use Neon's `-pooler` host for more headroom) |
 | `SPRING_PROFILES_ACTIVE` | `prod` in the Docker image, `dev` otherwise. Don't set it to `dev` in production. |
 
 ---
@@ -333,6 +334,17 @@ npm run type-check    # TypeScript validation
 **Job alerts:** when a job becomes open and visible (published, a draft published, reopened or un-hidden), the API publishes a `job.published` event to RabbitMQ (after the database commit). A consumer matches it against active alerts: *instant* alerts notify immediately, *daily* alerts are collected and sent as one digest at 08:00 UTC. Each job is sent to each alert at most once. If RabbitMQ is unavailable, matching runs directly.
 
 **Recommendations:** each open job gets a 0–100 score — 60% skills (profile skills found in the job's tags), 20% headline words in the title, 10% location or remote, 10% recency. Jobs already applied to are excluded, and only jobs with a skill or title match are shown.
+
+**Built for growth:**
+- List endpoints are paged, and a page holds at most 100 items.
+- List extras (saved flags, applicant/note/message counts, next interview) are loaded in one grouped query per page, not one per row.
+- Dashboards count with a single `GROUP BY`.
+- Keyword search uses trigram indexes.
+- Job-alert matching filters alerts in SQL and works in batches of 500. The daily digest runs one short transaction per alert.
+- Read notifications older than 90 days are deleted nightly.
+- Per-client rate limits cover sign-in, password/verification emails, applying, reports, messages and the notification stream. The client IP comes from Tomcat's proxy handling, so a faked `X-Forwarded-For` header doesn't bypass them.
+- The website retries automatically while the free API host wakes up and shows a "Starting up the server…" notice.
+- Live notifications reconnect with backoff and pause in hidden tabs.
 
 **Company teams:** recruiters on the same company team share all of the company's jobs, applicants, interviews and analytics. Jobs are always posted under the company's name and logo. The owner manages the team; ownership can be transferred.
 
@@ -556,6 +568,7 @@ Flyway runs all migrations automatically on API startup.
 | V13 | Interview responses (accept / new time / decline) and follow-up tracking |
 | V14 | Candidate profiles (location, saved resume, public profile, experience, education), job alerts, application timeline (history backfilled for existing applications) |
 | V15 | Private calendar feed tokens and built-in video rooms for interviews |
+| V16 | Indexes for scale: trigram indexes for keyword search (`pg_trgm`), job board, per-user lists, dashboards and user foreign keys |
 
 **Connect to the database directly:**
 ```bash

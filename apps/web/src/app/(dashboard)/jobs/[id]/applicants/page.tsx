@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@/types';
 import { useJob } from '@/hooks/useJobs';
-import { useBulkUpdateStatus, useJobApplications } from '@/hooks/useApplications';
+import { MAX_PIPELINE_APPLICANTS, useBulkUpdateStatus, useJobApplications } from '@/hooks/useApplications';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { APPLICATION_STATUS_BAR, JOB_STATUS_LABELS, JOB_STATUS_STYLES } from '@/lib/constants';
@@ -22,10 +22,16 @@ import { Input, Select } from '@/components/ui/Field';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { ApplicantCard } from '@/components/recruiter/ApplicantCard';
-import { PipelineBoard } from '@/components/pipeline/PipelineBoard';
+import dynamic from 'next/dynamic';
 import { useMoveApplication } from '@/components/pipeline/useMoveApplication';
 import { CONFIRM_STATUSES, MOVE_TARGETS, isForbidden, stageLabel } from '@/components/pipeline/stages';
-import { ApplicantDrawer } from '@/components/hiring/ApplicantDrawer';
+
+// Drag-and-drop board and the applicant panel are loaded separately so the page header and list paint first.
+const PipelineBoard = dynamic(() => import('@/components/pipeline/PipelineBoard').then((m) => m.PipelineBoard), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[420px] w-full rounded-xl" />,
+});
+const ApplicantDrawer = dynamic(() => import('@/components/hiring/ApplicantDrawer').then((m) => m.ApplicantDrawer), { ssr: false });
 
 type View = 'board' | 'list';
 type RatingFilter = 0 | 3 | 4;
@@ -288,12 +294,17 @@ export default function ApplicantsPage() {
                     </div>
                     <p className="text-sm text-fg-muted mt-0.5 break-words">{[job.companyName, job.location].filter(Boolean).join(' · ')}</p>
                     <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                      <span className="font-semibold text-fg-soft">{pluralize(apps.length, 'applicant')}</span>
+                      <span className="font-semibold text-fg-soft">{pluralize(appsQuery.data?.totalElements ?? apps.length, 'applicant')}</span>
                       <span className="inline-flex items-center gap-1.5 text-fg-tertiary">
                         <span className={cn('w-2 h-2 rounded-full', APPLICATION_STATUS_BAR.HIRED)} aria-hidden />
                         {hiredCount} of {pluralize(openings, 'opening')} hired
                       </span>
                     </p>
+                    {(appsQuery.data?.totalElements ?? 0) > apps.length && (
+                      <p className="mt-2 text-xs text-amber-800">
+                        Showing the {MAX_PIPELINE_APPLICANTS.toLocaleString('en-US')} most recent applicants. Close older ones out to keep the pipeline fast.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 lg:flex-shrink-0">

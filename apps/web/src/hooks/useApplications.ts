@@ -11,11 +11,39 @@ export function useMyApplications(page = 0) {
   });
 }
 
+/** The pipeline needs every applicant (board columns, counts, search), so pages are fetched up to this many. */
+export const MAX_PIPELINE_APPLICANTS = 1000;
+const APPLICANTS_PAGE = 100;
+
+/**
+ * All applicants for a job, newest first, merged into one page (fetched 100 at a time, up to
+ * MAX_PIPELINE_APPLICANTS). `totalElements` is the real total, so the UI can say when it's truncated.
+ */
 export function useJobApplications(jobId: string) {
   return useQuery({
     queryKey: ['applications', 'job', jobId],
-    queryFn: () => api.get<Page<Application>>(`/applications/job/${jobId}`, { params: { size: 100, sort: 'appliedAt,desc' } }).then((r) => r.data),
+    queryFn: async () => {
+      const get = (page: number) =>
+        api.get<Page<Application>>(`/applications/job/${jobId}`, { params: { page, size: APPLICANTS_PAGE, sort: 'appliedAt,desc' } })
+          .then((r) => r.data);
+      const first = await get(0);
+      const pages = Math.min(first.totalPages, MAX_PIPELINE_APPLICANTS / APPLICANTS_PAGE);
+      const rest = await Promise.all(Array.from({ length: Math.max(0, pages - 1) }, (_, i) => get(i + 1)));
+      return { ...first, content: [first, ...rest].flatMap((p) => p.content) };
+    },
     enabled: !!jobId,
+    // A big list: don't refetch it on every tab switch.
+    staleTime: 2 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** The candidate's own applications by status (all of them, for dashboard counts). */
+export function useMyApplicationStats(enabled = true) {
+  return useQuery({
+    queryKey: ['applications', 'my', 'stats'],
+    queryFn: () => api.get<ApplicationStats>('/applications/my/stats').then((r) => r.data),
+    enabled,
   });
 }
 

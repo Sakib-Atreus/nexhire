@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record BulkUpdateStatusRequest(
-    @NotEmpty List<UUID> applicationIds,
+    @NotEmpty @jakarta.validation.constraints.Size(max = 100, message = "Update at most 100 applications at a time") List<UUID> applicationIds,
     @NotNull ApplicationStatus status,
     String notes
 ) {}

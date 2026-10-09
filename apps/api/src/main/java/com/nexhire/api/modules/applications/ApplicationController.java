@@ -108,4 +108,11 @@ public class ApplicationController {
     public ResponseEntity<ApplicationStatsDTO> getRecruiterStats(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(applicationService.getRecruiterStats(currentUser));
     }
+
+    @GetMapping("/my/stats")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Your applications by status (all of them, not just one page)")
+    public ResponseEntity<ApplicationStatsDTO> getMyStats(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(applicationService.getCandidateStats(currentUser));
+    }
 }

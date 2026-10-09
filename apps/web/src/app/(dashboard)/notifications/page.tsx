@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import { Archive, Bell, BellRing, Briefcase, CalendarCheck, CalendarClock, Check, CheckCheck, Info, MessageSquare, RefreshCw, Settings, UserPlus } from 'lucide-react';
-import { useMarkAllRead, useMarkRead, useNotifications } from '@/hooks/useNotifications';
+import { useMarkAllRead, useMarkRead, useNotifications, useUnreadCount } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/store/authStore';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -122,11 +122,13 @@ function NotificationItem({ n, role }: { n: Notification; role?: Role }) {
 
 export default function NotificationsPage() {
   const role = useAuthStore((s) => s.user?.role);
-  const { data, isLoading, isError, error, refetch, isRefetching } = useNotifications();
+  const { data, isLoading, isError, error, refetch, isRefetching, hasNextPage, fetchNextPage, isFetchingNextPage } = useNotifications();
+  const { data: unreadTotal } = useUnreadCount();
   const markAll = useMarkAllRead();
 
-  const items = data?.content ?? [];
-  const unread = items.filter((n) => !n.read).length;
+  const items = data?.pages.flatMap((p) => p.content) ?? [];
+  // The server's count covers every page, not just the ones loaded.
+  const unread = unreadTotal ?? items.filter((n) => !n.read).length;
 
   return (
     <div className="max-w-3xl">
@@ -190,8 +192,12 @@ export default function NotificationsPage() {
           </ul>
         )}
       </Card>
-      {data && data.totalElements > items.length && (
-        <p className="mt-3 text-xs text-fg-muted">Showing your {items.length} most recent notifications.</p>
+      {hasNextPage && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="secondary" size="sm" onClick={() => fetchNextPage()} loading={isFetchingNextPage}>
+            Load older notifications
+          </Button>
+        </div>
       )}
     </div>
   );

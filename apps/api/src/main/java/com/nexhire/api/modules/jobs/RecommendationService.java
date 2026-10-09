@@ -42,7 +42,8 @@ public class RecommendationService {
         String city = user.getLocation() == null ? "" : user.getLocation().split(",")[0].trim().toLowerCase(Locale.ROOT);
         Set<UUID> applied = new HashSet<>(applicationRepository.findJobIdsByCandidateId(user.getId()));
 
-        List<RecommendedJobDTO> ranked = new ArrayList<>();
+        record Scored(Job job, int score, List<String> matched) {}
+        List<Scored> ranked = new ArrayList<>();
         for (Job job : jobRepository.findTop300ByStatusAndHiddenFalseOrderByCreatedAtDesc(JobStatus.OPEN)) {
             if (applied.contains(job.getId())) continue;
 
@@ -68,10 +69,16 @@ public class RecommendationService {
             // Only recommend jobs that relate to the profile (a skill or title match); location/recency just rank them.
             if (matched.isEmpty() && titleScore == 0) continue;
             int score = (int) Math.round(100 * (0.6 * skillScore + 0.2 * titleScore + 0.1 * locationScore + 0.1 * recency));
-            ranked.add(new RecommendedJobDTO(jobService.toDTO(job, user.getId()), score, matched));
+            ranked.add(new Scored(job, score, matched));
         }
-        ranked.sort(Comparator.comparingInt(RecommendedJobDTO::matchScore).reversed());
-        return ranked.stream().limit(Math.max(1, Math.min(size, 50))).toList();
+        // Rank on the raw jobs, then build DTOs only for the ones returned.
+        ranked.sort(Comparator.comparingInt(Scored::score).reversed());
+        List<Scored> top = ranked.stream().limit(Math.max(1, Math.min(size, 50))).toList();
+        List<com.nexhire.api.modules.jobs.dto.JobDTO> dtos = jobService.toDTOs(
+            new org.springframework.data.domain.PageImpl<>(top.stream().map(Scored::job).toList()), user.getId(), false).getContent();
+        List<RecommendedJobDTO> result = new ArrayList<>();
+        for (int i = 0; i < top.size(); i++) result.add(new RecommendedJobDTO(dtos.get(i), top.get(i).score(), top.get(i).matched()));
+        return result;
     }
 
     /** "Node.js" → "nodejs", "C++" → "c++": case/space/punctuation-insensitive skill keys. */

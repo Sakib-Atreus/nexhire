@@ -99,7 +99,7 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
                 <Bell className="h-[18px] w-[18px]" aria-hidden />
                 {unreadCount > 0 && (
                   <span
-                    className="absolute top-0.5 right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-surface"
+                    className="absolute top-0.5 right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 bg-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none ring-2 ring-surface"
                     aria-hidden
                   >
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -173,7 +173,7 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
               {SIDEBAR_SECTIONS[user.role].map((section, i) => (
                 <div key={section.title ?? i}>
                   {section.title && (
-                    <p className="pb-2 text-[11px] font-semibold uppercase tracking-wider text-fg-faint">{section.title}</p>
+                    <p className="pb-2 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">{section.title}</p>
                   )}
                   <div className="grid grid-cols-3 gap-2">
                     {section.items.map((item) => {

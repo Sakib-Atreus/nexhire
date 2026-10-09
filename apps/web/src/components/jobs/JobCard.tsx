@@ -25,7 +25,7 @@ export function JobCard({ job, matchScore, matchedSkills }: {
   /** Profile skills found in this job; shown as "Matches your skills: …". */
   matchedSkills?: string[];
 }) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const { mutate: saveJob, isPending: isSaving } = useSaveJob();
   const { mutate: unsaveJob, isPending: isUnsaving } = useUnsaveJob();
 

@@ -13,8 +13,10 @@ import java.util.UUID;
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"job", "candidate"})
     Page<Application> findByCandidateId(UUID candidateId, Pageable pageable);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"job", "candidate"})
     Page<Application> findByJobId(UUID jobId, Pageable pageable);
 
     Page<Application> findByJobRecruiterId(UUID recruiterId, Pageable pageable);
@@ -25,10 +27,15 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     long countByJobId(UUID jobId);
 
+    /** [jobId, count] for a page of jobs in one query. */
+    @Query("SELECT a.job.id, COUNT(a) FROM Application a WHERE a.job.id IN :jobIds GROUP BY a.job.id")
+    java.util.List<Object[]> countByJobIds(@Param("jobIds") java.util.Collection<UUID> jobIds);
+
     long countByJobIdAndStatus(UUID jobId, ApplicationStatus status);
 
     /** Applications on jobs the recruiter manages (own jobs + company jobs; pass JobAccess.NO_COMPANY when none). */
     @Query("SELECT a FROM Application a WHERE a.job.recruiter.id = :userId OR a.job.company.id = :companyId")
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"job", "candidate"})
     Page<Application> findManagedBy(@Param("userId") UUID userId, @Param("companyId") UUID companyId, Pageable pageable);
 
     @Query("SELECT COUNT(a) FROM Application a WHERE (a.job.recruiter.id = :userId OR a.job.company.id = :companyId) AND a.status = :status")
@@ -48,6 +55,18 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
     Double averageRating(@Param("jobId") UUID jobId);
 
     long countByStatus(ApplicationStatus status);
+
+    /** [status, count] across all applications. */
+    @Query("SELECT a.status, COUNT(a) FROM Application a GROUP BY a.status")
+    java.util.List<Object[]> countGroupedByStatus();
+
+    /** [status, count] across the jobs a recruiter manages (own + company team). */
+    @Query("SELECT a.status, COUNT(a) FROM Application a WHERE a.job.recruiter.id = :userId OR a.job.company.id = :companyId GROUP BY a.status")
+    java.util.List<Object[]> countManagedGroupedByStatus(@Param("userId") UUID userId, @Param("companyId") UUID companyId);
+
+    /** [status, count] for one candidate's applications. */
+    @Query("SELECT a.status, COUNT(a) FROM Application a WHERE a.candidate.id = :candidateId GROUP BY a.status")
+    java.util.List<Object[]> countCandidateGroupedByStatus(@Param("candidateId") UUID candidateId);
 
     long countByCandidateId(UUID candidateId);
 

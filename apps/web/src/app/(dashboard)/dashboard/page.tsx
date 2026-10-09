@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
-import { useRecruiterStats } from '@/hooks/useApplications';
+import { useMyApplicationStats, useRecruiterStats } from '@/hooks/useApplications';
 import { useJobs, useMyJobs, useSavedJobs } from '@/hooks/useJobs';
 import { useMe } from '@/hooks/useProfile';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -25,12 +25,10 @@ import { getProfileCompleteness } from '@/components/profile/completeness';
 import { useMyEducation, useMyExperience } from '@/hooks/useCandidate';
 import { RecommendedJobs } from '@/components/recommendations/RecommendedJobs';
 import {
-  APPLICATION_STATUS_LABELS, APPLICATION_STATUS_ORDER, APPLICATION_STATUS_STYLES, JOB_STATUS_LABELS, JOB_STATUS_STYLES,
+  APPLICATION_STATUS_LABELS, APPLICATION_STATUS_STYLES, JOB_STATUS_LABELS, JOB_STATUS_STYLES,
 } from '@/lib/constants';
 import { pluralize, timeAgo } from '@/lib/format';
 import type { Application, Page } from '@/types';
-
-const RECENT_WINDOW = 50;
 
 /** Most recent applications first (the list hooks don't request a sort order). */
 function useRecentApplications(scope: 'my' | 'recruiter', size: number) {
@@ -80,31 +78,28 @@ function NextStep({ title, description, children }: { title: string; description
 
 // ─── Candidate ────────────────────────────────────────────────────
 function CandidateDashboard() {
-  const apps = useRecentApplications('my', RECENT_WINDOW);
+  const apps = useRecentApplications('my', 5);
+  const myStats = useMyApplicationStats();
   const saved = useSavedJobs(0);
   const me = useMe();
 
   const list = apps.data?.content ?? [];
-  const total = apps.data?.totalElements;
-  const partial = (total ?? 0) > list.length;
-  const counts = APPLICATION_STATUS_ORDER.reduce(
-    (acc, s) => ({ ...acc, [s]: list.filter((a) => a.status === s).length }),
-    {} as StatusCounts
-  );
-  const inProgress = counts.PENDING + counts.REVIEWING + counts.SHORTLISTED + counts.INTERVIEWED;
+  // Counts come from the server for all applications (not just the recent ones listed).
+  const total = myStats.data?.total;
+  const counts: StatusCounts | null = myStats.data ? statsToCounts(myStats.data) : null;
+  const inProgress = counts ? counts.PENDING + counts.REVIEWING + counts.SHORTLISTED + counts.INTERVIEWED : undefined;
   const experience = useMyExperience();
   const education = useMyEducation();
   const completeness = me.data
     ? getProfileCompleteness({ ...me.data, experienceCount: experience.data?.length, educationCount: education.data?.length })
     : null;
-  const scopeHint = partial ? `In your ${RECENT_WINDOW} latest` : undefined;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Applications" value={apps.isError ? null : total} icon={Send} href="/applications" hint="All time" />
-        <StatCard label="In progress" value={apps.isError ? null : apps.data ? inProgress : undefined} icon={Clock} tone="bg-sky-50 text-sky-600" hint={scopeHint ?? 'Awaiting a decision'} />
-        <StatCard label="Offers & hires" value={apps.isError ? null : apps.data ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint={scopeHint} />
+        <StatCard label="Applications" value={myStats.isError ? null : total} icon={Send} href="/applications" hint="All time" />
+        <StatCard label="In progress" value={myStats.isError ? null : inProgress} icon={Clock} tone="bg-sky-50 text-sky-600" hint="Awaiting a decision" />
+        <StatCard label="Offers & hires" value={myStats.isError ? null : counts ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" />
         <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" />
       </div>
 
@@ -199,10 +194,10 @@ function CandidateDashboard() {
             <Card>
               <CardHeader
                 title="Application status"
-                description={partial ? `Your ${list.length} most recent applications` : 'All your applications'}
+                description="All your applications"
               />
               <div className="p-5">
-                <PipelineBars counts={counts} hideEmpty />
+                {counts && <PipelineBars counts={counts} hideEmpty />}
               </div>
             </Card>
           )}

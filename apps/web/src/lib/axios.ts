@@ -7,7 +7,16 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  // The free API host sleeps when idle and needs up to a minute to wake; give up only after that.
+  timeout: 70_000,
 });
+
+/** Network failures, timeouts and gateway errors (e.g. while the API host is waking up) are worth retrying. */
+export function isTransientError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  if (!error.response) return true; // network error / timeout / CORS during a restart
+  return [408, 425, 429, 500, 502, 503, 504].includes(error.response.status);
+}
 
 let isRefreshing = false;
 let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];

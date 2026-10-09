@@ -21,8 +21,8 @@
   --fg-soft: 30 41 59;           /* slate-800 */
   --fg-secondary: 51 65 85;      /* slate-700 */
   --fg-tertiary: 71 85 105;      /* slate-600 */
-  --fg-muted: 100 116 139;       /* secondary text (slate-500) */
-  --fg-subtle: 148 163 184;      /* hints, placeholders, icons (slate-400) */
+  --fg-muted: 85 99 120;         /* secondary text (~6:1 on white) */
+  --fg-subtle: 100 114 136;      /* hints, captions, icons (≥4.5:1 on white) */
   --fg-faint: 203 213 225;       /* disabled, decorative (slate-300) */
   --line-subtle: 241 245 249;    /* dividers (slate-100) */
   --line: 226 232 240;           /* borders (slate-200) */
@@ -134,11 +134,11 @@
   --fg-secondary: 203 213 225;
   --fg-tertiary: 176 189 205;
   --fg-muted: 148 163 184;
-  --fg-subtle: 100 116 139;
-  --fg-faint: 71 85 105;
+  --fg-subtle: 130 144 165;      /* ≥4.5:1 on cards */
+  --fg-faint: 96 110 132;        /* decorative only; ≥3:1 on cards */
   --line-subtle: 30 41 59;
-  --line: 45 58 78;
-  --line-strong: 71 85 105;
+  --line: 51 65 88;
+  --line-strong: 82 96 118;      /* input borders */
 
   --bg-primary-50: 25 32 66;
   --bg-primary-100: 32 39 82;

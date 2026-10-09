@@ -18,4 +18,9 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, UUID> {
     void deleteByUserIdAndJobId(UUID userId, UUID jobId);
 
     boolean existsByUserIdAndJobId(UUID userId, UUID jobId);
+
+    /** Which of these jobs the user has saved (one query for a whole page). */
+    @org.springframework.data.jpa.repository.Query("SELECT s.job.id FROM SavedJob s WHERE s.user.id = :userId AND s.job.id IN :jobIds")
+    java.util.Set<UUID> savedAmong(@org.springframework.data.repository.query.Param("userId") UUID userId,
+                                   @org.springframework.data.repository.query.Param("jobIds") java.util.Collection<UUID> jobIds);
 }

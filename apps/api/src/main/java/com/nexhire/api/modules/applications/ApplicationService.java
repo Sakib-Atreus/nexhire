@@ -29,7 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -77,7 +80,7 @@ public class ApplicationService {
     }
 
     public Page<ApplicationDTO> getMyApplications(UUID candidateId, Pageable pageable) {
-        return applicationRepository.findByCandidateId(candidateId, pageable).map(this::toCandidateDTO);
+        return toDTOs(applicationRepository.findByCandidateId(candidateId, pageable), false);
     }
 
     public Optional<ApplicationDTO> getMyApplicationForJob(UUID jobId, UUID candidateId) {
@@ -92,13 +95,12 @@ public class ApplicationService {
             throw new ForbiddenException("You do not have permission to view these applications");
         }
 
-        return applicationRepository.findByJobId(jobId, pageable).map(this::toDTO);
+        return toDTOs(applicationRepository.findByJobId(jobId, pageable), true);
     }
 
     /** Applications across every job the recruiter manages (own + company team). */
     public Page<ApplicationDTO> getRecruiterApplications(User recruiter, Pageable pageable) {
-        return applicationRepository.findManagedBy(recruiter.getId(), JobAccess.companyOrNone(recruiter), pageable)
-            .map(this::toDTO);
+        return toDTOs(applicationRepository.findManagedBy(recruiter.getId(), JobAccess.companyOrNone(recruiter), pageable), true);
     }
 
     @Transactional
@@ -178,32 +180,26 @@ public class ApplicationService {
     }
 
     public ApplicationStatsDTO getRecruiterStats(User recruiter) {
-        if (recruiter.getRole() == Role.ADMIN) {
-            return new ApplicationStatsDTO(
-                applicationRepository.countByStatus(ApplicationStatus.PENDING),
-                applicationRepository.countByStatus(ApplicationStatus.REVIEWING),
-                applicationRepository.countByStatus(ApplicationStatus.SHORTLISTED),
-                applicationRepository.countByStatus(ApplicationStatus.INTERVIEWED),
-                applicationRepository.countByStatus(ApplicationStatus.OFFERED),
-                applicationRepository.countByStatus(ApplicationStatus.HIRED),
-                applicationRepository.countByStatus(ApplicationStatus.REJECTED),
-                applicationRepository.countByStatus(ApplicationStatus.WITHDRAWN),
-                applicationRepository.count()
-            );
-        }
-        UUID uid = recruiter.getId();
-        UUID cid = JobAccess.companyOrNone(recruiter);
+        List<Object[]> rows = recruiter.getRole() == Role.ADMIN
+            ? applicationRepository.countGroupedByStatus()
+            : applicationRepository.countManagedGroupedByStatus(recruiter.getId(), JobAccess.companyOrNone(recruiter));
+        return stats(rows);
+    }
+
+    /** The candidate's own applications by status (for the dashboard; one grouped query). */
+    public ApplicationStatsDTO getCandidateStats(User candidate) {
+        return stats(applicationRepository.countCandidateGroupedByStatus(candidate.getId()));
+    }
+
+    private static ApplicationStatsDTO stats(List<Object[]> rows) {
+        Map<ApplicationStatus, Long> by = new EnumMap<>(ApplicationStatus.class);
+        for (Object[] r : rows) by.put((ApplicationStatus) r[0], (Long) r[1]);
+        java.util.function.Function<ApplicationStatus, Long> n = s -> by.getOrDefault(s, 0L);
         return new ApplicationStatsDTO(
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.PENDING),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.REVIEWING),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.SHORTLISTED),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.INTERVIEWED),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.OFFERED),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.HIRED),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.REJECTED),
-            applicationRepository.countManagedByStatus(uid, cid, ApplicationStatus.WITHDRAWN),
-            applicationRepository.countManaged(uid, cid)
-        );
+            n.apply(ApplicationStatus.PENDING), n.apply(ApplicationStatus.REVIEWING), n.apply(ApplicationStatus.SHORTLISTED),
+            n.apply(ApplicationStatus.INTERVIEWED), n.apply(ApplicationStatus.OFFERED), n.apply(ApplicationStatus.HIRED),
+            n.apply(ApplicationStatus.REJECTED), n.apply(ApplicationStatus.WITHDRAWN),
+            by.values().stream().mapToLong(Long::longValue).sum());
     }
 
     // ─── Access helpers (also used by the hiring tools) ─────────────────────
@@ -255,10 +251,39 @@ public class ApplicationService {
         return toDTO(application, false);
     }
 
+    /**
+     * A page of DTOs with the per-row extras (next interview, note and message counts) loaded in three
+     * grouped queries for the whole page instead of three queries per row.
+     */
+    private Page<ApplicationDTO> toDTOs(Page<Application> page, boolean hiringTeam) {
+        List<UUID> ids = page.getContent().stream().map(Application::getId).toList();
+        if (ids.isEmpty()) return page.map(a -> toDTO(a, hiringTeam));
+        Map<UUID, Interview> nextById = new HashMap<>();
+        for (Interview i : interviewRepository.upcomingForApplications(ids, Instant.now())) {
+            nextById.putIfAbsent(i.getApplication().getId(), i);
+        }
+        Map<UUID, Long> notes = hiringTeam ? countMap(noteRepository.countByApplicationIds(ids)) : Map.of();
+        Map<UUID, Long> messages = countMap(messageRepository.countByApplicationIds(ids));
+        return page.map(a -> build(a, hiringTeam, Optional.ofNullable(nextById.get(a.getId())),
+            notes.getOrDefault(a.getId(), 0L), messages.getOrDefault(a.getId(), 0L)));
+    }
+
+    private static Map<UUID, Long> countMap(List<Object[]> rows) {
+        Map<UUID, Long> m = new HashMap<>();
+        for (Object[] r : rows) m.put((UUID) r[0], (Long) r[1]);
+        return m;
+    }
+
     private ApplicationDTO toDTO(Application application, boolean hiringTeam) {
-        User candidate = application.getCandidate();
         Optional<Interview> next = interviewRepository
             .findFirstByApplicationIdAndStatusAndScheduledAtAfterOrderByScheduledAtAsc(application.getId(), InterviewStatus.SCHEDULED, Instant.now());
+        return build(application, hiringTeam, next,
+            hiringTeam ? noteRepository.countByApplicationId(application.getId()) : 0L,
+            messageRepository.countByApplicationId(application.getId()));
+    }
+
+    private ApplicationDTO build(Application application, boolean hiringTeam, Optional<Interview> next, long noteCount, long messageCount) {
+        User candidate = application.getCandidate();
         return new ApplicationDTO(
             application.getId(),
             application.getJob().getId(),
@@ -278,8 +303,8 @@ public class ApplicationService {
             next.map(Interview::getScheduledAt).orElse(null),
             next.map(Interview::getResponse).orElse(null),
             hiringTeam ? application.getRating() : null,
-            hiringTeam ? noteRepository.countByApplicationId(application.getId()) : null,
-            messageRepository.countByApplicationId(application.getId())
+            hiringTeam ? noteCount : null,
+            messageCount
         );
     }
 }

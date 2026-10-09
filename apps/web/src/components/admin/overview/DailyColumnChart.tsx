@@ -125,7 +125,7 @@ export function DailyColumnChart({ data, unit, emptyMessage }: {
                 aria-hidden
               >
                 <div className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg">
-                  <span className="block text-fg-faint">{dayLabel(point.date, true)}</span>
+                  <span className="block text-slate-300">{dayLabel(point.date, true)}</span>
                   <span className="font-semibold tabular-nums">{fmt(point.count)}</span> {noun(point.count)}
                 </div>
               </div>

@@ -33,7 +33,9 @@ function NameLink({ user, isSelf }: { user: User; isSelf: boolean }) {
 /** Desktop table (md+). */
 export function UsersTable({ users, currentUserId, busyId, onAction }: ListProps) {
   return (
-    <table className="hidden md:table w-full text-sm">
+    // Scrolls sideways inside its card on narrow tablets instead of spilling past the card edge.
+    <div className="hidden md:block overflow-x-auto">
+    <table className="w-full min-w-[680px] text-sm">
       <thead className="bg-muted text-left text-xs font-medium text-fg-muted">
         <tr>
           <th scope="col" className="px-5 py-3">User</th>
@@ -73,6 +75,7 @@ export function UsersTable({ users, currentUserId, busyId, onAction }: ListProps
         })}
       </tbody>
     </table>
+    </div>
   );
 }
 

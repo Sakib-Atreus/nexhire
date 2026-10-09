@@ -23,7 +23,7 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
         WHERE a.candidate.id = :candidateId AND i.status = 'SCHEDULED' AND i.scheduledAt >= :from
         ORDER BY i.scheduledAt ASC
         """)
-    List<Interview> upcomingForCandidate(@Param("candidateId") UUID candidateId, @Param("from") Instant from);
+    List<Interview> upcomingForCandidate(@Param("candidateId") UUID candidateId, @Param("from") Instant from, org.springframework.data.domain.Pageable limit);
 
     @Query("""
         SELECT i FROM Interview i JOIN FETCH i.application a JOIN FETCH a.job j
@@ -31,7 +31,7 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
         AND i.status = 'SCHEDULED' AND i.scheduledAt >= :from
         ORDER BY i.scheduledAt ASC
         """)
-    List<Interview> upcomingForRecruiter(@Param("userId") UUID userId, @Param("companyId") UUID companyId, @Param("from") Instant from);
+    List<Interview> upcomingForRecruiter(@Param("userId") UUID userId, @Param("companyId") UUID companyId, @Param("from") Instant from, org.springframework.data.domain.Pageable limit);
 
     /** Scheduled interviews created by this user that start inside [from, to). */
     @Query("""
@@ -59,4 +59,8 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
 
     @Query("SELECT COUNT(DISTINCT i.application.id) FROM Interview i WHERE i.application.job.id = :jobId AND i.status <> 'CANCELLED'")
     long countInterviewedApplications(@Param("jobId") UUID jobId);
+
+    /** Upcoming scheduled interviews for a page of applications (earliest first). */
+    @Query("SELECT i FROM Interview i WHERE i.application.id IN :ids AND i.status = com.nexhire.api.modules.hiring.InterviewStatus.SCHEDULED AND i.scheduledAt > :now ORDER BY i.scheduledAt ASC")
+    List<Interview> upcomingForApplications(@Param("ids") java.util.Collection<UUID> ids, @Param("now") Instant now);
 }

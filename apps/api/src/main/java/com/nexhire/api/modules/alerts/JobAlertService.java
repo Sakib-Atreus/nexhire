@@ -41,6 +41,13 @@ public class JobAlertService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MailService mailService;
+    private final org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+    private final jakarta.persistence.EntityManager entityManager;
+
+    /** Alerts examined per batch when a job is published. */
+    private static final int MATCH_BATCH = 500;
+    /** Alerts handled per round of the daily digest (each alert in its own transaction). */
+    private static final int DIGEST_BATCH = 200;
 
     // ─── CRUD (candidate) ───────────────────────────────────────────────────
 
@@ -93,43 +100,78 @@ public class JobAlertService {
         Job job = found.get();
         if (job.getStatus() != JobStatus.OPEN || job.isHidden()) return;
 
+        String haystack = haystack(job);
         int matched = 0;
-        for (JobAlert alert : alertRepository.findByActiveTrue()) {
-            if (!matches(alert, job) || matchRepository.existsByAlertIdAndJobId(alert.getId(), jobId)) continue;
-            matched++;
-            JobAlertMatch match = matchRepository.save(JobAlertMatch.builder().alertId(alert.getId()).jobId(jobId).build());
-            if (alert.getFrequency() == AlertFrequency.INSTANT) {
-                deliver(alert, List.of(job));
-                match.setSent(true);
-                matchRepository.save(match);
+        var page = org.springframework.data.domain.PageRequest.of(0, MATCH_BATCH);
+        while (true) {
+            var slice = alertRepository.candidatesFor(job.getCategory(), job.getJobType(), job.getExperienceLevel(), page);
+            for (JobAlert alert : slice) {
+                if (!matches(alert, job, haystack) || matchRepository.existsByAlertIdAndJobId(alert.getId(), jobId)) continue;
+                matched++;
+                JobAlertMatch match = matchRepository.save(JobAlertMatch.builder().alertId(alert.getId()).jobId(jobId).build());
+                if (alert.getFrequency() == AlertFrequency.INSTANT) {
+                    deliver(alert, List.of(job));
+                    match.setSent(true);
+                    matchRepository.save(match);
+                }
             }
+            if (!slice.hasNext()) break;
+            // Keep memory flat: write this batch and drop it from the persistence context.
+            entityManager.flush();
+            entityManager.clear();
+            page = page.next();
         }
         if (matched > 0) log.info("Job {} matched {} alert(s)", jobId, matched);
     }
 
-    /** Daily digest of queued matches (08:00 UTC). */
+    /**
+     * Daily digest of queued matches (08:00 UTC). Each alert is handled in its own short transaction,
+     * so memory and connection time stay small however many alerts are waiting.
+     */
     @Scheduled(cron = "0 0 8 * * *", zone = "UTC")
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED) // no outer transaction: one per alert below
     public void sendDailyDigests() {
-        Map<UUID, List<JobAlertMatch>> pending = matchRepository.findBySentFalseOrderByCreatedAtAsc().stream()
-            .collect(Collectors.groupingBy(JobAlertMatch::getAlertId, LinkedHashMap::new, Collectors.toList()));
-        for (Map.Entry<UUID, List<JobAlertMatch>> entry : pending.entrySet()) {
-            alertRepository.findById(entry.getKey()).filter(JobAlert::isActive).ifPresent(alert -> {
-                List<Job> jobs = jobRepository.findAllById(entry.getValue().stream().map(JobAlertMatch::getJobId).toList())
-                    .stream().filter(j -> j.getStatus() == JobStatus.OPEN && !j.isHidden()).toList();
-                if (!jobs.isEmpty()) deliver(alert, jobs);
-            });
-            entry.getValue().forEach(m -> m.setSent(true));
-            matchRepository.saveAll(entry.getValue());
+        Set<UUID> done = new HashSet<>();
+        while (true) {
+            List<UUID> batch = matchRepository.pendingAlertIds(org.springframework.data.domain.PageRequest.of(0, DIGEST_BATCH));
+            batch.removeIf(done::contains);
+            if (batch.isEmpty()) break;
+            for (UUID alertId : batch) {
+                done.add(alertId);
+                try {
+                    transactionTemplate.executeWithoutResult(status -> sendDigest(alertId));
+                } catch (RuntimeException e) {
+                    log.warn("Daily digest for alert {} failed: {}", alertId, e.getMessage());
+                }
+            }
         }
+    }
+
+    private void sendDigest(UUID alertId) {
+        alertRepository.findById(alertId).filter(JobAlert::isActive).ifPresent(alert -> {
+            List<UUID> jobIds = matchRepository.findByAlertIdAndSentFalseOrderByCreatedAtAsc(alertId).stream()
+                .map(JobAlertMatch::getJobId).toList();
+            List<Job> jobs = jobRepository.findAllById(jobIds).stream()
+                .filter(j -> j.getStatus() == JobStatus.OPEN && !j.isHidden()).toList();
+            if (!jobs.isEmpty()) deliver(alert, jobs);
+        });
+        matchRepository.markSent(alertId);
     }
 
     /** Does this job satisfy every criterion the alert sets? */
     static boolean matches(JobAlert alert, Job job) {
+        return matches(alert, job, haystack(job));
+    }
+
+    /** Lower-cased text the keyword is searched in; built once per job, not once per alert. */
+    private static String haystack(Job job) {
+        return String.join(" ",
+            Objects.toString(job.getTitle(), ""), Objects.toString(job.getDescription(), ""),
+            Objects.toString(job.getTags(), ""), Objects.toString(job.getCompanyName(), "")).toLowerCase(Locale.ROOT);
+    }
+
+    static boolean matches(JobAlert alert, Job job, String haystack) {
         if (notBlank(alert.getKeyword())) {
-            String haystack = String.join(" ",
-                Objects.toString(job.getTitle(), ""), Objects.toString(job.getDescription(), ""),
-                Objects.toString(job.getTags(), ""), Objects.toString(job.getCompanyName(), "")).toLowerCase(Locale.ROOT);
             if (!haystack.contains(alert.getKeyword().trim().toLowerCase(Locale.ROOT))) return false;
         }
         if (notBlank(alert.getLocation())

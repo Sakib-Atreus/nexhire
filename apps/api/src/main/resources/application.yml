@@ -9,6 +9,14 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    # Small pool sized for Neon / a 512 MB instance; idle connections are released so Neon can scale to zero.
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:8}
+      minimum-idle: 1
+      connection-timeout: 10000
+      idle-timeout: 120000
+      max-lifetime: 240000
+      keepalive-time: 60000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -17,6 +25,20 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        # Load lazy associations for a whole page in one query instead of one per row (avoids N+1).
+        default_batch_fetch_size: 100
+  data:
+    web:
+      pageable:
+        # Nobody can ask for huge pages (e.g. ?size=100000).
+        max-page-size: 100
+  task:
+    execution:
+      # Bounded pool for @Async work (notifications, emails) so a burst can't fill the heap.
+      pool:
+        core-size: 4
+        max-size: 8
+        queue-capacity: 1000
   mail:
     # STARTTLS for port 587 providers (Brevo, Resend, SendGrid, Gmail…); short timeouts so a slow SMTP never blocks.
     properties:
@@ -45,10 +67,16 @@ spring:
 
 server:
   port: 8080
-  # Use X-Forwarded-Proto/Host from Render's proxy so generated URLs (e.g. the calendar feed) are https.
-  forward-headers-strategy: framework
+  # Trust X-Forwarded-* only from private-network proxies (Render's load balancer): Tomcat reads the client
+  # IP from the right of X-Forwarded-For, so a client can't fake it (rate limits), and Proto/Host make
+  # generated URLs (e.g. the calendar feed) https.
+  forward-headers-strategy: native
   servlet:
     context-path: /api
+  tomcat:
+    # Fewer request threads than the default 200: memory on a 512 MB instance, and only 8 DB connections behind them.
+    threads:
+      max: 50
 
 jwt:
   # No default: set JWT_SECRET (32+ random characters). The app refuses to start without it.

@@ -18,10 +18,18 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { InterviewTypeIcon, TimeZoneNote } from '@/components/interviews/InterviewParts';
 import { canRespond } from '@/components/interviews/InterviewResponsePanel';
 import { dayHeading, formatTime, localDayKey } from '@/components/interviews/interviewUtils';
-import InterviewCalendar, { type CalendarHandle, type CalendarView } from '@/components/calendar/InterviewCalendar';
+import dynamic from 'next/dynamic';
+import type { CalendarHandle, CalendarView } from '@/components/calendar/InterviewCalendar';
+
 import { InterviewDetailsModal } from '@/components/calendar/InterviewDetailsModal';
 import { CalendarSubscribeCard } from '@/components/calendar/CalendarSubscribeCard';
 import { eventTone, legend } from '@/components/calendar/eventTone';
+
+// FullCalendar is the heaviest part of the page: load it after the stats and side panels.
+const InterviewCalendar = dynamic(() => import('@/components/calendar/InterviewCalendar'), {
+  ssr: false,
+  loading: () => <Skeleton className="m-4 h-[560px] rounded-xl" />,
+});
 
 const VIEWS: { value: CalendarView; label: string; icon: typeof CalendarDays }[] = [
   { value: 'dayGridMonth', label: 'Month', icon: CalendarDays },

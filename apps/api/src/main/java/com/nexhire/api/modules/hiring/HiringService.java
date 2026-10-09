@@ -41,6 +41,8 @@ public class HiringService {
     private static final int SERIES_DAYS = 30;
     private static final int MAX_INTERVIEW_MINUTES = 480;
     private static final long FOLLOW_UP_AFTER_HOURS = 48;
+    /** Upcoming lists are limited in SQL (the calendar covers anything further out). */
+    private static final org.springframework.data.domain.Pageable UPCOMING_LIMIT = org.springframework.data.domain.PageRequest.of(0, 50);
     /** Video rooms open 15 minutes before the interview and close an hour after its scheduled end. */
     private static final long ROOM_OPENS_MINUTES_BEFORE = 15;
     private static final long ROOM_CLOSES_MINUTES_AFTER = 60;
@@ -424,11 +426,11 @@ public class HiringService {
     public List<InterviewDTO> upcoming(User user) {
         Instant from = Instant.now().minus(1, ChronoUnit.HOURS);
         List<Interview> list = switch (user.getRole()) {
-            case CANDIDATE -> interviewRepository.upcomingForCandidate(user.getId(), from);
-            case RECRUITER -> interviewRepository.upcomingForRecruiter(user.getId(), JobAccess.companyOrNone(user), from);
+            case CANDIDATE -> interviewRepository.upcomingForCandidate(user.getId(), from, UPCOMING_LIMIT);
+            case RECRUITER -> interviewRepository.upcomingForRecruiter(user.getId(), JobAccess.companyOrNone(user), from, UPCOMING_LIMIT);
             default -> List.of();
         };
-        return list.stream().limit(50).map(this::toDTO).toList();
+        return list.stream().map(this::toDTO).toList();
     }
 
     // ─── Templates ──────────────────────────────────────────────────────────
