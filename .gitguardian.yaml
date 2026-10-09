@@ -1,0 +1,15 @@
+# GitGuardian (ggshield) configuration.
+# The values below are local-development credentials for the Docker services in docker/ and the
+# API's dev profile. They only work on a developer's own machine and are never used in production
+# (production reads real secrets from the hosting provider's environment variables).
+version: 2
+secret:
+  ignored_matches:
+    - name: Local Docker PostgreSQL / RabbitMQ dev password
+      match: root1234
+    - name: Local Docker MinIO dev password
+      match: minio1234
+    - name: Local dev-profile JWT placeholder
+      match: local-dev-only-jwt-secret-do-not-use-in-production
+    - name: Local docker-compose JWT placeholder
+      match: local-dev-secret-change-in-production
