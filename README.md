@@ -142,7 +142,7 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 
 ## License
 
-[MIT](LICENSE)
+This project is open source under the [MIT License](LICENSE) © 2026 Md. Sakib Mia. You are free to use, modify and distribute it, as long as the original copyright notice is kept.
 
 ## Contact
 
