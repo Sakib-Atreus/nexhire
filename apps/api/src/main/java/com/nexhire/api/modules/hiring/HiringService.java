@@ -389,8 +389,11 @@ public class HiringService {
 
         boolean candidate = app.getCandidate().getId().equals(user.getId());
         String userName = candidate ? user.getFullName() : user.getFullName() + " (" + app.getJob().getCompanyName() + ")";
-        String token = videoService.createToken(interview.getVideoRoomName(), userName, !candidate, closes);
-        return new VideoJoinDTO(interview.getId(), interview.getVideoRoomUrl(), token, !candidate, userName,
+        if (!videoService.isEnabled()) throw new BadRequestException("Video calls are turned off right now. Ask the hiring team for a meeting link.");
+        // Identity = user id, so the same person rejoining (e.g. after a refresh) replaces their old connection.
+        String token = videoService.createToken(interview.getVideoRoomName(), user.getId().toString(), userName, !candidate, closes);
+        // Always the current server URL (rooms made before a provider change keep their name and still work).
+        return new VideoJoinDTO(interview.getId(), videoService.serverUrl(), token, !candidate, userName,
             app.getJob().getTitle(), app.getJob().getCompanyName(), app.getCandidate().getFullName(),
             interview.getScheduledAt(), interview.getDurationMinutes());
     }
@@ -566,6 +569,7 @@ public class HiringService {
             a.getCandidate().getId(), a.getCandidate().getFullName(), i.getScheduledAt(), i.getDurationMinutes(),
             i.getType(), i.getLocation(), i.getMessage(), i.getStatus(), i.getCreatedAt(),
             i.getResponse(), i.getResponseNote(), proposedTimes(i), i.getRespondedAt(), i.getInvitedAt(), needsFollowUp,
-            i.getVideoRoomName() != null);
+            // A room only counts while video calls are configured; otherwise people see the meeting-link fallback.
+            i.getVideoRoomName() != null && videoService.isEnabled());
     }
 }

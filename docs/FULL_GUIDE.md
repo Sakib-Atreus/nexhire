@@ -31,7 +31,7 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 - **Applicant panel** — the candidate's full profile (experience, education, resume), private 1–5 ratings and notes (never visible to candidates), an activity timeline, messages with reusable templates and placeholders such as `{{firstName}}`, and an optional message to the candidate with each stage change
 - **Interview scheduling** — video, phone or on-site; warns about clashes with *your own* interviews; the candidate confirms or proposes another time, and one click accepts their suggestion; unanswered invitations are flagged after 48 hours with a one-click reminder
 - **Team calendar** — every interview across the jobs you manage, colour-coded by the candidate's response, with a job filter and a dashboard calendar card
-- **Built-in video rooms** — choose "NexHire video room" when scheduling a video interview: a private Daily.co room, joined with a personal link, that follows reschedules and is deleted on cancellation (or paste your own Zoom/Meet/Teams link)
+- **Built-in video rooms** — choose "NexHire video room" when scheduling a video interview: a private LiveKit room, joined with a personal link, that follows reschedules and is deleted on cancellation (or paste your own Zoom/Meet/Teams link)
 - **Analytics** — per-job funnel (views → applications → interviewed → offered → hired), daily applications and status breakdown
 
 ### For administrators
@@ -94,7 +94,7 @@ nexhire/
 │   │       ├── applications/     # Applying and the hiring pipeline
 │   │       ├── hiring/           # Interviews, notes, ratings, messages, templates, analytics
 │   │       ├── calendar/         # Interview calendar range + private iCal feed
-│   │       ├── video/            # Daily.co video rooms and join tokens
+│   │       ├── video/            # LiveKit video rooms and join tokens
 │   │       ├── notifications/    # SSE stream, RabbitMQ producer/consumer
 │   │       ├── admin/            # Admin panel, reports, audit log, site settings
 │   │       └── files/            # Uploads to MinIO / Backblaze B2
@@ -220,7 +220,7 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | SMTP for emails (e.g. Brevo: `smtp-relay.brevo.com`, port `587`). Without `SPRING_MAIL_HOST`, emails are only written to the log. |
 | `MAIL_FROM` | Sender, e.g. `NexHire <no-reply@yourdomain.com>` (must be a sender your SMTP provider allows) |
 | `APP_BASE_URL` | Frontend URL used in email and calendar links, e.g. `https://your-app.vercel.app` |
-| `DAILY_API_KEY` | Turns on built-in video rooms for video interviews ([Daily.co](https://dashboard.daily.co) → Developers → API key; the free plan includes 10,000 participant-minutes a month). Without it, recruiters paste their own meeting links. |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Turns on built-in video rooms ([LiveKit Cloud](https://cloud.livekit.io) → your project → Settings → Keys; the free Build plan needs no card and includes 5,000 participant-minutes a month). Without them, recruiters paste their own meeting links. |
 
 ### Optional
 
@@ -331,7 +331,7 @@ npm run type-check    # TypeScript validation
 3. The recruiter is notified. Choosing one of the candidate's suggested times confirms the interview immediately; any other new time goes back to the candidate to confirm.
 4. Invitations with no answer 48 hours after being sent are flagged so the recruiter can send a reminder.
 
-**Calendar and video:** `/calendar` shows interviews for the visible range (recruiters: every interview on the jobs they manage). Each user can subscribe to a private iCal feed (`/api/calendar/feed/{token}.ics`); calendar apps refresh it every few hours, so reschedules and cancellations appear on their own. Resetting the link invalidates the old one. When `DAILY_API_KEY` is set, a video interview can use a private Daily.co room named after the interview. It can be joined from 15 minutes before the start until an hour after the scheduled end, only with a personal token issued to the candidate or the hiring team (who join as hosts). Reschedules move the room's window, and cancelling deletes it.
+**Calendar and video:** `/calendar` shows interviews for the visible range (recruiters: every interview on the jobs they manage). Each user can subscribe to a private iCal feed (`/api/calendar/feed/{token}.ics`); calendar apps refresh it every few hours, so reschedules and cancellations appear on their own. Resetting the link invalidates the old one. When the `LIVEKIT_*` variables are set, a video interview can use a private LiveKit room named after the interview. It can be joined from 15 minutes before the start until an hour after the scheduled end, only with a personal token issued to the candidate or the hiring team (who join as hosts), after a camera and microphone check. Cancelling closes the room and disconnects everyone.
 
 **Job alerts:** when a job becomes open and visible (published, a draft published, reopened or un-hidden), the API publishes a `job.published` event to RabbitMQ (after the database commit). A consumer matches it against active alerts: *instant* alerts notify immediately, *daily* alerts are collected and sent as one digest at 08:00 UTC. Each job is sent to each alert at most once. If RabbitMQ is unavailable, matching runs directly.
 

@@ -43,7 +43,7 @@
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, TanStack Query, Zustand |
 | Backend | Spring Boot 3.3, Java 21, Spring Security (JWT), JPA, Flyway |
 | Data | PostgreSQL 16, RabbitMQ, MinIO / Backblaze B2 |
-| Integrations | Daily.co (video), FullCalendar, SMTP |
+| Integrations | LiveKit (video), FullCalendar, SMTP |
 | Tooling | Turborepo, npm workspaces, Docker |
 
 ---
@@ -92,7 +92,7 @@ Set these on the API in production (see `.env.example` for the full list):
 | `SPRING_RABBITMQ_*` | Optional | Message broker (the app still works without it) |
 | `MINIO_*` | Optional | File storage (uploads are disabled without it) |
 | `SPRING_MAIL_*`, `MAIL_FROM` | Optional | Email (logged instead of sent without it) |
-| `DAILY_API_KEY` | Optional | Built-in video rooms (otherwise meeting links are pasted) |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Optional | Built-in video rooms via LiveKit Cloud's free plan (otherwise meeting links are pasted) |
 
 On the frontend, set `NEXT_PUBLIC_API_URL` to the API URL (e.g. `https://your-api.onrender.com/api`).
 

@@ -1,97 +1,63 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Clock, LogOut, RotateCcw, ShieldCheck, Video } from 'lucide-react';
-import type { DailyCall, DailyThemeConfig } from '@daily-co/daily-js';
+import { LiveKitRoom, PreJoin, VideoConference, type LocalUserChoices } from '@livekit/components-react';
+import { DisconnectReason } from 'livekit-client';
+import '@livekit/components-styles';
 import { useVideoJoin } from '@/hooks/useHiring';
-import { useThemeStore } from '@/store/themeStore';
 import { getErrorMessage } from '@/lib/format';
 import { Card } from '@/components/ui/Card';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/States';
 import { formatTimeRange, formatWeekdayDate } from '@/components/interviews/interviewUtils';
 
-const THEMES: Record<'light' | 'dark', DailyThemeConfig> = {
-  light: {
-    colors: {
-      accent: '#4f46e5', accentText: '#ffffff', background: '#ffffff', backgroundAccent: '#f1f5f9', baseText: '#0f172a',
-      border: '#e2e8f0', mainAreaBg: '#0f172a', mainAreaBgAccent: '#1e293b', mainAreaText: '#ffffff', supportiveText: '#64748b',
-    },
-  },
-  dark: {
-    colors: {
-      accent: '#6366f1', accentText: '#ffffff', background: '#0f172a', backgroundAccent: '#1e293b', baseText: '#f1f5f9',
-      border: '#334155', mainAreaBg: '#020617', mainAreaBgAccent: '#0f172a', mainAreaText: '#ffffff', supportiveText: '#94a3b8',
-    },
-  },
-};
+type CallState = 'prejoin' | 'in-call' | 'left' | 'error';
 
-type CallState = 'joining' | 'in-call' | 'left' | 'error';
+/** Plain-language reasons for a call ending, so people know what to do next. */
+function disconnectMessage(reason?: DisconnectReason): string | null {
+  switch (reason) {
+    case DisconnectReason.CLIENT_INITIATED:
+      return null; // they pressed Leave
+    case DisconnectReason.DUPLICATE_IDENTITY:
+      return 'You joined this interview from another tab or device, so this window was disconnected.';
+    case DisconnectReason.PARTICIPANT_REMOVED:
+      return 'The host removed you from the call.';
+    case DisconnectReason.ROOM_DELETED:
+      return 'This video room was closed (the interview may have been cancelled).';
+    case DisconnectReason.JOIN_FAILURE:
+      return 'Couldn’t connect to the video room. Check your internet connection and try again.';
+    default:
+      return 'The connection was lost. Check your internet connection and rejoin.';
+  }
+}
 
-/** The interview's private NexHire video room (Daily Prebuilt), joined with a personal token. */
+/** Errors from the video service, translated. */
+function connectErrorMessage(error: Error): string {
+  const text = `${error.name} ${error.message}`.toLowerCase();
+  if (text.includes('quota') || text.includes('limit')) {
+    return 'The video service has reached its limit for now. Please use a meeting link for this interview.';
+  }
+  if (text.includes('permission') || text.includes('notallowed')) {
+    return 'Your browser blocked the camera or microphone. Allow access in the address bar, then rejoin.';
+  }
+  if (text.includes('token') || text.includes('401') || text.includes('unauthorized')) {
+    return 'Your access to this room has expired. Go back and open the interview again.';
+  }
+  return 'Couldn’t connect to the video room. Check your internet connection (or turn off a VPN or ad blocker) and try again.';
+}
+
+/** The interview's private NexHire video room (LiveKit), joined with a personal token. */
 export default function InterviewCallPage() {
   const { id } = useParams<{ id: string }>();
   const join = useVideoJoin(id);
-  const resolvedTheme = useThemeStore((s) => s.resolved);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const callRef = useRef<DailyCall | null>(null);
-  const [state, setState] = useState<CallState>('joining');
+  const [state, setState] = useState<CallState>('prejoin');
+  const [choices, setChoices] = useState<LocalUserChoices | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
 
   const details = join.data;
-
-  useEffect(() => {
-    if (!details || !containerRef.current) return;
-    let cancelled = false;
-    const container = containerRef.current;
-    setState('joining');
-    setCallError(null);
-
-    (async () => {
-      const { default: DailyIframe } = await import('@daily-co/daily-js');
-      // Only one call object may exist (React may run this effect twice in development).
-      await DailyIframe.getCallInstance()?.destroy();
-      if (cancelled) return;
-      const call = DailyIframe.createFrame(container, {
-        iframeStyle: { width: '100%', height: '100%', border: '0', borderRadius: '0' },
-        showLeaveButton: true,
-        showFullscreenButton: true,
-        theme: THEMES[useThemeStore.getState().resolved],
-      });
-      callRef.current = call;
-      call
-        .on('joined-meeting', () => setState('in-call'))
-        .on('left-meeting', () => setState((s) => (s === 'error' ? s : 'left')))
-        .on('error', (e) => {
-          setCallError(e?.errorMsg ?? 'The call ended unexpectedly.');
-          setState('error');
-        });
-      try {
-        await call.join({ url: details.roomUrl, token: details.token, userName: details.userName });
-      } catch (e) {
-        if (!cancelled) {
-          setCallError(getErrorMessage(e, 'Couldn’t connect to the video room.'));
-          setState('error');
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      const call = callRef.current;
-      callRef.current = null;
-      void call?.destroy();
-    };
-  }, [details, attempt]);
-
-  // Follow the app theme while in the call.
-  useEffect(() => {
-    void callRef.current?.setTheme(THEMES[resolvedTheme]);
-  }, [resolvedTheme]);
-
   const backHref = details?.owner ? '/interviews' : '/applications';
 
   if (join.isLoading) {
@@ -145,33 +111,76 @@ export default function InterviewCallPage() {
         </p>
       </div>
 
-      <Card className="relative overflow-hidden bg-slate-950">
-        <div ref={containerRef} className="h-[calc(100dvh-15rem)] min-h-[420px] w-full lg:h-[calc(100dvh-13rem)]" />
-
-        {state === 'joining' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950 text-slate-300" role="status">
-            <Spinner className="h-8 w-8" />
-            <p className="text-sm">Connecting to the video room…</p>
-          </div>
-        )}
-
-        {(state === 'left' || state === 'error') && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 px-6 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white">
-              <LogOut className="h-5 w-5" aria-hidden />
-            </span>
-            <h2 className="mt-4 text-lg font-semibold text-white">{state === 'left' ? 'You left the call' : 'Call disconnected'}</h2>
-            <p className="mt-1 max-w-sm text-sm text-slate-400">
-              {state === 'error' ? callError : 'You can rejoin while the room is open (until an hour after the scheduled end).'}
-            </p>
-            <div className="mt-6 flex gap-2">
-              <Button onClick={() => setAttempt((a) => a + 1)}>
-                <RotateCcw className="h-4 w-4" aria-hidden /> Rejoin
-              </Button>
-              <Link href={backHref} className={buttonClasses('secondary')}>Back to NexHire</Link>
+      {/* LiveKit's UI is dark in both themes, like most video apps. */}
+      <Card data-lk-theme="default" className="relative overflow-hidden bg-slate-950">
+        <div className="h-[calc(100dvh-15rem)] min-h-[460px] w-full lg:h-[calc(100dvh-13rem)]">
+          {state === 'prejoin' && (
+            <div className="flex h-full flex-col items-center justify-center gap-4 overflow-y-auto p-4 [&_.lk-username-container_input]:hidden [&_.lk-join-button]:mt-1 [&_.lk-join-button]:w-full [&_.lk-join-button]:justify-center [&_.lk-join-button]:bg-[#4f46e5] [&_.lk-join-button]:py-3 [&_.lk-join-button]:font-semibold [&_.lk-join-button]:text-white hover:[&_.lk-join-button]:bg-[#4338ca]">
+              <div className="text-center">
+                <h2 className="text-base font-semibold text-white">Check your camera and microphone</h2>
+                <p className="mt-1 text-sm text-slate-400">You’ll join as <span className="font-medium text-slate-200">{details.userName}</span></p>
+              </div>
+              <PreJoin
+                className="w-full max-w-lg"
+                defaults={{ username: details.userName, videoEnabled: true, audioEnabled: true }}
+                joinLabel="Join interview"
+                micLabel="Microphone"
+                camLabel="Camera"
+                persistUserChoices
+                onSubmit={(values) => {
+                  setChoices(values);
+                  setCallError(null);
+                  setState('in-call');
+                }}
+                onError={(e) => setCallError(connectErrorMessage(e))}
+              />
+              {callError && <p className="max-w-md text-center text-sm text-amber-300">{callError}</p>}
             </div>
-          </div>
-        )}
+          )}
+
+          {state === 'in-call' && choices && (
+            <LiveKitRoom
+              serverUrl={details.roomUrl}
+              token={details.token}
+              connect
+              video={choices.videoEnabled ? { deviceId: choices.videoDeviceId || undefined } : false}
+              audio={choices.audioEnabled ? { deviceId: choices.audioDeviceId || undefined } : false}
+              onDisconnected={(reason) => {
+                const message = disconnectMessage(reason);
+                setCallError(message);
+                setState(message ? 'error' : 'left');
+              }}
+              onError={(e) => {
+                setCallError(connectErrorMessage(e));
+                setState('error');
+              }}
+              onMediaDeviceFailure={() =>
+                setCallError('Your camera or microphone isn’t available. Check that no other app is using it, or allow access in the browser.')
+              }
+              className="h-full"
+            >
+              <VideoConference />
+            </LiveKitRoom>
+          )}
+
+          {(state === 'left' || state === 'error') && (
+            <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white">
+                <LogOut className="h-5 w-5" aria-hidden />
+              </span>
+              <h2 className="mt-4 text-lg font-semibold text-white">{state === 'left' ? 'You left the call' : 'Call disconnected'}</h2>
+              <p className="mt-1 max-w-sm text-sm text-slate-400">
+                {state === 'error' ? callError : 'You can rejoin while the room is open (until an hour after the scheduled end).'}
+              </p>
+              <div className="mt-6 flex gap-2">
+                <Button onClick={() => setState('prejoin')}>
+                  <RotateCcw className="h-4 w-4" aria-hidden /> Rejoin
+                </Button>
+                <Link href={backHref} className={buttonClasses('secondary')}>Back to NexHire</Link>
+              </div>
+            </div>
+          )}
+        </div>
       </Card>
     </div>
   );

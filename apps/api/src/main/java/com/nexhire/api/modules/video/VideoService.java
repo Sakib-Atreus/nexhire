@@ -1,6 +1,7 @@
 package com.nexhire.api.modules.video;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -9,100 +10,128 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Built-in interview video rooms on Daily.co (https://docs.daily.co/reference/rest-api).
- * Enabled when DAILY_API_KEY is set; otherwise interviews keep using pasted meeting links.
- * Rooms are private: joining needs a meeting token issued by NexHire to a participant.
+ * Built-in interview video rooms on LiveKit (LiveKit Cloud's free plan, or a self-hosted LiveKit server).
+ * Enabled when LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET are set; otherwise interviews keep
+ * using pasted meeting links.
+ *
+ * LiveKit creates a room automatically when the first participant joins, so "creating" a room only
+ * reserves its name. Access is controlled by NexHire: a join token is issued only to the candidate or
+ * the hiring team, and only while the interview's join window is open (see HiringService#joinVideo).
  */
 @Slf4j
 @Service
 public class VideoService {
 
-    public static final String PROVIDER = "DAILY";
+    public static final String PROVIDER = "LIVEKIT";
 
+    private final String serverUrl;
     private final String apiKey;
+    private final String apiSecret;
     private final RestClient client;
 
-    public VideoService(@Value("${video.daily.api-key:}") String apiKey,
-                        @Value("${video.daily.api-url:https://api.daily.co/v1}") String apiUrl) {
+    public VideoService(@Value("${video.livekit.url:}") String serverUrl,
+                        @Value("${video.livekit.api-key:}") String apiKey,
+                        @Value("${video.livekit.api-secret:}") String apiSecret) {
+        this.serverUrl = serverUrl == null ? "" : serverUrl.trim();
         this.apiKey = apiKey == null ? "" : apiKey.trim();
+        this.apiSecret = apiSecret == null ? "" : apiSecret.trim();
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5_000);
         factory.setReadTimeout(10_000);
+        // Server API (Twirp) lives on the same host over http(s): wss://x.livekit.cloud -> https://x.livekit.cloud
         this.client = RestClient.builder()
-            .baseUrl(apiUrl)
+            .baseUrl(this.serverUrl.replaceFirst("^ws", "http"))
             .requestFactory(factory)
-            .defaultHeader("Authorization", "Bearer " + this.apiKey)
             .build();
     }
 
+    /** WebSocket URL the browser connects to, e.g. wss://your-project.livekit.cloud */
+    public String serverUrl() {
+        return serverUrl;
+    }
+
     public boolean isEnabled() {
-        return !apiKey.isEmpty();
+        return !serverUrl.isEmpty() && !apiKey.isEmpty() && !apiSecret.isEmpty();
     }
 
-    /** Create a private room that can be joined between notBefore and expires. */
+    /** Reserve a room for an interview. LiveKit creates it on the first join; no network call needed. */
     public VideoRoom createRoom(String name, Instant notBefore, Instant expires) {
-        Map<String, Object> properties = new LinkedHashMap<>();
-        properties.put("nbf", notBefore.getEpochSecond());
-        properties.put("exp", expires.getEpochSecond());
-        properties.put("eject_at_room_exp", true);
-        properties.put("enable_prejoin_ui", true);
-        properties.put("enable_chat", true);
-        properties.put("enable_screenshare", true);
-        properties.put("max_participants", 10);
-        JsonNode room = call(() -> client.post().uri("/rooms")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(Map.of("name", name, "privacy", "private", "properties", properties))
-            .retrieve().body(JsonNode.class), "create the video room");
-        return new VideoRoom(room.path("name").asText(name), room.path("url").asText());
+        if (!isEnabled()) throw new VideoUnavailableException("Video calls aren't set up on this site");
+        return new VideoRoom(name, serverUrl);
     }
 
-    /** Move the room's join window (after a reschedule). */
+    /** Join windows are enforced when tokens are issued, so a reschedule needs nothing on LiveKit's side. */
     public void updateWindow(String name, Instant notBefore, Instant expires) {
-        if (!isEnabled()) return; // video was switched off since the room was made; nothing to keep in sync
-        call(() -> client.post().uri("/rooms/{name}", name)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(Map.of("properties", Map.of("nbf", notBefore.getEpochSecond(), "exp", expires.getEpochSecond())))
-            .retrieve().body(JsonNode.class), "update the video room");
+        // Nothing to sync.
     }
 
-    /** Best-effort delete (e.g. the interview was cancelled); expired rooms are cleaned up by Daily anyway. */
+    /** Best-effort: close the room if it's live (e.g. the interview was cancelled), disconnecting everyone. */
     public void deleteRoom(String name) {
         if (!isEnabled()) return;
         try {
-            client.delete().uri("/rooms/{name}", name).retrieve().toBodilessEntity();
+            client.post().uri("/twirp/livekit.RoomService/DeleteRoom")
+                .header("Authorization", "Bearer " + serverToken(name))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("room", name))
+                .retrieve().toBodilessEntity();
         } catch (RestClientException e) {
-            log.warn("Could not delete video room {}: {}", name, e.getMessage());
+            // A room that was never joined doesn't exist on LiveKit yet; that's fine.
+            log.debug("LiveKit room {} not deleted: {}", name, e.getMessage());
         }
     }
 
-    /** Short-lived token for one participant. Owners can manage the call (mute, remove, end). */
-    public String createToken(String roomName, String userName, boolean owner, Instant expires) {
-        Map<String, Object> properties = new LinkedHashMap<>();
-        properties.put("room_name", roomName);
-        properties.put("user_name", userName);
-        properties.put("is_owner", owner);
-        properties.put("exp", expires.getEpochSecond());
-        JsonNode token = call(() -> client.post().uri("/meeting-tokens")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(Map.of("properties", properties))
-            .retrieve().body(JsonNode.class), "start the video call");
-        return token.path("token").asText();
-    }
-
-    private JsonNode call(java.util.function.Supplier<JsonNode> request, String action) {
+    /**
+     * Join token for one participant, valid until {@code expires}. Owners (the hiring team) get room-admin
+     * rights so they can mute or remove participants.
+     */
+    public String createToken(String roomName, String identity, String userName, boolean owner, Instant expires) {
         if (!isEnabled()) throw new VideoUnavailableException("Video calls aren't set up on this site");
-        try {
-            JsonNode body = request.get();
-            if (body == null) throw new VideoUnavailableException("We couldn't " + action + ". Please try again.");
-            return body;
-        } catch (RestClientException e) {
-            log.warn("Daily API error while trying to {}: {}", action, e.getMessage());
-            throw new VideoUnavailableException("We couldn't " + action + ". Please try again, or use your own meeting link.");
-        }
+        Map<String, Object> video = new LinkedHashMap<>();
+        video.put("room", roomName);
+        video.put("roomJoin", true);
+        video.put("canPublish", true);
+        video.put("canSubscribe", true);
+        video.put("canPublishData", true);
+        if (owner) video.put("roomAdmin", true);
+        Instant now = Instant.now();
+        return Jwts.builder()
+            .issuer(apiKey)
+            .subject(identity)
+            .claim("name", userName)
+            .claim("video", video)
+            .notBefore(Date.from(now.minus(1, ChronoUnit.MINUTES))) // tolerate small clock differences
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expires))
+            .signWith(signingKey(), Jwts.SIG.HS256) // LiveKit verifies HS256; jjwt would otherwise pick HS384/512 for long secrets
+            .compact();
+    }
+
+    /** Short-lived token for server API calls on one room. */
+    private String serverToken(String roomName) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+            .issuer(apiKey)
+            .subject("nexhire-server")
+            .claim("video", Map.of("room", roomName, "roomAdmin", true, "roomCreate", true))
+            .notBefore(Date.from(now.minus(1, ChronoUnit.MINUTES)))
+            .expiration(Date.from(now.plus(5, ChronoUnit.MINUTES)))
+            .signWith(signingKey(), Jwts.SIG.HS256) // LiveKit verifies HS256; jjwt would otherwise pick HS384/512 for long secrets
+            .compact();
+    }
+
+    private SecretKey signingKey() {
+        // LiveKit secrets are long random strings; HS256 needs at least 32 bytes.
+        byte[] bytes = apiSecret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < 32) throw new VideoUnavailableException("The video service is misconfigured (API secret too short)");
+        return Keys.hmacShaKeyFor(bytes);
     }
 }

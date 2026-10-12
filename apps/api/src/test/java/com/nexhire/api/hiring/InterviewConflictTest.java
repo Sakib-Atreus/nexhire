@@ -108,7 +108,7 @@ class InterviewConflictTest {
     void videoRoom_isCreatedWithAJoinWindowAroundTheInterview() {
         when(videoService.isEnabled()).thenReturn(true);
         when(videoService.createRoom(any(), any(), any()))
-            .thenAnswer(inv -> new com.nexhire.api.modules.video.VideoRoom(inv.getArgument(0), "https://x.daily.co/" + inv.getArgument(0)));
+            .thenAnswer(inv -> new com.nexhire.api.modules.video.VideoRoom(inv.getArgument(0), "wss://test.livekit.cloud"));
         InterviewRequest req = new InterviewRequest(tenAm, 45, InterviewType.VIDEO, null, null, null, true, true);
 
         InterviewDTO dto = hiringService.schedule(app.getId(), req, recruiter);
