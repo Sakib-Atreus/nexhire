@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Link from 'next/link';
 import { AuthSwitchLink } from '@/components/auth/AuthSwitchLink';
 import { useSearchParams } from 'next/navigation';
 import { Building2, Search } from 'lucide-react';
@@ -128,6 +129,11 @@ function RegisterForm() {
       <Button type="submit" size="lg" className="w-full" loading={isPending}>
         {isPending ? 'Creating account…' : 'Create account'}
       </Button>
+      <p className="text-center text-xs leading-relaxed text-fg-muted">
+        By creating an account, you agree to our{' '}
+        <Link href="/terms" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">Terms of Service</Link> and{' '}
+        <Link href="/privacy" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">Privacy Policy</Link>.
+      </p>
     </form>
   );
 }

@@ -55,8 +55,12 @@ export function SiteFooter() {
             </nav>
           ))}
         </div>
-        <div className="mt-10 pt-6 border-t border-slate-800 text-xs text-slate-400">
-          © {new Date().getFullYear()} NexHire. All rights reserved.
+        <div className="mt-10 pt-6 border-t border-slate-800 flex flex-col gap-3 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} NexHire. All rights reserved.</p>
+          <nav aria-label="Legal" className="flex gap-5">
+            <Link href="/privacy" className="hover:text-white transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400">Terms of Service</Link>
+          </nav>
         </div>
       </div>
     </footer>
