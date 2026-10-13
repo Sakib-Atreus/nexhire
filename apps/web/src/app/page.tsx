@@ -4,15 +4,15 @@ import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
-  Bell,
-  Bookmark,
   Building2,
-  ClipboardList,
+  CalendarDays,
   KanbanSquare,
   LayoutDashboard,
   ListChecks,
   Search,
-  SlidersHorizontal,
+  Sparkles,
+  Users,
+  Video,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { buttonClasses } from '@/components/ui/Button';
@@ -20,6 +20,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { HeroSearch } from '@/components/marketing/HeroSearch';
 import { HeroGlow } from '@/components/marketing/HeroGlow';
+import { HeroPreview } from '@/components/marketing/HeroPreview';
 import { LatestJobs, OpenRolesCount } from '@/components/marketing/LatestJobs';
 import { useMounted } from '@/components/marketing/useMounted';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
@@ -27,34 +28,34 @@ import { FeaturedJobs } from '@/components/marketing/FeaturedJobs';
 
 const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
   {
-    icon: SlidersHorizontal,
-    title: 'Focused search',
-    description: 'Filter open roles by keyword, location, company, job type, experience level and salary.',
-  },
-  {
-    icon: Bookmark,
-    title: 'Save for later',
-    description: 'Bookmark interesting roles and come back to them when you are ready to apply.',
+    icon: Sparkles,
+    title: 'Jobs matched to you',
+    description: 'Recommendations ranked by your skills and headline, plus alerts the moment a matching job is posted.',
   },
   {
     icon: ListChecks,
-    title: 'Clear application status',
-    description: 'See where each application stands, from applied and under review to interview and offer.',
+    title: 'Every application in one place',
+    description: 'Follow each application from applied to offer, with a full timeline and messages from the hiring team.',
   },
   {
-    icon: Bell,
-    title: 'Status notifications',
-    description: 'Get notified in the app when a recruiter moves your application forward.',
+    icon: CalendarDays,
+    title: 'Interviews made easy',
+    description: 'Accept or suggest a new time in one click, and keep interviews in sync with Google, Outlook or Apple Calendar.',
   },
   {
-    icon: ClipboardList,
-    title: 'Structured job posts',
-    description: 'Recruiters describe responsibilities, requirements, salary range and deadline in one consistent format.',
+    icon: Video,
+    title: 'Built-in video calls',
+    description: 'Join interviews right in the browser from a private room, with a camera and microphone check first.',
   },
   {
     icon: KanbanSquare,
-    title: 'Applicant pipeline',
-    description: 'Review applicants per job, read cover letters and resumes, and update their status.',
+    title: 'Drag-and-drop pipeline',
+    description: 'Move applicants between stages, rate them, keep private notes and message candidates from one panel.',
+  },
+  {
+    icon: Users,
+    title: 'Built for hiring teams',
+    description: 'Share jobs and applicants with your company team, with analytics for every role you post.',
   },
 ];
 
@@ -102,7 +103,7 @@ export default function HomePage() {
             style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '28px 28px' }}
             aria-hidden
           />
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-28">
+          <div className="relative max-w-7xl mx-auto grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_auto] px-4 sm:px-6 py-16 sm:py-24 lg:py-28">
             <div className="max-w-3xl">
               <OpenRolesCount className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium text-primary-50 mb-6 backdrop-blur dark:border-white/15 dark:shadow-[0_0_24px_-6px_rgba(129,140,248,0.6)]" />
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
@@ -149,6 +150,7 @@ export default function HomePage() {
                 )}
               </div>
             </div>
+            <HeroPreview />
           </div>
         </section>
 

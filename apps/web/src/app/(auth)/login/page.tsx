@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
 import Link from 'next/link';
+import { AuthSwitchLink } from '@/components/auth/AuthSwitchLink';
 import { useSearchParams } from 'next/navigation';
 import { useLogin } from '@/hooks/useAuth';
 import { getErrorMessage } from '@/lib/format';
@@ -93,9 +94,7 @@ export default function LoginPage() {
       footer={
         <>
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
-            Create one
-          </Link>
+          <AuthSwitchLink to="/register">Create one</AuthSwitchLink>
         </>
       }
     >

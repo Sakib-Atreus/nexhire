@@ -4,14 +4,14 @@ import { cn } from '@/lib/cn';
 import { formatDateTime } from './stages';
 
 const RESPONSE_CHIP: Record<InterviewResponse, { icon: LucideIcon; tone: string; suffix: string }> = {
-  AWAITING: { icon: CalendarClock, tone: 'bg-subtle text-fg-secondary ring-slate-500/20', suffix: 'awaiting' },
-  ACCEPTED: { icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', suffix: 'confirmed' },
+  AWAITING: { icon: CalendarClock, tone: 'bg-subtle text-fg-secondary ring-slate-500/20', suffix: 'Awaiting' },
+  ACCEPTED: { icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', suffix: 'Confirmed' },
   NEW_TIME_REQUESTED: { icon: RefreshCw, tone: 'bg-amber-50 text-amber-800 ring-amber-600/20', suffix: 'new time requested' },
   DECLINED: { icon: CalendarX2, tone: 'bg-rose-50 text-rose-700 ring-rose-600/20', suffix: 'declined' },
 };
 
 /**
- * Next scheduled interview with the candidate's response, e.g. "Interview Oct 10, 2:30 PM · awaiting"
+ * Next scheduled interview with the candidate's response, e.g. "Oct 10, 2:30 PM · Awaiting"
  * (local time). New time requested / declined replace the date because they need the recruiter's action.
  */
 export function InterviewChip({ at, response, className }: { at?: string | null; response?: InterviewResponse | null; className?: string }) {
@@ -22,7 +22,8 @@ export function InterviewChip({ at, response, className }: { at?: string | null;
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset whitespace-nowrap',
+        // Wraps instead of overflowing narrow pipeline cards.
+        'inline-flex max-w-full items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium leading-4 ring-1 ring-inset',
         r.tone,
         className
       )}
@@ -35,8 +36,9 @@ export function InterviewChip({ at, response, className }: { at?: string | null;
           <span className="sr-only"> for the interview on <time dateTime={at}>{formatDateTime(at)}</time></span>
         </span>
       ) : (
-        <span>
-          Interview <time dateTime={at}>{formatDateTime(at)}</time> · {r.suffix}
+        <span className="min-w-0">
+          <span className="sr-only">Interview </span>
+          <time dateTime={at}>{formatDateTime(at)}</time> · {r.suffix}
         </span>
       )}
     </span>

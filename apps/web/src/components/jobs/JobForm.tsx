@@ -139,7 +139,7 @@ function defaultsFrom(job?: Job): FormInput {
     experienceLevel: job?.experienceLevel ?? 'MID',
     status: job?.status,
     openings: job?.openings ?? 1,
-    salaryCurrency: job?.salaryCurrency || 'USD',
+    salaryCurrency: job?.salaryCurrency || defaultCurrency(),
     salaryMin: job?.salaryMin ?? '',
     salaryMax: job?.salaryMax ?? '',
     description: job?.description ?? '',
@@ -205,6 +205,23 @@ function Section({ step, icon: Icon, title, description, children, bodyClassName
 }
 
 /** How the posting will look in search results, updated as the recruiter types. */
+/** New jobs default to the poster's local currency (from the browser's time zone), falling back to USD. */
+function defaultCurrency(): string {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+    const byZone: Record<string, string> = {
+      'Asia/Dhaka': 'BDT', 'Asia/Kolkata': 'INR', 'Asia/Calcutta': 'INR', 'Asia/Singapore': 'SGD', 'Asia/Dubai': 'AED', 'Europe/London': 'GBP',
+    };
+    if (byZone[zone]) return byZone[zone];
+    if (zone.startsWith('Europe/')) return 'EUR';
+    if (zone.startsWith('Australia/')) return 'AUD';
+    if (zone === 'America/Toronto' || zone === 'America/Vancouver') return 'CAD';
+  } catch {
+    /* fall through */
+  }
+  return 'USD';
+}
+
 function PreviewCard({ v }: { v: FormInput }) {
   const toNum = (x: unknown) => {
     const n = Number(String(x ?? '').replace(/[,\s]/g, ''));
@@ -690,7 +707,7 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
       </div>
 
       {/* Side panel: sticky on desktop, stacked after the form on smaller screens. */}
-      <aside className="min-w-0 space-y-4 lg:sticky lg:top-24" aria-label="Preview and publish">
+      <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-24" aria-label="Preview and publish">
         <Card className="p-4 sm:p-5">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Preview</h2>
           <p className="mt-0.5 mb-3 text-xs text-fg-subtle">How candidates will see this job in search.</p>
@@ -701,7 +718,8 @@ export function JobForm({ mode, job, onSubmit, isSubmitting, serverError, cancel
           <Checklist v={values} />
         </Card>
 
-        <Card className="p-4 sm:p-5">
+        {/* Publish/save first on desktop so the buttons stay on screen while the panel is sticky. */}
+        <Card className="p-4 sm:p-5 lg:order-first">
           {Object.keys(errors).length > 0 && (
             <p className="mb-3 flex items-start gap-2 text-xs text-rose-600" role="alert">
               <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden />

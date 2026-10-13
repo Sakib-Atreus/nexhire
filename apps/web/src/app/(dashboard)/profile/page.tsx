@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Camera, LinkIcon, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useMe, useUpdateProfile } from '@/hooks/useProfile';
+import { useResendVerification } from '@/hooks/useAuth';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { SkillsInput } from '@/components/ui/SkillsInput';
 import { Avatar } from '@/components/ui/Avatar';
@@ -131,6 +132,7 @@ function PhotoPicker({ user }: { user: User }) {
 export default function ProfilePage() {
   const { data: user, isLoading, isError, error, refetch, isRefetching } = useMe();
   const { mutate: updateProfile, isPending } = useUpdateProfile();
+  const resendVerification = useResendVerification();
   const openToWorkLabelId = useId();
 
   const {
@@ -217,7 +219,22 @@ export default function ProfilePage() {
                     {user.emailVerified ? (
                       <Badge tone="bg-emerald-50 text-emerald-700 ring-emerald-600/20">Verified</Badge>
                     ) : (
-                      <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">Not verified</Badge>
+                      <span className="flex items-center gap-2">
+                        <Badge tone="bg-amber-50 text-amber-700 ring-amber-600/20">Not verified</Badge>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            resendVerification.mutate(undefined, {
+                              onSuccess: () => toast.success('Verification email sent', `Check ${user.email} for the link.`),
+                              onError: (err) => toast.error('Couldn’t send the email', getErrorMessage(err)),
+                            })
+                          }
+                          disabled={resendVerification.isPending || resendVerification.isSuccess}
+                          className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline disabled:opacity-60 disabled:no-underline"
+                        >
+                          {resendVerification.isSuccess ? 'Sent' : resendVerification.isPending ? 'Sending…' : 'Verify'}
+                        </button>
+                      </span>
                     )}
                   </dd>
                 </div>

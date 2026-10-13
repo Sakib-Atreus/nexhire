@@ -104,7 +104,7 @@ export function EducationEditor() {
   return (
     <ProfileListEditor<Education>
       title="Education"
-      description="Degrees, diplomas and certifications."
+      description="Degrees, diplomas and certifications. Changes here save automatically."
       icon={GraduationCap}
       noun="education"
       emptyDescription="Add your schools and degrees."

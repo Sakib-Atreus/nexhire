@@ -9,7 +9,6 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { AttentionStrip } from '@/components/admin/overview/AttentionStrip';
 import { DailyColumnChart } from '@/components/admin/overview/DailyColumnChart';
 import { OverviewSkeleton } from '@/components/admin/overview/OverviewSkeleton';
-import { QuickLinks } from '@/components/admin/overview/QuickLinks';
 import { RoleBreakdown } from '@/components/admin/overview/RoleBreakdown';
 import { TopCompanies } from '@/components/admin/overview/TopCompanies';
 import { pluralize } from '@/lib/format';
@@ -106,8 +105,6 @@ export default function AdminOverviewPage() {
             <CardHeader title="Top companies" description="Most active employers. Select a company to see its jobs." />
             <TopCompanies companies={data.topCompanies} />
           </Card>
-
-          <QuickLinks />
         </div>
       )}
     </div>

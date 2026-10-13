@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
-import { ExternalLink, FileText, Mail, X } from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { ArrowRight, CalendarPlus, ExternalLink, FileText, Mail, MessageSquare, X } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@/types';
 import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_STYLES } from '@/lib/constants';
 import { cn } from '@/lib/cn';
@@ -11,6 +11,7 @@ import { buttonClasses } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Field';
 import { StarRatingInput } from '@/components/pipeline/StarRating';
 import { MOVE_TARGETS } from '@/components/pipeline/stages';
+import { PIPELINE_STAGES } from '@/lib/constants';
 import { OverviewTab } from './OverviewTab';
 import { NotesTab } from './NotesTab';
 import { MessagesTab, type MessageDraft } from './MessagesTab';
@@ -44,6 +45,9 @@ export function ApplicantDrawer({ app, onClose }: {
   const [tab, setTab] = useState<Tab>('overview');
   const [messageDraft, setMessageDraft] = useState<MessageDraft | null>(null);
   const [targetStatus, setTargetStatus] = useState<ApplicationStatus | null>(null);
+  const [scheduleRequest, setScheduleRequest] = useState(0);
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const clearScheduleRequest = useCallback(() => setScheduleRequest(0), []);
 
   // Reset to Overview when switching applicants.
   const appId = app?.id;
@@ -51,7 +55,13 @@ export function ApplicantDrawer({ app, onClose }: {
     setTab('overview');
     setMessageDraft(null);
     setTargetStatus(null);
+    setScheduleRequest(0);
   }, [appId]);
+
+  // Keep the selected tab visible in the scrollable tab bar.
+  useEffect(() => {
+    tabListRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [tab]);
 
   /** Open the Messages tab with the composer pre-filled (e.g. an interview reminder). */
   function composeMessage(text: string) {
@@ -99,6 +109,10 @@ export function ApplicantDrawer({ app, onClose }: {
   if (!app) return null;
 
   const withdrawn = app.status === 'WITHDRAWN';
+  // The next pipeline stage, for the one-click "Move to …" shortcut (none once hired or not selected).
+  const stageIndex = PIPELINE_STAGES.findIndex((s) => s.status === app.status);
+  const nextStage = stageIndex >= 0 && stageIndex < PIPELINE_STAGES.length - 1 ? PIPELINE_STAGES[stageIndex + 1] : null;
+  const closed = withdrawn || app.status === 'REJECTED' || app.status === 'HIRED';
   const tabs: { id: Tab; label: string; count?: number | null }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'profile', label: 'Profile' },
@@ -186,10 +200,31 @@ export function ApplicantDrawer({ app, onClose }: {
               </a>
             )}
           </div>
+          {!closed && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" className={buttonClasses('primary', 'sm')} onClick={() => { setTab('interviews'); setScheduleRequest(Date.now()); }}>
+                <CalendarPlus className="w-3.5 h-3.5" aria-hidden /> Schedule interview
+              </button>
+              <button type="button" className={buttonClasses('secondary', 'sm')} onClick={() => setTab('messages')}>
+                <MessageSquare className="w-3.5 h-3.5" aria-hidden /> Message
+              </button>
+              {nextStage && (
+                <button type="button" className={buttonClasses('secondary', 'sm')} onClick={() => setTargetStatus(nextStage.status)}>
+                  Move to {nextStage.label} <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Applicant sections" onKeyDown={onTabKey} className="flex gap-1 px-2 sm:px-4 border-b border-line overflow-x-auto">
+        <div
+          ref={tabListRef}
+          role="tablist"
+          aria-label="Applicant sections"
+          onKeyDown={onTabKey}
+          className="flex gap-0.5 px-2 sm:px-3 border-b border-line overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {tabs.map((t) => {
             const selected = tab === t.id;
             return (
@@ -203,7 +238,7 @@ export function ApplicantDrawer({ app, onClose }: {
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'relative flex-shrink-0 px-3 py-2.5 text-sm font-medium inline-flex items-center gap-1.5 border-b-2 -mb-px focus:outline-none focus-visible:bg-muted',
+                  'relative flex-shrink-0 px-2.5 py-2.5 text-[13px] sm:text-sm font-medium inline-flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap focus:outline-none focus-visible:bg-muted',
                   selected ? 'border-primary-600 text-primary-700' : 'border-transparent text-fg-muted hover:text-fg-soft'
                 )}
               >
@@ -231,7 +266,7 @@ export function ApplicantDrawer({ app, onClose }: {
           {tab === 'notes' && <NotesTab applicationId={app.id} candidateName={app.candidateName} />}
           {tab === 'messages' && <MessagesTab applicationId={app.id} candidateName={app.candidateName} draft={messageDraft} onDraftUsed={() => setMessageDraft(null)} />}
           {tab === 'interviews' && (
-            <InterviewsTab applicationId={app.id} candidateName={app.candidateName} readOnly={withdrawn} onSendReminder={composeMessage} />
+            <InterviewsTab applicationId={app.id} candidateName={app.candidateName} readOnly={withdrawn} onSendReminder={composeMessage} scheduleRequest={scheduleRequest} onScheduleRequestHandled={clearScheduleRequest} />
           )}
         </div>
       </div>

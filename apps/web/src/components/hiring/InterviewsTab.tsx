@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlarmClock, CalendarCheck, CalendarPlus, CalendarX2, CheckCircle2, Clock, MapPin, Phone, RefreshCw, Send, Video, XCircle, type LucideIcon,
 } from 'lucide-react';
@@ -225,10 +225,13 @@ function ResponseDetails({ iv, firstName, readOnly, onPropose, onCancel, onRemin
   }
 }
 
-export function InterviewsTab({ applicationId, candidateName, readOnly, onSendReminder }: {
+export function InterviewsTab({ applicationId, candidateName, readOnly, onSendReminder, scheduleRequest, onScheduleRequestHandled }: {
   applicationId: string;
   candidateName: string;
   readOnly?: boolean;
+  /** Changes when the drawer's "Schedule interview" shortcut is used; opens the scheduler. */
+  scheduleRequest?: number;
+  onScheduleRequestHandled?: () => void;
   /** Switch to Messages with this text in the composer. */
   onSendReminder?: (text: string) => void;
 }) {
@@ -237,6 +240,13 @@ export function InterviewsTab({ applicationId, candidateName, readOnly, onSendRe
   const update = useUpdateInterview();
   const [scheduling, setScheduling] = useState(false);
   const [editing, setEditing] = useState<Interview | undefined>();
+  useEffect(() => {
+    if (scheduleRequest && !readOnly) {
+      setEditing(undefined);
+      setScheduling(true);
+      onScheduleRequestHandled?.();
+    }
+  }, [scheduleRequest, readOnly, onScheduleRequestHandled]);
   const [cancelling, setCancelling] = useState<Interview | null>(null);
 
   const list = [...(interviews.data ?? [])].sort((a, b) => {

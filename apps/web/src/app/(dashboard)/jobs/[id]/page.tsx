@@ -184,16 +184,31 @@ interface PanelProps {
 
 function ActionPanel({ job, role, isOwner, canManage, application, applicationLoading, onApply }: PanelProps) {
   const deadline = getDeadline(job);
-  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const isCandidate = role === 'CANDIDATE';
+  const isGuest = !role;
+  const signInHref = `/login?next=${encodeURIComponent(`/jobs/${job.id}`)}`;
+  const registerHref = `/register?next=${encodeURIComponent(`/jobs/${job.id}`)}`;
+
+  // Salary is already in the header; the panel summarises the facts people compare jobs on.
+  const facts: { label: string; value: string }[] = [
+    { label: 'Job type', value: JOB_TYPE_LABELS[job.jobType] },
+    { label: 'Experience', value: EXPERIENCE_LABELS[job.experienceLevel] },
+    ...(job.openings ? [{ label: 'Openings', value: pluralize(job.openings, 'position') }] : []),
+    { label: 'Posted', value: timeAgo(job.createdAt) },
+  ];
 
   return (
     <Card className="p-5 space-y-5">
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Salary</p>
-        <p className={cn('mt-1 font-semibold', salary ? 'text-lg text-fg' : 'text-sm text-fg-muted')}>
-          {salary ?? 'Not disclosed'}
-        </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Job overview</p>
+        <dl className="mt-3 space-y-2.5">
+          {facts.map((f) => (
+            <div key={f.label} className="flex items-center justify-between gap-3 text-sm">
+              <dt className="text-fg-muted">{f.label}</dt>
+              <dd className="font-medium text-fg text-right">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
       {(job.deadline || deadline.closed) && (
@@ -211,6 +226,16 @@ function ActionPanel({ job, role, isOwner, canManage, application, applicationLo
               {deadline.label}
             </p>
           )}
+        </div>
+      )}
+
+      {isGuest && !deadline.closed && (
+        <div className="space-y-2 border-t border-line-subtle pt-5">
+          <Link href={signInHref} className={buttonClasses('primary', 'lg', 'w-full')}>Sign in to apply</Link>
+          <p className="text-center text-xs text-fg-muted">
+            New to NexHire?{' '}
+            <Link href={registerHref} className="font-medium text-primary-600 hover:text-primary-700">Create a free account</Link>
+          </p>
         </div>
       )}
 
@@ -257,15 +282,22 @@ function ActionPanel({ job, role, isOwner, canManage, application, applicationLo
   );
 }
 
-function MobileApplyBar({ job, application, applicationLoading, onApply }: {
+function MobileApplyBar({ job, application, applicationLoading, onApply, guest = false }: {
   job: Job;
   application?: Application;
   applicationLoading: boolean;
   onApply: () => void;
+  /** Signed-out visitor: no bottom tab bar, and the button leads to sign-in. */
+  guest?: boolean;
 }) {
   const deadline = getDeadline(job);
   return (
-    <div className="lg:hidden fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t border-line bg-surface/95 backdrop-blur px-4 py-3">
+    <div
+      className={cn(
+        'lg:hidden fixed inset-x-0 z-20 border-t border-line bg-surface/95 backdrop-blur px-4 py-3',
+        guest ? 'bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
+      )}
+    >
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         <div className="min-w-0 flex-1">
           {application ? (
@@ -286,8 +318,14 @@ function MobileApplyBar({ job, application, applicationLoading, onApply }: {
             </>
           )}
         </div>
-        <SaveButton job={job} compact />
-        {application ? (
+        {!guest && <SaveButton job={job} compact />}
+        {guest ? (
+          deadline.closed ? (
+            <Button disabled>Closed</Button>
+          ) : (
+            <Link href={`/login?next=${encodeURIComponent(`/jobs/${job.id}`)}`} className={buttonClasses('primary')}>Sign in to apply</Link>
+          )
+        ) : application ? (
           <Link href="/applications" className={buttonClasses('secondary')}>Track</Link>
         ) : (
           <Button onClick={onApply} disabled={deadline.closed || applicationLoading}>
@@ -388,7 +426,8 @@ export default function JobDetailPage() {
   const descParagraphs = paragraphs(job.description);
   const responsibilities = toListItems(job.responsibilities);
   const requirements = toListItems(job.requirements);
-  const showMobileBar = isCandidate;
+  const isGuest = !user;
+  const showMobileBar = isCandidate || isGuest;
   // Signed-out visitors get a sign-in link; owners and admins can't report.
   const canReport = !isOwner && !isAdmin;
 
@@ -591,7 +630,7 @@ export default function JobDetailPage() {
       {showMobileBar && (
         <>
           <div className="h-20 lg:hidden" aria-hidden />
-          <MobileApplyBar job={job} application={application} applicationLoading={applicationLoading} onApply={openApply} />
+          <MobileApplyBar job={job} application={application} applicationLoading={applicationLoading} onApply={openApply} guest={isGuest} />
         </>
       )}
 

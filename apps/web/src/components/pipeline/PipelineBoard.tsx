@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -210,12 +210,12 @@ function Column({ status, label, apps, onOpen, onMove, suppressClick, highlight 
           <span className="sr-only"> applicant{apps.length === 1 ? '' : 's'}</span>
         </span>
       </header>
-      <ul className="flex-1 px-2 pb-2 space-y-2 min-h-[8rem]">
+      <ul className="flex-1 px-2 pb-2 space-y-2">
         {apps.map((a) => (
           <BoardCard key={a.id} app={a} onOpen={onOpen} onMove={onMove} suppressClick={suppressClick} />
         ))}
         {apps.length === 0 && (
-          <li className="h-24 rounded-lg border-2 border-dashed border-line flex items-center justify-center text-xs text-fg-subtle">
+          <li className="h-20 rounded-lg border-2 border-dashed border-line flex items-center justify-center text-xs text-fg-subtle">
             Drop applicants here
           </li>
         )}
@@ -257,7 +257,7 @@ function RejectedColumn({ apps, expanded, onToggle, onOpen, onMove, suppressClic
             <ChevronRight className="w-4 h-4" aria-hidden />
           </button>
         </header>
-        <ul className="flex-1 px-2 pb-2 space-y-2 min-h-[8rem]">
+        <ul className="flex-1 px-2 pb-2 space-y-2">
           {apps.map((a) => (
             <BoardCard key={a.id} app={a} onOpen={onOpen} onMove={onMove} suppressClick={suppressClick} />
           ))}
@@ -388,6 +388,18 @@ export function PipelineBoard({ apps, withdrawn, onOpen, onMove }: {
     if (status !== app.status) onMove(app, status);
   }
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [moreRight, setMoreRight] = useState(false);
+  function updateScrollHint() {
+    const el = scrollRef.current;
+    if (el) setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }
+  useEffect(() => {
+    updateScrollHint();
+    window.addEventListener('resize', updateScrollHint);
+    return () => window.removeEventListener('resize', updateScrollHint);
+  }, []);
+
   return (
     <>
       <DndContext
@@ -404,13 +416,17 @@ export function PipelineBoard({ apps, withdrawn, onOpen, onMove }: {
           },
         }}
       >
+        <div className="relative">
         <div
+          ref={scrollRef}
+          onScroll={updateScrollHint}
           role="region"
           aria-label="Hiring pipeline board"
           tabIndex={0}
           className="relative -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto pb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-xl"
         >
-          <div className="flex gap-3 items-stretch">
+          {/* Columns keep their own height, so empty stages stay compact. */}
+          <div className="flex gap-3 items-start">
             {PIPELINE_STAGES.map((s) => (
               <Column
                 key={s.status}
@@ -432,6 +448,11 @@ export function PipelineBoard({ apps, withdrawn, onOpen, onMove }: {
               suppressClick={suppressClick}
             />
           </div>
+        </div>
+        {/* Fade on the right while more columns are off-screen. */}
+        {moreRight && (
+          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-12 rounded-r-xl bg-gradient-to-l from-canvas to-transparent sm:block" aria-hidden />
+        )}
         </div>
         <DragOverlay dropAnimation={null}>
           {active ? (

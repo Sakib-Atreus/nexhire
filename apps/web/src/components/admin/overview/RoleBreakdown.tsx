@@ -38,9 +38,10 @@ export function RoleBreakdown({ counts }: { counts: Record<Role, number> }) {
               className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-2 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               <span className={cn('w-2.5 h-2.5 rounded-sm flex-shrink-0', ROLE_BAR[r])} aria-hidden />
-              <span className="min-w-0 flex-1 text-sm text-fg-tertiary truncate" title={ROLE_LABELS[r]}>{ROLE_PLURALS[r]}</span>
+              {/* Count sits right after its label, so it reads as one phrase on wide screens. */}
+              <span className="min-w-0 text-sm text-fg-tertiary truncate" title={ROLE_LABELS[r]}>{ROLE_PLURALS[r]}</span>
               <span className="tabular-nums text-sm font-semibold text-fg">{counts[r].toLocaleString('en-US')}</span>
-              <span className="tabular-nums text-xs text-fg-subtle w-9 text-right">{Math.round(pct(counts[r]))}%</span>
+              <span className="tabular-nums text-xs text-fg-subtle">({Math.round(pct(counts[r]))}%)</span>
             </Link>
           </li>
         ))}

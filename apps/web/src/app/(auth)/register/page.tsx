@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Link from 'next/link';
+import { AuthSwitchLink } from '@/components/auth/AuthSwitchLink';
 import { useSearchParams } from 'next/navigation';
 import { Building2, Search } from 'lucide-react';
 import { useRegister } from '@/hooks/useAuth';
@@ -140,9 +140,7 @@ export default function RegisterPage() {
       footer={
         <>
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-primary-600 hover:text-primary-700 hover:underline">
-            Sign in
-          </Link>
+          <AuthSwitchLink to="/login">Sign in</AuthSwitchLink>
         </>
       }
     >

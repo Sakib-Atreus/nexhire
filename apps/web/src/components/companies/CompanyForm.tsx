@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, type ChangeEvent } from 'react';
+import { Upload } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +11,9 @@ import { COMPANY_SIZES, COMPANY_SIZE_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input, Select, Textarea } from '@/components/ui/Field';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import { toast } from '@/store/toastStore';
+import { getErrorMessage } from '@/lib/format';
 
 const DESCRIPTION_MAX = 5000;
 
@@ -31,7 +35,11 @@ const httpsUrl = (label: string) =>
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter the company name').max(255, 'Name must be 255 characters or fewer'),
   website: httpsUrl('Website'),
-  logoUrl: httpsUrl('Logo URL'),
+  logoUrl: z
+    .string()
+    .trim()
+    .max(500, 'Logo URL must be 500 characters or fewer')
+    .refine((v) => !v || /^https?:\/\/.+/.test(v), 'Logo must be a full web address, or upload an image'),
   industry: z.string().trim().max(100, 'Industry must be 100 characters or fewer'),
   size: z.union([z.enum(COMPANY_SIZES), z.literal('')]),
   headquarters: z.string().trim().max(255, 'Headquarters must be 255 characters or fewer'),
@@ -77,7 +85,7 @@ export function CompanyForm({ company, mode, submitting, onSubmit }: {
   onSubmit: (input: CompanyInput) => Promise<boolean>;
 }) {
   const {
-    register, handleSubmit, reset, watch, formState: { errors, isDirty },
+    register, handleSubmit, reset, watch, setValue, formState: { errors, isDirty },
   } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: toValues(company) });
 
   // Re-sync when the saved company changes (e.g. a teammate edited it and the query refetched)
@@ -98,7 +106,21 @@ export function CompanyForm({ company, mode, submitting, onSubmit }: {
   const name = watch('name');
   const logoUrl = watch('logoUrl');
   const description = watch('description') ?? '';
-  const logoValid = !errors.logoUrl && /^https:\/\/.+/.test(logoUrl?.trim() ?? '');
+  const logoValid = !errors.logoUrl && /^https?:\/\/.+/.test(logoUrl?.trim() ?? '');
+  const upload = useFileUpload();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function onLogoFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return toast.error('Choose an image', 'PNG, JPG or WebP work best.');
+    if (file.size > 5 * 1024 * 1024) return toast.error('Image is too large', 'Use an image under 5 MB.');
+    upload.mutate(file, {
+      onSuccess: ({ url }) => setValue('logoUrl', url, { shouldDirty: true, shouldValidate: true }),
+      onError: (err) => toast.error('Couldn’t upload the logo', getErrorMessage(err)),
+    });
+  }
 
   const submit = handleSubmit(async (values) => {
     const ok = await onSubmit(toInput(values));
@@ -116,16 +138,28 @@ export function CompanyForm({ company, mode, submitting, onSubmit }: {
           {(id) => <Input id={id} type="url" inputMode="url" {...register('website')} invalid={!!errors.website} placeholder="https://" />}
         </FormField>
 
-        <FormField label="Logo URL" error={errors.logoUrl?.message} hint="A square image works best.">
+        <FormField label="Logo" error={errors.logoUrl?.message} hint="A square image works best (PNG, JPG or WebP, up to 5 MB).">
           {(id) => (
-            <div className="flex items-center gap-3">
-              <CompanyLogo
-                key={logoValid ? logoUrl : 'fallback'}
-                name={name?.trim() || 'Company'}
-                src={logoValid ? logoUrl.trim() : null}
-                size="sm"
-              />
-              <Input id={id} type="url" inputMode="url" {...register('logoUrl')} invalid={!!errors.logoUrl} placeholder="https://" className="min-w-0" />
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <CompanyLogo
+                  key={logoValid ? logoUrl : 'fallback'}
+                  name={name?.trim() || 'Company'}
+                  src={logoValid ? logoUrl.trim() : null}
+                  size="md"
+                />
+                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={onLogoFile} tabIndex={-1} aria-hidden />
+                <Button type="button" variant="secondary" size="sm" loading={upload.isPending} onClick={() => fileRef.current?.click()}>
+                  {!upload.isPending && <Upload className="w-3.5 h-3.5" aria-hidden />}
+                  {logoValid ? 'Replace logo' : 'Upload logo'}
+                </Button>
+                {logoValid && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setValue('logoUrl', '', { shouldDirty: true, shouldValidate: true })}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              <Input id={id} type="url" inputMode="url" {...register('logoUrl')} invalid={!!errors.logoUrl} placeholder="Or paste an image link (https://…)" className="min-w-0 text-xs" />
             </div>
           )}
         </FormField>

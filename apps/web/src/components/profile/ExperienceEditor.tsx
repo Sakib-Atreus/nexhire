@@ -110,7 +110,7 @@ export function ExperienceEditor() {
   return (
     <ProfileListEditor<WorkExperience>
       title="Work experience"
-      description="Your roles, most recent first. Reorder with the arrows."
+      description="Your roles, most recent first. Reorder with the arrows. Changes here save automatically."
       icon={Briefcase}
       noun="role"
       emptyDescription="Add the roles you've held so recruiters can see your track record."

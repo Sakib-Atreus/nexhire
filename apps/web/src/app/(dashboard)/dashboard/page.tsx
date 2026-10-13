@@ -18,7 +18,6 @@ import { Badge } from '@/components/ui/Badge';
 import { buttonClasses } from '@/components/ui/Button';
 import { EmptyState, ErrorState, Skeleton, Spinner } from '@/components/ui/States';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { UpcomingInterviewsCard } from '@/components/interviews/UpcomingInterviewsCard';
 import { CalendarWidget } from '@/components/calendar/CalendarWidget';
 import { PipelineBars, statsToCounts, type StatusCounts } from '@/components/dashboard/PipelineBars';
 import { getProfileCompleteness } from '@/components/profile/completeness';
@@ -99,8 +98,8 @@ function CandidateDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Applications" value={myStats.isError ? null : total} icon={Send} href="/applications" hint="All time" />
         <StatCard label="In progress" value={myStats.isError ? null : inProgress} icon={Clock} tone="bg-sky-50 text-sky-600" hint="Awaiting a decision" />
-        <StatCard label="Offers & hires" value={myStats.isError ? null : counts ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" />
-        <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" />
+        <StatCard label="Offers & hires" value={myStats.isError ? null : counts ? counts.OFFERED + counts.HIRED : undefined} icon={Trophy} tone="bg-emerald-50 text-emerald-600" hint="Offers received and jobs won" />
+        <StatCard label="Saved jobs" value={saved.isError ? null : saved.data?.totalElements} icon={Bookmark} tone="bg-amber-50 text-amber-600" href="/jobs/saved" hint="Bookmarked for later" />
       </div>
 
       <CalendarWidget recruiter={false} />
@@ -118,7 +117,7 @@ function CandidateDashboard() {
         <RecommendedJobs size={6} grid />
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <Card className="lg:col-span-2 overflow-hidden">
           <CardHeader title="Recent applications" description="Your latest submissions and where they stand" action={list.length > 0 ? <ViewAll href="/applications" /> : undefined} />
           {apps.isLoading ? (
@@ -154,7 +153,6 @@ function CandidateDashboard() {
         </Card>
 
         <div className="space-y-6">
-          <UpcomingInterviewsCard viewer="CANDIDATE" />
           {completeness && completeness.percent < 100 ? (
             <NextStep
               title="Complete your profile"
@@ -230,7 +228,7 @@ function RecruiterDashboard() {
 
       <CalendarWidget recruiter />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <Card className="lg:col-span-2 overflow-hidden">
           <CardHeader title="Recent applicants" description="Latest candidates across your job posts" />
           {recent.isLoading ? (
@@ -269,7 +267,6 @@ function RecruiterDashboard() {
         </Card>
 
         <div className="space-y-6">
-          <UpcomingInterviewsCard viewer="RECRUITER" />
           {noJobs ? (
             <NextStep title="Post your first job" description="Describe the role and start receiving applications from candidates.">
               <Link href="/jobs/create" className={buttonClasses('primary', 'sm')}><Plus className="w-4 h-4" aria-hidden /> Post a job</Link>

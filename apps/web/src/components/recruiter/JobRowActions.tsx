@@ -22,7 +22,7 @@ const menuItem =
 
 /**
  * Per-row actions for a hiring-team job: applicants, publish/close/reopen, analytics, edit,
- * plus a "more" menu (view, duplicate, delete). useUpdateJob is bound to a single job id.
+ * plus a "more" menu (view, duplicate, close, delete). useUpdateJob is bound to a single job id.
  */
 export function JobRowActions({ job, onDelete }: { job: Job; onDelete: (job: Job) => void }) {
   const router = useRouter();
@@ -103,24 +103,23 @@ export function JobRowActions({ job, onDelete }: { job: Job; onDelete: (job: Job
         {pluralize(applicants, 'applicant')}
       </Link>
 
-      {(canClose || canOpen) && (
+      {/* Publish / Reopen stay visible; closing a live job is in the "more" menu so it isn't hit by accident. */}
+      {canOpen && (
         <Button
           variant={isDraft ? 'primary' : 'secondary'}
           size="sm"
-          onClick={() => setStatus(canClose ? 'CLOSED' : 'OPEN')}
+          onClick={() => setStatus('OPEN')}
           disabled={update.isPending}
-          aria-label={canClose ? `Close ${job.title}` : `${openLabel} ${job.title}`}
+          aria-label={`${openLabel} ${job.title}`}
         >
           {update.isPending ? (
             <Spinner className={cn('w-3.5 h-3.5', isDraft ? 'text-white' : 'text-fg-muted')} />
-          ) : canClose ? (
-            <Lock className="w-3.5 h-3.5" aria-hidden />
           ) : isDraft ? (
             <Send className="w-3.5 h-3.5" aria-hidden />
           ) : (
             <RotateCcw className="w-3.5 h-3.5" aria-hidden />
           )}
-          <span className={isDraft ? undefined : 'hidden sm:inline'}>{canClose ? 'Close' : openLabel}</span>
+          <span className={isDraft ? undefined : 'hidden sm:inline'}>{openLabel}</span>
         </Button>
       )}
 
@@ -161,6 +160,11 @@ export function JobRowActions({ job, onDelete }: { job: Job; onDelete: (job: Job
             <button type="button" role="menuitem" className={menuItem} onClick={duplicateJob}>
               <Copy className="w-4 h-4 text-fg-subtle" aria-hidden /> Duplicate
             </button>
+            {canClose && (
+              <button type="button" role="menuitem" className={menuItem} onClick={() => { closeMenu(false); setStatus('CLOSED'); }} disabled={update.isPending}>
+                <Lock className="w-4 h-4 text-fg-subtle" aria-hidden /> Close job
+              </button>
+            )}
             <div className="my-1 border-t border-line-subtle" role="separator" />
             <button
               type="button"

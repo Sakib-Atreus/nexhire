@@ -7,6 +7,16 @@ import { useAuthStore } from '@/store/authStore';
 import type { AuthResponse, Role } from '@/types';
 
 interface LoginData { email: string; password: string }
+
+/**
+ * Where to go after signing in or up: `?next=/jobs/123` (set by "Sign in to apply") when it's a safe
+ * in-app path, otherwise the dashboard.
+ */
+function nextPath(): string {
+  if (typeof window === 'undefined') return '/dashboard';
+  const next = new URLSearchParams(window.location.search).get('next');
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+}
 interface RegisterData { email: string; password: string; firstName: string; lastName: string; role: Role }
 
 export function useLogin() {
@@ -17,7 +27,7 @@ export function useLogin() {
     mutationFn: (data: LoginData) => api.post<AuthResponse>('/auth/login', data).then((r) => r.data),
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken, data.refreshToken);
-      router.push('/dashboard');
+      router.push(nextPath());
     },
   });
 }
@@ -30,7 +40,7 @@ export function useRegister() {
     mutationFn: (data: RegisterData) => api.post<AuthResponse>('/auth/register', data).then((r) => r.data),
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken, data.refreshToken);
-      router.push('/dashboard');
+      router.push(nextPath());
     },
   });
 }
