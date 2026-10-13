@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { buttonClasses } from '@/components/ui/Button';
+import { Reveal } from './Reveal';
 
 /*
  * Interactive "How it works": two audiences, three steps each. Each step's preview is a small working
@@ -530,13 +531,13 @@ export function HowItWorks() {
       className="py-16 sm:py-24 bg-surface"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold text-primary-600">How it works</p>
           <h2 id="how-heading" className="mt-2 text-2xl font-bold tracking-tight text-fg sm:text-3xl">
             From first click to first day
           </h2>
           <p className="mt-3 text-base text-fg-muted sm:text-lg">Three steps, whichever side of hiring you’re on. Try them below.</p>
-        </div>
+        </Reveal>
 
         {/* Audience tabs */}
         <div className="mt-8 flex justify-center">
@@ -561,7 +562,7 @@ export function HowItWorks() {
           </div>
         </div>
 
-        <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-12">
+        <Reveal delay={120} className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-12">
           {/* Steps (desktop: vertical timeline) */}
           <div className="hidden lg:block">
           <ol className="relative">
@@ -697,7 +698,7 @@ export function HowItWorks() {
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

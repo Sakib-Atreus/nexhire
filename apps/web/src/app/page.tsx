@@ -24,6 +24,7 @@ import { LatestJobs, OpenRolesCount } from '@/components/marketing/LatestJobs';
 import { useMounted } from '@/components/marketing/useMounted';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
 import { FeaturedJobs } from '@/components/marketing/FeaturedJobs';
+import { Reveal, stagger } from '@/components/marketing/Reveal';
 
 const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
   {
@@ -136,23 +137,27 @@ export default function HomePage() {
         {/* Features */}
         <section aria-labelledby="features-heading" className="py-16 sm:py-24 bg-canvas border-y border-line/70">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="max-w-2xl mb-12">
+            <Reveal className="max-w-2xl mb-12">
               <h2 id="features-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
                 Built for both sides of hiring
               </h2>
               <p className="mt-3 text-fg-muted text-base sm:text-lg">
                 The essentials for finding a role or filling one, without the clutter.
               </p>
-            </div>
+            </Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {FEATURES.map((f) => (
-                <div key={f.title} className="rounded-xl border border-line bg-surface p-6 shadow-card">
+              {FEATURES.map((f, i) => (
+                <Reveal
+                  key={f.title}
+                  delay={stagger(i)}
+                  className="rounded-xl border border-line bg-surface p-6 shadow-card transition-shadow hover:shadow-md"
+                >
                   <span className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
                     <f.icon className="w-5 h-5" aria-hidden />
                   </span>
                   <h3 className="mt-4 font-semibold text-fg">{f.title}</h3>
                   <p className="mt-1.5 text-sm text-fg-muted leading-relaxed">{f.description}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -161,7 +166,7 @@ export default function HomePage() {
         {/* CTA */}
         <section className="py-16 sm:py-20 bg-surface">
           <div className="max-w-5xl mx-auto px-4 sm:px-6">
-            <div className="rounded-2xl bg-primary-600 px-6 py-12 sm:px-12 text-center">
+            <Reveal className="rounded-2xl bg-primary-600 px-6 py-12 sm:px-12 text-center">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                 {signedIn ? 'Pick up where you left off' : 'Ready when you are'}
               </h2>
@@ -196,7 +201,7 @@ export default function HomePage() {
                   </>
                 )}
               </div>
-            </div>
+            </Reveal>
           </div>
         </section>
       </main>

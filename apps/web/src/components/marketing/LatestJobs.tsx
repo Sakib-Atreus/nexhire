@@ -12,6 +12,7 @@ import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { Skeleton } from '@/components/ui/States';
 import { buttonClasses } from '@/components/ui/Button';
 import { VerifiedIcon } from '@/components/companies/VerifiedBadge';
+import { Reveal, stagger } from '@/components/marketing/Reveal';
 
 // `sort` is forwarded to the API as a query param (Spring Pageable) so the newest roles come first.
 const LATEST_PARAMS = { size: 6, sort: 'createdAt,desc' };
@@ -105,7 +106,7 @@ export function LatestJobs() {
   return (
     <section aria-labelledby="latest-heading" className="py-16 sm:py-20 bg-canvas border-b border-line/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        <Reveal className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <h2 id="latest-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
               Latest openings
@@ -120,12 +121,12 @@ export function LatestJobs() {
               <ArrowRight className="w-4 h-4" aria-hidden />
             </Link>
           )}
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5" aria-busy={isLoading || undefined}>
           {isLoading
             ? Array.from({ length: 6 }, (_, i) => <JobCardSkeleton key={i} />)
-            : data!.content.map((job) => <JobCard key={job.id} job={job} />)}
+            : data!.content.map((job, i) => <Reveal key={job.id} delay={stagger(i)}><JobCard job={job} /></Reveal>)}
         </div>
       </div>
     </section>
