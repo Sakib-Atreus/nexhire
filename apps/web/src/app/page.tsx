@@ -4,12 +4,10 @@ import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
-  Building2,
   CalendarDays,
   KanbanSquare,
   LayoutDashboard,
   ListChecks,
-  Search,
   Sparkles,
   Users,
   Video,
@@ -21,6 +19,7 @@ import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { HeroSearch } from '@/components/marketing/HeroSearch';
 import { HeroGlow } from '@/components/marketing/HeroGlow';
 import { HeroPreview } from '@/components/marketing/HeroPreview';
+import { HowItWorks } from '@/components/marketing/HowItWorks';
 import { LatestJobs, OpenRolesCount } from '@/components/marketing/LatestJobs';
 import { useMounted } from '@/components/marketing/useMounted';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
@@ -56,31 +55,6 @@ const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
     icon: Users,
     title: 'Built for hiring teams',
     description: 'Share jobs and applicants with your company team, with analytics for every role you post.',
-  },
-];
-
-const TRACKS = [
-  {
-    id: 'seekers',
-    icon: Search,
-    title: 'For job seekers',
-    cta: { href: '/register?role=CANDIDATE', label: 'Create a job seeker account' },
-    steps: [
-      { title: 'Create your profile', desc: 'Add your headline, skills and experience so recruiters know who you are.' },
-      { title: 'Find and apply', desc: 'Search open roles, save the ones you like and apply with a cover letter.' },
-      { title: 'Track your progress', desc: 'Follow each application on your dashboard as recruiters review it.' },
-    ],
-  },
-  {
-    id: 'recruiters',
-    icon: Building2,
-    title: 'For recruiters',
-    cta: { href: '/register?role=RECRUITER', label: 'Create a recruiter account' },
-    steps: [
-      { title: 'Post a role', desc: 'Publish a job with salary range, requirements and optional screening questions.' },
-      { title: 'Review applicants', desc: 'See everyone who applied, with their cover letter and resume in one place.' },
-      { title: 'Move candidates forward', desc: 'Shortlist, interview and make offers, and candidates are kept informed.' },
-    ],
   },
 ];
 
@@ -157,53 +131,7 @@ export default function HomePage() {
         <FeaturedJobs />
         <LatestJobs />
 
-        {/* How it works: two tracks */}
-        <section aria-labelledby="how-heading" className="py-16 sm:py-24 bg-surface">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="max-w-2xl mb-12">
-              <h2 id="how-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
-                How NexHire works
-              </h2>
-              <p className="mt-3 text-fg-muted text-base sm:text-lg">
-                One platform, two sides of the same process.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {TRACKS.map((track) => (
-                <div key={track.id} className="rounded-2xl border border-line bg-muted/60 p-6 sm:p-8">
-                  <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
-                      <track.icon className="w-5 h-5" aria-hidden />
-                    </span>
-                    <h3 className="text-lg font-semibold text-fg">{track.title}</h3>
-                  </div>
-                  <ol className="mt-6 space-y-5">
-                    {track.steps.map((step, i) => (
-                      <li key={step.title} className="flex gap-4">
-                        <span
-                          className="flex-shrink-0 w-7 h-7 rounded-full bg-surface ring-1 ring-line text-xs font-semibold text-primary-700 flex items-center justify-center"
-                          aria-hidden
-                        >
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-medium text-fg">{step.title}</p>
-                          <p className="mt-0.5 text-sm text-fg-muted leading-relaxed">{step.desc}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                  {!signedIn && (
-                    <Link href={track.cta.href} className={buttonClasses('secondary', 'md', 'mt-7')}>
-                      {track.cta.label}
-                      <ArrowRight className="w-4 h-4" aria-hidden />
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <HowItWorks />
 
         {/* Features */}
         <section aria-labelledby="features-heading" className="py-16 sm:py-24 bg-canvas border-y border-line/70">

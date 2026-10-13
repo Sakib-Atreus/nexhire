@@ -70,7 +70,8 @@ npm run docker:up
 npm install
 npm run docker:dev                      # PostgreSQL, RabbitMQ and MinIO
 
-cd apps/api && ./mvnw spring-boot:run   # API on :8080 (terminal 1)
+cd apps/api && SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/nexhire_dev \
+  ./mvnw spring-boot:run                # API on :8080 (terminal 1)
 npm run dev                             # Web on :3000 (terminal 2, from the repo root)
 ```
 
