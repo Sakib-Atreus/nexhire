@@ -297,3 +297,15 @@
 .nh-calendar .fc-list-empty { background: rgb(var(--surface)); }
 .nh-calendar .fc-scroller::-webkit-scrollbar { width: 8px; height: 8px; }
 .nh-calendar .fc-scroller::-webkit-scrollbar-thumb { background: rgb(var(--line-strong)); border-radius: 9999px; }
+
+/* During a video interview the phone's bottom tab bar is hidden (see the call page). */
+html[data-in-call] [data-mobile-tabbar] { display: none; }
+
+/* On phones LiveKit pins the chat to the whole screen, where our sticky header covers its close button.
+   Keep it inside the call box instead: over the video, above the call controls. */
+@media (max-width: 600px) {
+  [data-lk-theme] .lk-video-conference { position: relative; }
+  [data-lk-theme] .lk-video-conference .lk-chat {
+    position: absolute; inset: 0 0 var(--lk-control-bar-height, 69px) 0; z-index: 10; width: auto; min-width: 0; max-width: none;
+  }
+}

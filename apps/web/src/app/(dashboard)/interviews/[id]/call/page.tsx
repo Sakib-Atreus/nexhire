@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Clock, LogOut, RotateCcw, ShieldCheck, Video } from 'lucide-react';
-import { LiveKitRoom, PreJoin, VideoConference, type LocalUserChoices } from '@livekit/components-react';
+import { LiveKitRoom, PreJoin, VideoConference, useRoomContext, type LocalUserChoices } from '@livekit/components-react';
 import { DisconnectReason } from 'livekit-client';
 import '@livekit/components-styles';
 import { useVideoJoin } from '@/hooks/useHiring';
 import { getErrorMessage } from '@/lib/format';
 import { Card } from '@/components/ui/Card';
 import { Button, buttonClasses } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import { useCallGuard } from '@/components/interviews/useCallGuard';
 import { Spinner } from '@/components/ui/States';
 import { formatTimeRange, formatWeekdayDate } from '@/components/interviews/interviewUtils';
 
@@ -49,6 +51,27 @@ function connectErrorMessage(error: Error): string {
   return 'Couldn’t connect to the video room. Check your internet connection (or turn off a VPN or ad blocker) and try again.';
 }
 
+/*
+ * LiveKit normally hangs up on `beforeunload`, which fires before the "Leave site?" prompt, so the call
+ * would drop even when the person chooses to stay. We turn that off (disconnectOnPageLeave: false) and
+ * hang up only once the page is really going away.
+ */
+const ROOM_OPTIONS = { disconnectOnPageLeave: false };
+
+function DisconnectOnPageExit() {
+  const room = useRoomContext();
+  useEffect(() => {
+    const leave = () => void room.disconnect();
+    window.addEventListener('pagehide', leave);
+    document.addEventListener('freeze', leave);
+    return () => {
+      window.removeEventListener('pagehide', leave);
+      document.removeEventListener('freeze', leave);
+    };
+  }, [room]);
+  return null;
+}
+
 /** The interview's private NexHire video room (LiveKit), joined with a personal token. */
 export default function InterviewCallPage() {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +79,17 @@ export default function InterviewCallPage() {
   const [state, setState] = useState<CallState>('prejoin');
   const [choices, setChoices] = useState<LocalUserChoices | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
+  const callRef = useRef<HTMLDivElement>(null);
+  const inCall = state === 'in-call';
+  // Back closes the chat first, then asks before leaving; links and closing the tab ask too.
+  const guard = useCallGuard(inCall, callRef);
+
+  // Phones: hide the bottom tab bar during the call, so the video has room and there are fewer accidental taps.
+  useEffect(() => {
+    if (!inCall) return;
+    document.documentElement.setAttribute('data-in-call', '');
+    return () => document.documentElement.removeAttribute('data-in-call');
+  }, [inCall]);
 
   const details = join.data;
   const backHref = details?.owner ? '/interviews' : '/applications';
@@ -113,7 +147,7 @@ export default function InterviewCallPage() {
 
       {/* LiveKit's UI is dark in both themes, like most video apps. */}
       <Card data-lk-theme="default" className="relative overflow-hidden bg-slate-950">
-        <div className="h-[calc(100dvh-15rem)] min-h-[460px] w-full lg:h-[calc(100dvh-13rem)]">
+        <div ref={callRef} className="h-[calc(100dvh-15rem)] min-h-[460px] w-full lg:h-[calc(100dvh-13rem)]">
           {state === 'prejoin' && (
             <div className="flex h-full flex-col items-center justify-center gap-4 overflow-y-auto p-4 [&_.lk-username-container_input]:hidden [&_.lk-join-button]:mt-1 [&_.lk-join-button]:w-full [&_.lk-join-button]:justify-center [&_.lk-join-button]:bg-[#4f46e5] [&_.lk-join-button]:py-3 [&_.lk-join-button]:font-semibold [&_.lk-join-button]:text-white hover:[&_.lk-join-button]:bg-[#4338ca]">
               <div className="text-center">
@@ -143,6 +177,7 @@ export default function InterviewCallPage() {
               serverUrl={details.roomUrl}
               token={details.token}
               connect
+              options={ROOM_OPTIONS}
               video={choices.videoEnabled ? { deviceId: choices.videoDeviceId || undefined } : false}
               audio={choices.audioEnabled ? { deviceId: choices.audioDeviceId || undefined } : false}
               onDisconnected={(reason) => {
@@ -159,6 +194,7 @@ export default function InterviewCallPage() {
               }
               className="h-full"
             >
+              <DisconnectOnPageExit />
               <VideoConference />
             </LiveKitRoom>
           )}
@@ -182,6 +218,16 @@ export default function InterviewCallPage() {
           )}
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={guard.confirmOpen}
+        onClose={guard.stay}
+        onConfirm={guard.leave}
+        title="Leave the interview?"
+        description="You’ll be disconnected from the video call. You can rejoin from the same link while the room is open."
+        confirmLabel="Leave call"
+        cancelLabel="Stay in call"
+      />
     </div>
   );
 }

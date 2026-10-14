@@ -116,6 +116,7 @@ export function Navbar({ guest = false }: { guest?: boolean }) {
       {mobileNav.length > 0 && (
         <nav
           aria-label="Main"
+          data-mobile-tabbar
           className="lg:hidden fixed bottom-0 inset-x-0 z-30 h-[calc(3.5rem+env(safe-area-inset-bottom))] bg-surface border-t border-line flex pb-[env(safe-area-inset-bottom)]"
         >
           {mobileNav.map((item) => {

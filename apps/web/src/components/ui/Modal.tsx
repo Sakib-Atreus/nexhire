@@ -86,13 +86,14 @@ export function Modal({ open, onClose, title, description, children, footer, siz
 }
 
 /** Confirmation dialog for destructive or irreversible actions. */
-export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = 'Confirm', tone = 'danger', loading }: {
+export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'danger', loading }: {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
   description?: string;
   confirmLabel?: string;
+  cancelLabel?: string;
   tone?: 'danger' | 'primary';
   loading?: boolean;
 }) {
@@ -105,7 +106,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, description, co
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>{cancelLabel}</Button>
           <Button variant={tone} onClick={onConfirm} loading={loading}>{confirmLabel}</Button>
         </>
       }
