@@ -1,4 +1,4 @@
-# NexHire — Complete Developer Manual
+# NexHire - Complete Developer Manual
 
 > Full-stack Job Portal · Spring Boot 3 · Next.js 15 · PostgreSQL · RabbitMQ · MinIO
 
@@ -8,12 +8,12 @@
 
 1. [Project Overview](#1-project-overview)
 2. [Tech Stack](#2-tech-stack)
-3. [Infrastructure — Docker Services](#3-infrastructure--docker-services)
+3. [Infrastructure - Docker Services](#3-infrastructure--docker-services)
 4. [Starting the Project](#4-starting-the-project)
-5. [Backend — How It Works](#5-backend--how-it-works)
-6. [API Reference — All Endpoints](#6-api-reference--all-endpoints)
-7. [Frontend — Pages & Routes](#7-frontend--pages--routes)
-8. [Frontend — Hooks Reference](#8-frontend--hooks-reference)
+5. [Backend - How It Works](#5-backend--how-it-works)
+6. [API Reference - All Endpoints](#6-api-reference--all-endpoints)
+7. [Frontend - Pages & Routes](#7-frontend--pages--routes)
+8. [Frontend - Hooks Reference](#8-frontend--hooks-reference)
 9. [Step-by-Step Testing Guide](#9-step-by-step-testing-guide)
 10. [Roles & Permissions](#10-roles--permissions)
 11. [File Upload (MinIO)](#11-file-upload-minio)
@@ -53,7 +53,7 @@ NexHire is a full-stack job portal with three user roles:
 
 ---
 
-## 3. Infrastructure — Docker Services
+## 3. Infrastructure - Docker Services
 
 All services run via Docker Compose:
 
@@ -91,7 +91,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 ## 4. Starting the Project
 
-### Step 1 — Start Docker services
+### Step 1 - Start Docker services
 
 ```bash
 cd docker
@@ -103,10 +103,10 @@ docker ps
 
 Expected containers: `nexhire-postgres-dev`, `nexhire-rabbitmq-dev`, `nexhire-minio-dev`
 
-### Step 2 — Start the Backend (Spring Boot)
+### Step 2 - Start the Backend (Spring Boot)
 
 ```bash
-# Set Java 21 (required — project does not work with Java 25)
+# Set Java 21 (required - project does not work with Java 25)
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 
 cd apps/api
@@ -120,7 +120,7 @@ Started NexHireApplication in X.XXX seconds
 
 Backend is now live at: `http://localhost:8080/api`
 
-### Step 3 — Start the Frontend (Next.js)
+### Step 3 - Start the Frontend (Next.js)
 
 Open a new terminal:
 
@@ -131,7 +131,7 @@ npm run dev
 
 Frontend is now live at: `http://localhost:3000`
 
-### Step 4 — Verify Everything Works
+### Step 4 - Verify Everything Works
 
 ```bash
 # Backend health check
@@ -147,7 +147,7 @@ open http://localhost:3000
 
 ---
 
-## 5. Backend — How It Works
+## 5. Backend - How It Works
 
 ### Request Flow
 
@@ -210,7 +210,7 @@ Frontend stores URL (resumeUrl, avatarUrl) in state/DB
 
 ---
 
-## 6. API Reference — All Endpoints
+## 6. API Reference - All Endpoints
 
 **Base URL**: `http://localhost:8080/api`
 
@@ -322,7 +322,7 @@ Resend email verification token. **Requires authentication.**
 
 ### User Endpoints (`/users`)
 
-#### GET `/users/me` — Authenticated
+#### GET `/users/me` - Authenticated
 Get the currently logged-in user's profile.
 
 **Response:**
@@ -348,7 +348,7 @@ Get the currently logged-in user's profile.
 
 ---
 
-#### PATCH `/users/me` — Authenticated
+#### PATCH `/users/me` - Authenticated
 Update current user's profile.
 
 **Body (all fields optional):**
@@ -367,24 +367,24 @@ Update current user's profile.
 
 ---
 
-#### GET `/users` — ADMIN only
+#### GET `/users` - ADMIN only
 Get all users (paginated).
 
 **Query Params:** `page=0&size=20`
 
 ---
 
-#### GET `/users/{id}` — ADMIN only
+#### GET `/users/{id}` - ADMIN only
 Get user by ID.
 
 ---
 
-#### DELETE `/users/{id}` — ADMIN only
+#### DELETE `/users/{id}` - ADMIN only
 Delete a user.
 
 ---
 
-#### PATCH `/users/{id}/status` — ADMIN only
+#### PATCH `/users/{id}/status` - ADMIN only
 Ban or unban a user.
 
 **Body:**
@@ -395,7 +395,7 @@ Ban or unban a user.
 
 ---
 
-#### PATCH `/users/{id}/role` — ADMIN only
+#### PATCH `/users/{id}/role` - ADMIN only
 Change a user's role.
 
 **Body:**
@@ -408,7 +408,7 @@ Change a user's role.
 
 ### Job Endpoints (`/jobs`)
 
-#### GET `/jobs` — Public
+#### GET `/jobs` - Public
 Search and browse jobs with filters.
 
 **Query Params:**
@@ -428,22 +428,22 @@ Experience levels: `ENTRY`, `MID`, `SENIOR`, `LEAD`, `EXECUTIVE`
 
 ---
 
-#### GET `/jobs/saved` — CANDIDATE
+#### GET `/jobs/saved` - CANDIDATE
 Get all jobs the candidate has bookmarked.
 
 ---
 
-#### GET `/jobs/my` — RECRUITER
+#### GET `/jobs/my` - RECRUITER
 Get all jobs posted by the current recruiter.
 
 ---
 
-#### GET `/jobs/{id}` — Public
+#### GET `/jobs/{id}` - Public
 Get job details. Also increments the view count.
 
 ---
 
-#### POST `/jobs` — RECRUITER
+#### POST `/jobs` - RECRUITER
 Create a new job posting.
 
 **Body:**
@@ -466,29 +466,29 @@ Create a new job posting.
 
 ---
 
-#### PATCH `/jobs/{id}` — RECRUITER (owner only)
+#### PATCH `/jobs/{id}` - RECRUITER (owner only)
 Update a job posting. Same fields as create, all optional.
 
 ---
 
-#### DELETE `/jobs/{id}` — RECRUITER (owner only)
+#### DELETE `/jobs/{id}` - RECRUITER (owner only)
 Delete a job posting.
 
 ---
 
-#### POST `/jobs/{id}/save` — CANDIDATE
+#### POST `/jobs/{id}/save` - CANDIDATE
 Bookmark a job for later.
 
 ---
 
-#### DELETE `/jobs/{id}/save` — CANDIDATE
+#### DELETE `/jobs/{id}/save` - CANDIDATE
 Remove a bookmarked job.
 
 ---
 
 ### Application Endpoints (`/applications`)
 
-#### POST `/applications` — CANDIDATE
+#### POST `/applications` - CANDIDATE
 Apply to a job.
 
 **Body:**
@@ -504,22 +504,22 @@ Apply to a job.
 
 ---
 
-#### GET `/applications/my` — CANDIDATE
+#### GET `/applications/my` - CANDIDATE
 Get all of the candidate's applications with status.
 
 ---
 
-#### GET `/applications/job/{jobId}` — RECRUITER
+#### GET `/applications/job/{jobId}` - RECRUITER
 Get all applications for a specific job.
 
 ---
 
-#### GET `/applications/recruiter` — RECRUITER
+#### GET `/applications/recruiter` - RECRUITER
 Get all applications across all of the recruiter's jobs.
 
 ---
 
-#### GET `/applications/recruiter/stats` — RECRUITER
+#### GET `/applications/recruiter/stats` - RECRUITER
 Get application counts by status.
 
 **Response:**
@@ -536,7 +536,7 @@ Get application counts by status.
 
 ---
 
-#### PATCH `/applications/{id}/status` — RECRUITER
+#### PATCH `/applications/{id}/status` - RECRUITER
 Update a single application's status.
 
 **Body:**
@@ -551,7 +551,7 @@ Status values: `PENDING`, `REVIEWING`, `SHORTLISTED`, `REJECTED`, `HIRED`
 
 ---
 
-#### PATCH `/applications/bulk-status` — RECRUITER
+#### PATCH `/applications/bulk-status` - RECRUITER
 Update multiple applications at once.
 
 **Body:**
@@ -567,29 +567,29 @@ Update multiple applications at once.
 
 ### Notification Endpoints (`/notifications`)
 
-#### GET `/notifications` — Authenticated
+#### GET `/notifications` - Authenticated
 Get all notifications for the current user (paginated).
 
 ---
 
-#### GET `/notifications/unread-count` — Authenticated
+#### GET `/notifications/unread-count` - Authenticated
 Get the number of unread notifications.
 
 **Response:** `{ "count": 5 }`
 
 ---
 
-#### PATCH `/notifications/mark-all-read` — Authenticated
+#### PATCH `/notifications/mark-all-read` - Authenticated
 Mark all notifications as read.
 
 ---
 
-#### PATCH `/notifications/{id}/read` — Authenticated
+#### PATCH `/notifications/{id}/read` - Authenticated
 Mark a single notification as read.
 
 ---
 
-#### GET `/notifications/stream` — Authenticated
+#### GET `/notifications/stream` - Authenticated
 Open a Server-Sent Events (SSE) stream for real-time notifications.
 
 **Usage:** Frontend uses `EventSource` to connect. The stream sends notification data as JSON events.
@@ -606,12 +606,12 @@ GET /api/notifications/stream?token=<accessToken>
 
 ---
 
-#### GET `/notifications/preferences` — Authenticated
+#### GET `/notifications/preferences` - Authenticated
 Get notification preferences (stored as JSON).
 
 ---
 
-#### PATCH `/notifications/preferences` — Authenticated
+#### PATCH `/notifications/preferences` - Authenticated
 Update notification preferences.
 
 **Body:**
@@ -627,7 +627,7 @@ Update notification preferences.
 
 ### File Upload Endpoint (`/files`)
 
-#### POST `/files/upload` — Authenticated
+#### POST `/files/upload` - Authenticated
 Upload a file (resume, avatar, etc.) to MinIO.
 
 **Request:** `multipart/form-data` with field `file`
@@ -648,7 +648,7 @@ Upload a file (resume, avatar, etc.) to MinIO.
 
 ---
 
-## 7. Frontend — Pages & Routes
+## 7. Frontend - Pages & Routes
 
 ### Auth Pages (no login required)
 
@@ -691,7 +691,7 @@ Upload a file (resume, avatar, etc.) to MinIO.
 
 ---
 
-## 8. Frontend — Hooks Reference
+## 8. Frontend - Hooks Reference
 
 All hooks use TanStack Query. They handle loading, error, and caching automatically.
 
@@ -756,7 +756,7 @@ const { mutate: updateProfile } = useUpdateProfile();
 updateProfile({ firstName, bio, skills: ['React', 'Node.js'], headline: '...' });
 ```
 
-### Users — Admin (`useUsers.ts`)
+### Users - Admin (`useUsers.ts`)
 
 ```ts
 const { data } = useAllUsers(page, size);
@@ -798,7 +798,7 @@ upload(file, {
 
 Follow these steps in order to test the complete application flow.
 
-### Step 1 — Register Accounts
+### Step 1 - Register Accounts
 
 Open http://localhost:3000/register
 
@@ -820,7 +820,7 @@ Register three accounts:
 
 ---
 
-### Step 2 — Test Recruiter Flow
+### Step 2 - Test Recruiter Flow
 
 Login as the recruiter at http://localhost:3000/login
 
@@ -830,19 +830,19 @@ Login as the recruiter at http://localhost:3000/login
 3. Submit → you are redirected to the job listing
 
 **View your jobs:**
-- Go to `/jobs/my` — the posted job appears
+- Go to `/jobs/my` - the posted job appears
 
 **Check dashboard:**
-- Go to `/dashboard` — shows your job count and application stats
+- Go to `/dashboard` - shows your job count and application stats
 
 ---
 
-### Step 3 — Test Candidate Flow
+### Step 3 - Test Candidate Flow
 
 Login as the candidate.
 
 **Browse and apply:**
-1. Go to `/jobs` — see the recruiter's job
+1. Go to `/jobs` - see the recruiter's job
 2. Click the job → Job detail page
 3. Click "Apply Now"
 4. Fill in **Cover Letter** (required) and upload a **Resume** (required)
@@ -857,7 +857,7 @@ Login as the candidate.
 
 ---
 
-### Step 4 — Test Recruiter Applicant Management
+### Step 4 - Test Recruiter Applicant Management
 
 Login as the recruiter.
 
@@ -871,7 +871,7 @@ Login as the recruiter.
 
 ---
 
-### Step 5 — Test Admin Flow
+### Step 5 - Test Admin Flow
 
 Login as the admin user.
 
@@ -889,7 +889,7 @@ Login as the admin user.
 
 ---
 
-### Step 6 — Test File Upload
+### Step 6 - Test File Upload
 
 1. Login as any user
 2. Go to `/profile`
@@ -899,7 +899,7 @@ Login as the admin user.
 
 ---
 
-### Step 7 — Test Real-Time Notifications
+### Step 7 - Test Real-Time Notifications
 
 Open two browser windows (or tabs):
 
@@ -911,7 +911,7 @@ Open two browser windows (or tabs):
 
 ---
 
-### Step 8 — Test Token Refresh
+### Step 8 - Test Token Refresh
 
 1. Login as any user
 2. Copy the `accessToken` cookie value
@@ -921,10 +921,10 @@ Open two browser windows (or tabs):
 
 ---
 
-### Step 9 — Test Rate Limiting
+### Step 9 - Test Rate Limiting
 
 ```bash
-# Try to login 11+ times quickly — 11th request returns 429
+# Try to login 11+ times quickly - 11th request returns 429
 for i in {1..12}; do
   curl -s -o /dev/null -w "%{http_code}\n" \
     -X POST http://localhost:8080/api/auth/login \
@@ -935,7 +935,7 @@ done
 
 ---
 
-### Step 10 — Test Password Reset
+### Step 10 - Test Password Reset
 
 1. Go to `/forgot-password`
 2. Enter your email
@@ -972,11 +972,11 @@ done
 
 ### SecurityConfig Rules
 
-- `POST /auth/**` — public
-- `GET /jobs/**` — public (read-only job browsing)
-- `GET /v3/api-docs/**`, `GET /swagger-ui/**` — public
-- `GET /actuator/health` — public
-- **Everything else** — requires valid JWT token
+- `POST /auth/**` - public
+- `GET /jobs/**` - public (read-only job browsing)
+- `GET /v3/api-docs/**`, `GET /swagger-ui/**` - public
+- `GET /actuator/health` - public
+- **Everything else** - requires valid JWT token
 
 ---
 

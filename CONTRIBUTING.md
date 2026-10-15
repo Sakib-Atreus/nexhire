@@ -34,7 +34,7 @@ Thank you for taking the time to contribute!
 
 ## Making Changes
 
-- Keep changes focused — one feature or fix per PR
+- Keep changes focused - one feature or fix per PR
 - Follow existing code style (Java: standard Spring conventions, TypeScript: ESLint rules)
 - Write or update tests when changing backend logic
 - Run checks before pushing:
@@ -56,8 +56,8 @@ npm run lint
 
 1. Push your branch to your fork
 2. Open a PR against the `main` branch of this repo
-3. Fill in the PR description — what changed and why
-4. Wait for review — feedback will be given within a few days
+3. Fill in the PR description - what changed and why
+4. Wait for review - feedback will be given within a few days
 
 ---
 

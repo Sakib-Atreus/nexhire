@@ -1,8 +1,8 @@
-# NexHire — Full Guide
+# NexHire - Full Guide
 
 > The complete reference (setup, configuration, API endpoints, database, troubleshooting). For a short overview, see the [README](../README.md).
 
-**NexHire** is a full-stack job portal where job seekers find and apply for jobs, and companies run their whole hiring process — from posting a role to scheduling interviews and making a hire. Job seekers search and save jobs, apply with a resume, respond to interview invitations and message the hiring team. Recruiters work in company teams with a drag-and-drop hiring pipeline, private notes and ratings, message templates, interview scheduling and per-job analytics. Administrators moderate users, jobs and companies from a dedicated admin panel.
+**NexHire** is a full-stack job portal where job seekers find and apply for jobs, and companies run their whole hiring process - from posting a role to scheduling interviews and making a hire. Job seekers search and save jobs, apply with a resume, respond to interview invitations and message the hiring team. Recruiters work in company teams with a drag-and-drop hiring pipeline, private notes and ratings, message templates, interview scheduling and per-job analytics. Administrators moderate users, jobs and companies from a dedicated admin panel.
 
 The platform is a **monorepo** with a Spring Boot REST API and a Next.js frontend. It runs locally with one Docker Compose command and is designed to deploy for free on **Vercel + Render**, with **Neon** (PostgreSQL), **CloudAMQP** (RabbitMQ) and **Backblaze B2** (file storage) as managed services.
 
@@ -11,45 +11,45 @@ The platform is a **monorepo** with a Spring Boot REST API and a Next.js fronten
 ## Features
 
 ### For job seekers
-- **Job search** — keyword, location, category, job type and experience level filters; featured jobs first; save jobs for later
-- **Recommended jobs** — open roles ranked by how well they match your skills, headline and location, with the matching skills shown
-- **Job alerts** — save a search and get notified (in-app and by email) when a matching job is posted, instantly or as a daily digest; one-click unsubscribe
-- **Full profile** — work experience, education, location, a saved resume, and an optional public profile page (`/p/your-name`) to share
-- **Quick apply** — apply in one click with your saved resume
-- **Company profiles** — browse the company directory and each company's open roles; "Verified employer" badges
-- **One place for every application** — progress tracker (Applied → Review → Shortlist → Interview → Offer → Hired), a timeline of every update with messages from the hiring team, withdraw, cover letter and screening questions
-- **Interview invitations** — accept, request another time (suggest up to 3 times) or decline; warnings when an invitation overlaps your other interviews; add interviews to Google Calendar, Outlook or Apple Calendar
-- **Messages** — two-way conversation with the hiring team on each application
-- **Calendar** — month, week, day and agenda views of your interviews, colour-coded by status, plus a calendar card on the dashboard
-- **Video interviews** — join the interview in the browser from NexHire; the private room opens 15 minutes before the start
-- **Profile** — avatar, headline, bio, skills, portfolio links and an "Open to work" toggle
+- **Job search** - keyword, location, category, job type and experience level filters; featured jobs first; save jobs for later
+- **Recommended jobs** - open roles ranked by how well they match your skills, headline and location, with the matching skills shown
+- **Job alerts** - save a search and get notified (in-app and by email) when a matching job is posted, instantly or as a daily digest; one-click unsubscribe
+- **Full profile** - work experience, education, location, a saved resume, and an optional public profile page (`/p/your-name`) to share
+- **Quick apply** - apply in one click with your saved resume
+- **Company profiles** - browse the company directory and each company's open roles; "Verified employer" badges
+- **One place for every application** - progress tracker (Applied → Review → Shortlist → Interview → Offer → Hired), a timeline of every update with messages from the hiring team, withdraw, cover letter and screening questions
+- **Interview invitations** - accept, request another time (suggest up to 3 times) or decline; warnings when an invitation overlaps your other interviews; add interviews to Google Calendar, Outlook or Apple Calendar
+- **Messages** - two-way conversation with the hiring team on each application
+- **Calendar** - month, week, day and agenda views of your interviews, colour-coded by status, plus a calendar card on the dashboard
+- **Video interviews** - join the interview in the browser from NexHire; the private room opens 15 minutes before the start
+- **Profile** - avatar, headline, bio, skills, portfolio links and an "Open to work" toggle
 
 ### For recruiters and hiring teams
-- **Company teams** — create a company profile, add teammates by email; everyone on the team shares the company's jobs and applicants
-- **Job posting** — publish or save as draft, duplicate a job, set the number of openings (the job closes as *Filled* automatically once that many people are hired), screening questions, salary in any currency
-- **Hiring pipeline board** — drag applicants between stages (works with mouse, touch and keyboard), or use list view with bulk actions
-- **Applicant panel** — the candidate's full profile (experience, education, resume), private 1–5 ratings and notes (never visible to candidates), an activity timeline, messages with reusable templates and placeholders such as `{{firstName}}`, and an optional message to the candidate with each stage change
-- **Interview scheduling** — video, phone or on-site; warns about clashes with *your own* interviews; the candidate confirms or proposes another time, and one click accepts their suggestion; unanswered invitations are flagged after 48 hours with a one-click reminder
-- **Team calendar** — every interview across the jobs you manage, colour-coded by the candidate's response, with a job filter and a dashboard calendar card
-- **Built-in video rooms** — choose "NexHire video room" when scheduling a video interview: a private LiveKit room, joined with a personal link, that follows reschedules and is deleted on cancellation (or paste your own Zoom/Meet/Teams link)
-- **Analytics** — per-job funnel (views → applications → interviewed → offered → hired), daily applications and status breakdown
+- **Company teams** - create a company profile, add teammates by email; everyone on the team shares the company's jobs and applicants
+- **Job posting** - publish or save as draft, duplicate a job, set the number of openings (the job closes as *Filled* automatically once that many people are hired), screening questions, salary in any currency
+- **Hiring pipeline board** - drag applicants between stages (works with mouse, touch and keyboard), or use list view with bulk actions
+- **Applicant panel** - the candidate's full profile (experience, education, resume), private 1–5 ratings and notes (never visible to candidates), an activity timeline, messages with reusable templates and placeholders such as `{{firstName}}`, and an optional message to the candidate with each stage change
+- **Interview scheduling** - video, phone or on-site; warns about clashes with *your own* interviews; the candidate confirms or proposes another time, and one click accepts their suggestion; unanswered invitations are flagged after 48 hours with a one-click reminder
+- **Team calendar** - every interview across the jobs you manage, colour-coded by the candidate's response, with a job filter and a dashboard calendar card
+- **Built-in video rooms** - choose "NexHire video room" when scheduling a video interview: a private LiveKit room, joined with a personal link, that follows reschedules and is deleted on cancellation (or paste your own Zoom/Meet/Teams link)
+- **Analytics** - per-job funnel (views → applications → interviewed → offered → hired), daily applications and status breakdown
 
 ### For administrators
-- **Overview dashboard** — users by role, 30-day sign-up and application trends, top companies and a "needs attention" list
-- **Moderation** — search and manage users, verify recruiters and companies, hide or feature jobs, review job reports
-- **Audit log** — every admin action with who, what, when and why
-- **Site settings** — site-wide announcement banner, job categories and suggested skills
+- **Overview dashboard** - users by role, 30-day sign-up and application trends, top companies and a "needs attention" list
+- **Moderation** - search and manage users, verify recruiters and companies, hide or feature jobs, review job reports
+- **Audit log** - every admin action with who, what, when and why
+- **Site settings** - site-wide announcement banner, job categories and suggested skills
 
 ### Platform
-- **Role-based access** — Job seeker, Recruiter and Administrator roles; sign-up is limited to job seekers and recruiters, and the first administrator is created from environment variables
-- **Real-time notifications** — Server-Sent Events push updates instantly; RabbitMQ delivers them, with a direct fallback so nothing is lost if the broker is down
-- **Email** — password reset, email verification and job alerts via any SMTP provider (Brevo, Resend, SendGrid, …); without SMTP settings emails are logged instead
-- **Event-driven job alerts** — publishing a job emits a RabbitMQ event that is matched against saved searches
-- **JWT authentication** — access + refresh tokens, email verification and password reset
-- **File storage** — resumes and avatars in S3-compatible storage (MinIO locally, Backblaze B2 in production)
-- **Calendar sync** — a private iCal link per user keeps interviews up to date in Google Calendar, Outlook or Apple Calendar (moves and cancellations included); the link can be reset at any time
-- **Light and dark mode** — a sun/moon toggle in the top bar on every page (Light / Dark / System in the user menu); remembered per browser, applied before the page paints so there's no flash
-- **Swagger UI** — interactive API docs at `/api/swagger-ui.html`
+- **Role-based access** - Job seeker, Recruiter and Administrator roles; sign-up is limited to job seekers and recruiters, and the first administrator is created from environment variables
+- **Real-time notifications** - Server-Sent Events push updates instantly; RabbitMQ delivers them, with a direct fallback so nothing is lost if the broker is down
+- **Email** - password reset, email verification and job alerts via any SMTP provider (Brevo, Resend, SendGrid, …); without SMTP settings emails are logged instead
+- **Event-driven job alerts** - publishing a job emits a RabbitMQ event that is matched against saved searches
+- **JWT authentication** - access + refresh tokens, email verification and password reset
+- **File storage** - resumes and avatars in S3-compatible storage (MinIO locally, Backblaze B2 in production)
+- **Calendar sync** - a private iCal link per user keeps interviews up to date in Google Calendar, Outlook or Apple Calendar (moves and cancellations included); the link can be reset at any time
+- **Light and dark mode** - a sun/moon toggle in the top bar on every page (Light / Dark / System in the user menu); remembered per browser, applied before the page paints so there's no flash
+- **Swagger UI** - interactive API docs at `/api/swagger-ui.html`
 
 ---
 
@@ -118,7 +118,7 @@ nexhire/
 
 ## Quick Start
 
-### Option A — Full Docker (easiest)
+### Option A - Full Docker (easiest)
 
 Runs everything in containers. No local Java or Node needed.
 
@@ -149,16 +149,16 @@ docker compose -f docker/docker-compose.yml up --build -d
 
 ---
 
-### Option B — Local Development (hot reload)
+### Option B - Local Development (hot reload)
 
 Runs infrastructure in Docker and the apps locally for fast feedback.
 
-**Step 1 — Install dependencies**
+**Step 1 - Install dependencies**
 ```bash
 npm install
 ```
 
-**Step 2 — Start infrastructure (PostgreSQL + RabbitMQ + MinIO)**
+**Step 2 - Start infrastructure (PostgreSQL + RabbitMQ + MinIO)**
 ```bash
 npm run docker:dev
 ```
@@ -166,14 +166,14 @@ npm run docker:dev
 > PostgreSQL runs on port **5433** (not 5432) to avoid conflicts with any local PostgreSQL.
 > MinIO runs on port **9000** (API) and **9001** (console).
 
-**Step 3 — Generate the Maven wrapper (first time only)**
+**Step 3 - Generate the Maven wrapper (first time only)**
 ```bash
 cd apps/api
 JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn wrapper:wrapper
 cd ../..
 ```
 
-**Step 4 — Start the API** (new terminal)
+**Step 4 - Start the API** (new terminal)
 ```bash
 cd apps/api
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/nexhire_dev \
@@ -185,7 +185,7 @@ Wait for `Started NexHireApplication`. Flyway runs the database migrations autom
 
 > Locally the API runs with the `dev` profile, which supplies the credentials of the Docker dev services from `application-dev.yml`. Production uses the `prod` profile (set in the Dockerfile), where secrets **must** come from environment variables.
 
-**Step 5 — Start the frontend** (new terminal)
+**Step 5 - Start the frontend** (new terminal)
 ```bash
 npm run dev
 ```
@@ -204,8 +204,8 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 |---|---|---|
 | `JWT_SECRET` | output of `openssl rand -hex 48` | At least 32 characters. **The API refuses to start without it.** Changing it signs everyone out. |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://<host>/<db>?sslmode=require` | For Neon, copy the host and database from *Connection details* and add `jdbc:` |
-| `SPRING_DATASOURCE_USERNAME` | | **Required** — the API refuses to start without it |
-| `SPRING_DATASOURCE_PASSWORD` | | **Required** — the API refuses to start without it |
+| `SPRING_DATASOURCE_USERNAME` | | **Required** - the API refuses to start without it |
+| `SPRING_DATASOURCE_PASSWORD` | | **Required** - the API refuses to start without it |
 | `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` | Comma-separated frontend origins, no trailing `/` |
 | `NEXT_PUBLIC_API_URL` | `https://your-api.onrender.com/api` | Set on the **frontend**; built into the bundle, so redeploy after changing it |
 
@@ -213,9 +213,9 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 
 | Variable | Notes |
 |---|---|
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Creates the first administrator on startup — only while no admin exists (password ≥ 8 characters). Safe to remove afterwards. |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Creates the first administrator on startup - only while no admin exists (password ≥ 8 characters). Safe to remove afterwards. |
 | `SPRING_RABBITMQ_HOST`, `SPRING_RABBITMQ_PORT`, `SPRING_RABBITMQ_USERNAME`, `SPRING_RABBITMQ_PASSWORD`, `SPRING_RABBITMQ_VIRTUAL_HOST`, `SPRING_RABBITMQ_SSL_ENABLED` | Message broker. For CloudAMQP use port `5671` and SSL `true`. If unset or wrong, the API still runs and delivers notifications directly. |
-| `SPRING_RABBITMQ_ADDRESSES` | Alternative to the separate RabbitMQ variables: `amqps://user:pass@host/vhost`. **Takes priority** over host/port/username/password when set — remove it if it points to an old broker. |
+| `SPRING_RABBITMQ_ADDRESSES` | Alternative to the separate RabbitMQ variables: `amqps://user:pass@host/vhost`. **Takes priority** over host/port/username/password when set - remove it if it points to an old broker. |
 | `MINIO_ENDPOINT`, `MINIO_PUBLIC_URL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` | File storage (Backblaze B2 in production). If the keys are missing the API still runs, but uploads are disabled. |
 | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | SMTP for emails (e.g. Brevo: `smtp-relay.brevo.com`, port `587`). Without `SPRING_MAIL_HOST`, emails are only written to the log. |
 | `MAIL_FROM` | Sender, e.g. `NexHire <no-reply@yourdomain.com>` (must be a sender your SMTP provider allows) |
@@ -235,13 +235,13 @@ Copy `.env.example` to `.env` for reference. The API reads these from the enviro
 
 ## Deployment (Render + Vercel)
 
-**Backend — Render (Docker)**
+**Backend - Render (Docker)**
 1. Create a web service from this repository with **Root Directory** `apps/api` (the Dockerfile is detected automatically).
 2. Add the environment variables above (at minimum the required ones, plus `ADMIN_EMAIL`/`ADMIN_PASSWORD` the first time).
 3. Deploy. In the logs, look for `The following 1 profile is active: "prod"` and `Started NexHireApplication`. Migrations run automatically.
 4. Check `https://<your-service>.onrender.com/api/actuator/health` returns `{"status":"UP"}`.
 
-**Frontend — Vercel**
+**Frontend - Vercel**
 1. Import the repository with **Root Directory** `apps/web`.
 2. Set `NEXT_PUBLIC_API_URL` to `https://<your-service>.onrender.com/api`.
 3. Add the Vercel URL to `CORS_ALLOWED_ORIGINS` on Render.
@@ -335,7 +335,7 @@ npm run type-check    # TypeScript validation
 
 **Job alerts:** when a job becomes open and visible (published, a draft published, reopened or un-hidden), the API publishes a `job.published` event to RabbitMQ (after the database commit). A consumer matches it against active alerts: *instant* alerts notify immediately, *daily* alerts are collected and sent as one digest at 08:00 UTC. Each job is sent to each alert at most once. If RabbitMQ is unavailable, matching runs directly.
 
-**Recommendations:** each open job gets a 0–100 score — 60% skills (profile skills found in the job's tags), 20% headline words in the title, 10% location or remote, 10% recency. Jobs already applied to are excluded, and only jobs with a skill or title match are shown.
+**Recommendations:** each open job gets a 0–100 score - 60% skills (profile skills found in the job's tags), 20% headline words in the title, 10% location or remote, 10% recency. Jobs already applied to are excluded, and only jobs with a skill or title match are shown.
 
 **Built for growth:**
 - List endpoints are paged, and a page holds at most 100 items.
@@ -519,7 +519,7 @@ ADMIN_EMAIL=you@example.com
 ADMIN_PASSWORD='a-strong-password'
 ```
 
-On startup, if no administrator exists yet, the API creates one with these credentials — or promotes an existing account with that email and sets its password. Once an admin exists the variables are ignored and can be removed. Further admins can be promoted from the admin panel.
+On startup, if no administrator exists yet, the API creates one with these credentials - or promotes an existing account with that email and sets its password. Once an admin exists the variables are ignored and can be removed. Further admins can be promoted from the admin panel.
 
 ### Create users
 
@@ -590,12 +590,12 @@ In production (`prod` profile) secrets have no defaults. Set the variable named 
 
 ### The website says "We could not reach the server"
 The browser got no usable response from the API:
-- **API down, sleeping or still deploying** — open `/api/actuator/health`; on Render check *Events* and *Logs*.
-- **CORS** — `CORS_ALLOWED_ORIGINS` must contain the exact frontend URL.
-- **Wrong API URL** — `NEXT_PUBLIC_API_URL` on Vercel must point at the Render API; redeploy the frontend after changing it.
+- **API down, sleeping or still deploying** - open `/api/actuator/health`; on Render check *Events* and *Logs*.
+- **CORS** - `CORS_ALLOWED_ORIGINS` must contain the exact frontend URL.
+- **Wrong API URL** - `NEXT_PUBLIC_API_URL` on Vercel must point at the Render API; redeploy the frontend after changing it.
 
 ### RabbitMQ login errors (`ACCESS_REFUSED`)
-The API keeps running and delivers notifications directly, retrying the broker every 30 seconds. Check the RabbitMQ variables — and remove `SPRING_RABBITMQ_ADDRESSES` if it points to an old instance, because it overrides the others.
+The API keeps running and delivers notifications directly, retrying the broker every 30 seconds. Check the RabbitMQ variables - and remove `SPRING_RABBITMQ_ADDRESSES` if it points to an old instance, because it overrides the others.
 
 ### Port 5432 already in use
 PostgreSQL is already running locally. Both Docker setups use port **5433** to avoid this conflict.
@@ -616,7 +616,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn wrapper:wrapper
 Make sure you're on Node >= 20 and npm >= 10 (`node -v`, `npm -v`).
 
 ### Profile image / file upload fails
-- MinIO must be running locally — check with `docker ps | grep minio`.
+- MinIO must be running locally - check with `docker ps | grep minio`.
 - In production, set the `MINIO_*` variables; without keys, uploads are disabled.
 - Files are served through the API at `/api/files/<filename>`.
 
@@ -628,7 +628,7 @@ The public board shows only **open**, **non-hidden** jobs. Drafts, closed or fil
 ## Known Limitations
 
 - **Email needs an SMTP provider.** Set the `SPRING_MAIL_*`, `MAIL_FROM` and `APP_BASE_URL` variables; until then, password-reset, verification and job-alert emails are only written to the API log. Messages and interview invitations are in-app notifications.
-- **No CI pipeline yet** — run `./mvnw test` and `npm run type-check` before pushing.
+- **No CI pipeline yet** - run `./mvnw test` and `npm run type-check` before pushing.
 - **Interview clash checks** cover the recruiter who schedules the interview, not every teammate attending.
 - **Calendar subscriptions refresh on the calendar app's schedule** (Google Calendar can take up to ~12 hours); use "Add to calendar" for an instant one-off copy.
 

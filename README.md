@@ -52,7 +52,7 @@
 
 **Requirements:** Node.js 20+, Java 21, Docker.
 
-### Option A — Docker (everything in containers)
+### Option A - Docker (everything in containers)
 
 ```bash
 npm run docker:up
@@ -64,7 +64,7 @@ npm run docker:up
 | API | http://localhost:8080/api |
 | API docs (Swagger) | http://localhost:8080/api/swagger-ui.html |
 
-### Option B — Local development (hot reload)
+### Option B - Local development (hot reload)
 
 ```bash
 npm install
