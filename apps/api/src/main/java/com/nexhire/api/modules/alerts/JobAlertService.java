@@ -190,7 +190,7 @@ public class JobAlertService {
         Job first = jobs.get(0);
         String title = jobs.size() == 1 ? "New job: " + first.getTitle() : jobs.size() + " new jobs for \"" + alert.getName() + "\"";
         String body = jobs.size() == 1
-            ? first.getCompanyName() + " · " + Objects.toString(first.getLocation(), "") + " — matches your alert \"" + alert.getName() + "\""
+            ? first.getCompanyName() + " · " + Objects.toString(first.getLocation(), "") + " · Matches your alert \"" + alert.getName() + "\""
             : "Including " + first.getTitle() + " at " + first.getCompanyName() + ".";
         notificationService.notify(user.getId(), NotificationType.JOB_ALERT, title, body,
             jobs.size() == 1 ? first.getId() : alert.getId(), jobs.size() == 1 ? "JOB" : "ALERT");
@@ -199,7 +199,7 @@ public class JobAlertService {
             List<String> lines = new ArrayList<>();
             lines.add("Hi " + user.getFirstName() + ", here " + (jobs.size() == 1 ? "is a new job" : "are new jobs")
                 + " matching your alert \"" + alert.getName() + "\":");
-            jobs.stream().limit(MAX_JOBS_IN_DIGEST).forEach(j -> lines.add("• " + j.getTitle() + " — " + j.getCompanyName()
+            jobs.stream().limit(MAX_JOBS_IN_DIGEST).forEach(j -> lines.add("• " + j.getTitle() + " at " + j.getCompanyName()
                 + (j.getLocation() != null ? " · " + j.getLocation() : "") + "\n" + mailService.link("/jobs/" + j.getId())));
             if (jobs.size() > MAX_JOBS_IN_DIGEST) lines.add("…and " + (jobs.size() - MAX_JOBS_IN_DIGEST) + " more.");
             lines.add("Don't want these emails? Unsubscribe: " + mailService.link("/alerts/unsubscribe?token=" + alert.getUnsubscribeToken()));

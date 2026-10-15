@@ -40,7 +40,7 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
       {
         onSuccess: () => {
           setClash(null);
-          toast.success(`Interview moved — ${i.candidateName} has been notified`, formatInterviewWhen({ scheduledAt: iso, durationMinutes: i.durationMinutes }));
+          toast.success(`Interview moved - ${i.candidateName} has been notified`, formatInterviewWhen({ scheduledAt: iso, durationMinutes: i.durationMinutes }));
         },
         onError: (err) => {
           const conflicts = getInterviewConflicts(err);
@@ -77,7 +77,7 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
                   disabled={past || update.isPending}
                   loading={update.isPending && target === t}
                   onClick={() => move(t)}
-                  title={past ? 'This time has passed' : `Reschedule to this time (${formatDuration(i.durationMinutes)}) — confirms it automatically`}
+                  title={past ? 'This time has passed' : `Reschedule to this time (${formatDuration(i.durationMinutes)}). This confirms it automatically`}
                 >
                   Use {formatSlot(t)}{past && ' (passed)'}
                 </Button>
@@ -94,7 +94,7 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
             <ul className="mt-1.5 space-y-1 text-sm text-amber-900">
               {clash.conflicts.map((c, idx) => (
                 <li key={c.interviewId ?? idx} className="break-words">
-                  {c.label} — {formatInterviewWhen(c)}
+                  {c.label}: {formatInterviewWhen(c)}
                 </li>
               ))}
             </ul>
@@ -108,7 +108,7 @@ function CandidateResponse({ interview: i }: { interview: Interview }) {
             </div>
           </div>
         )}
-        <p className="text-xs text-fg-muted">Picking one of their times confirms it — no need for them to reply again.</p>
+        <p className="text-xs text-fg-muted">Picking one of their times confirms it - no need for them to reply again.</p>
       </div>
     );
   }

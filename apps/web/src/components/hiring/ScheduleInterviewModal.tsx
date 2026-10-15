@@ -54,7 +54,7 @@ export function ConflictWarning({ conflicts, footer }: { conflicts: InterviewCon
       <ul className="mt-2 space-y-1.5 text-sm text-amber-900">
         {conflicts.map((c, i) => (
           <li key={c.interviewId ?? `${c.who}-${i}`}>
-            {c.label} — {slotLabel(c.scheduledAt, c.durationMinutes)}
+            {c.label}: {slotLabel(c.scheduledAt, c.durationMinutes)}
           </li>
         ))}
       </ul>

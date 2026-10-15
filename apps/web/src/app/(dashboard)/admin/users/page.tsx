@@ -162,7 +162,7 @@ function AdminUsersView() {
                   {pluralize(data.totalElements, filtering ? 'matching user' : 'user')}
                   {verifiedWithoutRecruiter && (
                     <span className="block sm:inline sm:ml-2 text-xs text-fg-subtle">
-                      Showing recruiters only — verification applies to recruiters.
+                      Showing recruiters only - verification applies to recruiters.
                     </span>
                   )}
                 </>

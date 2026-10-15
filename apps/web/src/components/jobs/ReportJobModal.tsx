@@ -47,7 +47,7 @@ export function ReportJobModal({ jobId, jobTitle, open, onClose }: {
       { jobId, reason, details: details.trim() || undefined },
       {
         onSuccess: () => {
-          toast.success('Thanks — our team will review this job.');
+          toast.success('Thanks - our team will review this job.');
           onClose();
         },
         onError: (err) => setError(getErrorMessage(err, "We couldn't send your report. Please try again.")),

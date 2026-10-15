@@ -86,7 +86,7 @@ function SuggestedTimes({ iv, firstName, readOnly, onPropose }: {
       {
         onSuccess: () => {
           setClash(null);
-          toast.success(`Interview moved to ${slotLabel(time, iv.durationMinutes)}`, `Confirmed — it was ${firstName}'s suggestion.`);
+          toast.success(`Interview moved to ${slotLabel(time, iv.durationMinutes)}`, `Confirmed - it was ${firstName}'s suggestion.`);
         },
         onError: (err) => {
           const conflicts = getInterviewConflicts(err);

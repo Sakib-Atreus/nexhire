@@ -41,7 +41,7 @@ export function CompletenessCard({ fields }: { fields: Fields }) {
               ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" aria-hidden />
               : <Circle className="w-4 h-4 text-fg-faint flex-shrink-0" aria-hidden />}
             {item.label}
-            <span className="sr-only">{item.done ? '— complete' : '— missing'}</span>
+            <span className="sr-only">{item.done ? ', complete' : ', missing'}</span>
           </li>
         ))}
       </ul>

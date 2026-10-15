@@ -65,7 +65,7 @@ public class MailService {
         StringBuilder sb = new StringBuilder(heading).append("\n\n");
         paragraphs.forEach(p -> sb.append(p).append("\n\n"));
         if (buttonUrl != null) sb.append(buttonText).append(": ").append(buttonUrl).append("\n\n");
-        return sb.append("— NexHire").toString();
+        return sb.append("The NexHire team").toString();
     }
 
     private String html(String heading, java.util.List<String> paragraphs, String buttonText, String buttonUrl) {

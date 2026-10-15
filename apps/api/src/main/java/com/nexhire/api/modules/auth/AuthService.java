@@ -119,7 +119,7 @@ public class AuthService {
             mailService.send(user.getEmail(), "Reset your NexHire password", "Reset your password",
                 java.util.List.of("Hi " + user.getFirstName() + ",",
                     "We received a request to reset your NexHire password. This link is valid for 1 hour.",
-                    "If you didn't ask for this, you can ignore this email — your password won't change."),
+                    "If you didn't ask for this, you can ignore this email - your password won't change."),
                 "Choose a new password", mailService.link("/reset-password?token=" + token));
         });
         return new MessageResponse("If an account exists for this email, we've sent a link to reset the password");

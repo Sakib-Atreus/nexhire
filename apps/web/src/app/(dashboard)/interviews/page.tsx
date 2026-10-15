@@ -161,8 +161,8 @@ function SummaryCard({ interviews, recruiter }: { interviews: Interview[]; recru
         ) : null}
         <p className="text-xs text-fg-muted">
           {recruiter
-            ? 'Shows scheduled interviews for every job you manage, including jobs posted by your company team. Rescheduling resets the candidate’s answer so they confirm the new time — unless you pick one of their suggested times.'
-            : 'Accept, decline or suggest another time for each invitation — you can change your answer until the interview starts. You’ll be notified if the time changes; please confirm the new time when it does.'}
+            ? 'Shows scheduled interviews for every job you manage, including jobs posted by your company team. Rescheduling resets the candidate’s answer so they confirm the new time - unless you pick one of their suggested times.'
+            : 'Accept, decline or suggest another time for each invitation - you can change your answer until the interview starts. You’ll be notified if the time changes; please confirm the new time when it does.'}
         </p>
       </div>
     </Card>

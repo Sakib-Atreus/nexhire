@@ -129,7 +129,7 @@ function ManageCompanyView({ data, currentUserId }: { data: MyCompany; currentUs
           {!company.verified && (
             <div className="mx-5 mt-5 flex items-start gap-2.5 rounded-lg bg-muted px-3.5 py-3 text-sm text-fg-tertiary ring-1 ring-inset ring-line sm:mx-6">
               <ShieldCheck className="mt-0.5 w-4 h-4 flex-shrink-0 text-fg-subtle" aria-hidden />
-              <p><span className="font-medium text-fg">Not verified yet</span> — an administrator verifies companies. Verified companies get a badge on their jobs and appear first in the directory.</p>
+              <p><span className="font-medium text-fg">Not verified yet</span> - an administrator verifies companies. Verified companies get a badge on their jobs and appear first in the directory.</p>
             </div>
           )}
           <div className="p-5 sm:p-6">

@@ -58,7 +58,7 @@ function ClashNote({ clashes, compact }: { clashes: Interview[]; compact?: boole
       <div className="min-w-0 space-y-1 break-words">
         {clashes.map((c) => (
           <p key={c.id}>
-            This overlaps your interview for <span className="font-medium">{c.jobTitle}</span> at {c.companyName} — {formatInterviewWhen(c)}.
+            This overlaps your interview for <span className="font-medium">{c.jobTitle}</span> at {c.companyName} on {formatInterviewWhen(c)}.
             {!compact && ' You can ask for another time.'}
           </p>
         ))}
@@ -141,7 +141,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
       },
       {
         onSuccess: () => {
-          toast.success(`Sent — ${i.companyName} will confirm a time.`);
+          toast.success(`Sent - ${i.companyName} will confirm a time.`);
           onClose();
         },
         onError: (err) => {
@@ -243,7 +243,7 @@ function RequestTimeModal({ open, onClose, interview: i, others }: {
             value={note}
             maxLength={NOTE_MAX}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. I have a class on Tuesday mornings — afternoons work best."
+            placeholder="e.g. I have a class on Tuesday mornings, so afternoons work best."
           />
           <p className="text-xs text-fg-muted">
             {i.companyName} will see your note.
@@ -392,7 +392,7 @@ export function InterviewResponsePanel({ interview: i, compact, className }: {
 
       {i.response === 'NEW_TIME_REQUESTED' && i.proposedTimes.length > 0 && (
         <div className="text-xs text-fg-tertiary">
-          <p>Your suggestions — {i.companyName} will confirm one:</p>
+          <p>Your suggestions ({i.companyName} will confirm one):</p>
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {i.proposedTimes.map((t) => (
               <li key={t} className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 font-medium text-fg-secondary ring-1 ring-inset ring-amber-200">
